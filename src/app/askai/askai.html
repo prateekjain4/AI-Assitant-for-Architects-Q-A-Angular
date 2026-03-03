@@ -1,0 +1,25 @@
+<h3 class="mt-5 mb-3">Ask the AI</h3>
+
+<!-- question form -->
+<form (ngSubmit)="sendQuestion()" class="mb-4">
+  <div class="form-group">
+    <label for="questionInput">Enter your question:</label>
+    <textarea
+      id="questionInput"
+      class="form-control"
+      rows="3"
+      [(ngModel)]="question"
+      name="question"
+      placeholder="Type something and hit Ask"
+      required
+    ></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary mt-2">Ask</button>
+</form>
+
+<div *ngIf="answer">
+  <h4>Answer</h4>
+  <div style="white-space: pre-line;">
+    {{ answer }}
+  </div>
+</div>
