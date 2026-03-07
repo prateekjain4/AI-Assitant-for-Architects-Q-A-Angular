@@ -6,19 +6,22 @@ import { App } from './app';
 import { Askai } from './askai/askai';
 import { UpdatedBylaw } from './updated-bylaw/updated-bylaw';
 import { HomeModule } from './home/home-module';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { provideHttpClient } from '@angular/common/http';
+import { PlanningTool } from './planning-tool/planning-tool';
 @NgModule({
   declarations: [
     App,
     Askai,
-    UpdatedBylaw
+    UpdatedBylaw,
+    PlanningTool
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HomeModule,
-    FormsModule
+    FormsModule,
+    ReactiveFormsModule
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),

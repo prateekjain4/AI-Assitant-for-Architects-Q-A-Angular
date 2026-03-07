@@ -1,0 +1,96 @@
+<h3 class="mt-5 mb-3">Plan Your Next Project</h3>
+
+    <form [formGroup]="plotCalculator" (ngSubmit)="onSubmit()">
+
+    <div class="row mb-3">
+        <div class="col">
+            <label class="form-label">Zone</label>
+            <input class="form-control" type="text" formControlName="zoneDetails">
+            <small class="text-danger" *ngIf="plotCalculator.get('zoneDetails')?.invalid && plotCalculator.get('zoneDetails')?.touched">
+                Zone is required.
+            </small>
+        </div>
+
+        <div class="col">
+            <label class="form-label">Plot Length</label>
+            <input class="form-control" type="number" formControlName="plotLength">
+            <small class="text-danger" *ngIf="plotCalculator.get('plotLength')?.invalid && plotCalculator.get('plotLength')?.touched">
+                Plot Length is required.
+            </small>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-3">
+            <label class="form-label">Plot Width</label>
+            <input class="form-control" type="number" formControlName="plotWidth">
+            <small class="text-danger" *ngIf="plotCalculator.get('plotWidth')?.invalid && plotCalculator.get('plotWidth')?.touched">
+                Plot Width is required.
+            </small>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-3">
+            <label class="form-label">Road Width</label>
+            <input class="form-control" type="number" formControlName="roadWidth">
+            <small class="text-danger" *ngIf="plotCalculator.get('roadWidth')?.invalid && plotCalculator.get('roadWidth')?.touched">
+                Road Width is required.
+            </small>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-3">
+            <label class="form-label">Building Height</label>
+            <input class="form-control" type="number" formControlName="buildingHeight">
+            <small class="text-danger" *ngIf="plotCalculator.get('buildingHeight')?.invalid && plotCalculator.get('buildingHeight')?.touched">
+                Building Height is required.
+            </small>
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-3">
+            <label class="form-label">Usage</label>
+            <input class="form-control" type="text" formControlName="usage">
+            <small class="text-danger" *ngIf="plotCalculator.get('usage')?.invalid && plotCalculator.get('usage')?.touched">
+                Usage is required.
+            </small>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" type="submit" [disabled]="plotCalculator.invalid">Calculate Regulations</button>
+</form>
+
+<div *ngIf="loading">
+  Calculating regulations...
+</div>
+
+
+<div *ngIf="result" class="card mt-4 p-3 shadow-sm">
+
+  <h4>Planning Result</h4>
+
+  <p><b>Plot Area:</b> {{result.plot_area}}</p>
+  <p><b>FAR:</b> {{result.far}}</p>
+  <p><b>Maximum Built Area:</b> {{result.max_built_area}}</p>
+
+  <h5>Setbacks</h5>
+  <p>Front: {{result.setbacks?.front}} m</p>
+  <p>Side: {{result.setbacks?.side}} m</p>
+  <p>Rear: {{result.setbacks?.rear}} m</p>
+
+  <h5>Fire Rules</h5>
+  <ul>
+    <li *ngFor="let rule of result.fire_rules">
+      {{rule}}
+    </li>
+  </ul>
+
+  <h5>AI Explanation</h5>
+  <p style="white-space: pre-line">
+    {{result.ai_explanation}}
+  </p>
+
+</div>
