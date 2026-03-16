@@ -1,3 +1,6 @@
+<h3>Planning Map</h3>
+
+<app-map></app-map>
 <h3 class="mt-5 mb-3">Plan Your Next Project</h3>
 
     <form [formGroup]="plotCalculator" (ngSubmit)="onSubmit()">
@@ -10,13 +13,12 @@
                 Zone is required.
             </small>
         </div>
+    </div>
+    <div class="row mb-3">
 
         <div class="col">
             <label class="form-label">Plot Length</label>
             <input class="form-control" type="number" formControlName="plotLength">
-            <small class="text-danger" *ngIf="plotCalculator.get('plotLength')?.invalid && plotCalculator.get('plotLength')?.touched">
-                Plot Length is required.
-            </small>
         </div>
     </div>
 
@@ -24,9 +26,6 @@
         <div class="col-3">
             <label class="form-label">Plot Width</label>
             <input class="form-control" type="number" formControlName="plotWidth">
-            <small class="text-danger" *ngIf="plotCalculator.get('plotWidth')?.invalid && plotCalculator.get('plotWidth')?.touched">
-                Plot Width is required.
-            </small>
         </div>
     </div>
 

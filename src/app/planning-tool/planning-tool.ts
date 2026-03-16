@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-
+import { MapData } from '../services/map-data';
 @Component({
   selector: 'app-planning-tool',
   standalone: false,
@@ -16,13 +16,13 @@ export class PlanningTool implements OnInit {
   loading: boolean = false;
   errorMessage: string = '';
 
-  constructor(private fb: FormBuilder, private http: HttpClient, private cdr: ChangeDetectorRef) {}
+  constructor(private fb: FormBuilder, private http: HttpClient, private mapData: MapData, private cdr: ChangeDetectorRef) {}
 
   ngOnInit(): void {
     this.plotCalculator = this.fb.group({
       zoneDetails: ['', Validators.required],
-      plotLength: ['', Validators.required],
-      plotWidth: ['', Validators.required],
+      plotLength: [''],
+      plotWidth: [''],
       roadWidth: ['', Validators.required],
       buildingHeight: ['', Validators.required],
       usage: ['', Validators.required]
@@ -41,11 +41,12 @@ export class PlanningTool implements OnInit {
     this.result = null;
 
     const formData = this.plotCalculator.value;
-
+    const coordinates = this.mapData.getPlotCoordinates();
     const payload = {
       zone: this.plotCalculator.value.zoneDetails,
       plot_length: Number(this.plotCalculator.value.plotLength),
       plot_width: Number(this.plotCalculator.value.plotWidth),
+      coordinates: coordinates,
       road_width: Number(this.plotCalculator.value.roadWidth),
       building_height: Number(this.plotCalculator.value.buildingHeight),
       usage: this.plotCalculator.value.usage

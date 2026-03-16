@@ -9,12 +9,14 @@ import { HomeModule } from './home/home-module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { provideHttpClient } from '@angular/common/http';
 import { PlanningTool } from './planning-tool/planning-tool';
+import { Map } from './map/map';
 @NgModule({
   declarations: [
     App,
     Askai,
     UpdatedBylaw,
-    PlanningTool
+    PlanningTool,
+    Map
   ],
   imports: [
     BrowserModule,
