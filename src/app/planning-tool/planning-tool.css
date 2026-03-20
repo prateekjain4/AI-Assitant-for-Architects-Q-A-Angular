@@ -1,0 +1,89 @@
+.planning-card {
+  border: 1px solid #e3e8ef;
+  border-radius: 12px;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.09);
+}
+
+.planning-card .form-label {
+  font-weight: 600;
+}
+
+.planning-card .form-control {
+  min-height: 45px;
+  border-radius: 8px;
+}
+
+.chat-launcher-wrapper {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 2000;
+}
+
+.chat-launcher {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  border: none;
+  background: #f8d7da;
+  color: #a71d2a;
+  font-size: 1.7rem;
+  line-height: 1;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+}
+
+.chat-widget-body strong {
+  color: #a71d2a;
+}
+.chat-widget {
+  position: fixed;
+  right: 24px;
+  bottom: 96px;
+  width: min(380px, calc(100% - 48px));
+  max-height: 500px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  z-index: 1999;
+  padding: 12px;
+}
+
+.chat-widget-header {
+  border-bottom: 1px solid #ebedef;
+  padding-bottom: 8px;
+  margin-bottom: 8px;
+}
+
+.chat-widget-body {
+  min-height: 180px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.chat-widget-input {
+  margin-top: 8px;
+}
+
+.chat-widget-input .form-control {
+  border: 1px solid #dc3545;
+  background-color: #ffe5e9;
+  color: #a71d2a;
+}
+
+.chat-widget-input .btn-primary {
+  background-color: #dc3545;
+  border-color: #dc3545;
+  color: #fff;
+}
+
+.chat-widget-input .btn-primary:hover,
+.chat-widget-input .btn-primary:focus {
+  background-color: #c82333;
+  border-color: #bd2130;
+}
+
+.chat-widget-body strong {
+  color: #0d6efd;
+}

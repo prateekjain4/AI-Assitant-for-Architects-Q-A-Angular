@@ -1,71 +1,103 @@
 <h3>Planning Map</h3>
 
 <app-map></app-map>
-<h3 class="mt-5 mb-3">Plan Your Next Project</h3>
+
+<div class="card mt-4 mb-4 planning-card">
+  <div class="card-body">
+    <h3 class="card-title mb-3">Plan Your Next Project</h3>
+    <p class="card-text text-muted">Fill in your plot details for regulations and better AI responses.</p>
 
     <form [formGroup]="plotCalculator" (ngSubmit)="onSubmit()">
-
-    <div class="row mb-3">
-        <div class="col">
-            <label class="form-label">Zone</label>
-            <input class="form-control" type="text" formControlName="zoneDetails">
-            <small class="text-danger" *ngIf="plotCalculator.get('zoneDetails')?.invalid && plotCalculator.get('zoneDetails')?.touched">
-                Zone is required.
-            </small>
+      <div class="row g-3">
+        <div class="col-12 col-md-6">
+          <label class="form-label">Zone <span class="text-danger">*</span></label>
+          <input class="form-control" type="text" formControlName="zoneDetails" placeholder="e.g. R1 Residential">
+          <div class="invalid-feedback d-block" *ngIf="plotCalculator.get('zoneDetails')?.invalid && plotCalculator.get('zoneDetails')?.touched">
+            Zone is required.
+          </div>
         </div>
-    </div>
-    <div class="row mb-3">
 
-        <div class="col">
-            <label class="form-label">Plot Length</label>
-            <input class="form-control" type="number" formControlName="plotLength">
+        <div class="col-12 col-md-3">
+          <label class="form-label">Plot Length (m)</label>
+          <input class="form-control" type="number" formControlName="plotLength" placeholder="100">
         </div>
-    </div>
 
-    <div class="row mb-3">
-        <div class="col-3">
-            <label class="form-label">Plot Width</label>
-            <input class="form-control" type="number" formControlName="plotWidth">
+        <div class="col-12 col-md-3">
+          <label class="form-label">Plot Width (m)</label>
+          <input class="form-control" type="number" formControlName="plotWidth" placeholder="50">
         </div>
-    </div>
 
-    <div class="row mb-3">
-        <div class="col-3">
-            <label class="form-label">Road Width</label>
-            <input class="form-control" type="number" formControlName="roadWidth">
-            <small class="text-danger" *ngIf="plotCalculator.get('roadWidth')?.invalid && plotCalculator.get('roadWidth')?.touched">
-                Road Width is required.
-            </small>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Road Width (m) <span class="text-danger">*</span></label>
+          <input class="form-control" type="number" formControlName="roadWidth" placeholder="6">
+          <div class="invalid-feedback d-block" *ngIf="plotCalculator.get('roadWidth')?.invalid && plotCalculator.get('roadWidth')?.touched">
+            Road Width is required.
+          </div>
         </div>
-    </div>
 
-    <div class="row mb-3">
-        <div class="col-3">
-            <label class="form-label">Building Height</label>
-            <input class="form-control" type="number" formControlName="buildingHeight">
-            <small class="text-danger" *ngIf="plotCalculator.get('buildingHeight')?.invalid && plotCalculator.get('buildingHeight')?.touched">
-                Building Height is required.
-            </small>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Building Height (m) <span class="text-danger">*</span></label>
+          <input class="form-control" type="number" formControlName="buildingHeight" placeholder="12">
+          <div class="invalid-feedback d-block" *ngIf="plotCalculator.get('buildingHeight')?.invalid && plotCalculator.get('buildingHeight')?.touched">
+            Building Height is required.
+          </div>
         </div>
-    </div>
 
-    <div class="row mb-3">
-        <div class="col-3">
-            <label class="form-label">Usage</label>
-            <input class="form-control" type="text" formControlName="usage">
-            <small class="text-danger" *ngIf="plotCalculator.get('usage')?.invalid && plotCalculator.get('usage')?.touched">
-                Usage is required.
-            </small>
+        <div class="col-12 col-md-4">
+          <label class="form-label">Usage <span class="text-danger">*</span></label>
+          <input class="form-control" type="text" formControlName="usage" placeholder="e.g. Residential">
+          <div class="invalid-feedback d-block" *ngIf="plotCalculator.get('usage')?.invalid && plotCalculator.get('usage')?.touched">
+            Usage is required.
+          </div>
         </div>
-    </div>
 
-    <button class="btn btn-primary" type="submit" [disabled]="plotCalculator.invalid">Calculate Regulations</button>
-</form>
+        <div class="col-12 text-end mt-2">
+          <button class="btn btn-primary" type="submit" [disabled]="plotCalculator.invalid">Calculate Regulations</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 
 <div *ngIf="loading">
   Calculating regulations...
 </div>
 
+<div class="chat-launcher-wrapper">
+  <button class="chat-launcher" (click)="toggleChat()" aria-label="Open Planning Assistant">
+    <span *ngIf="!chatOpen">🤖</span>
+    <span *ngIf="chatOpen">✕</span>
+  </button>
+</div>
+
+<div class="chat-widget" *ngIf="chatOpen">
+  <div class="chat-widget-header d-flex justify-content-between align-items-center">
+    <h5 class="m-0">Planning Assistant</h5>
+    <button class="btn btn-sm btn-outline-secondary" (click)="toggleChat()" aria-label="Close chat">✕</button>
+  </div>
+
+  <div #chatBody class="chat-widget-body" style="max-height: 320px; overflow-y: auto;">
+    <div *ngFor="let msg of messages" class="mb-2">
+      <strong>{{msg.role}}:</strong>
+      <div style="white-space: pre-line;">{{msg.text}}</div>
+    </div>
+
+    <div *ngIf="chatLoading" class="text-muted">
+      <i>AI is typing...</i>
+    </div>
+  </div>
+
+  <div class="chat-widget-input mt-2 d-flex">
+    <input
+      class="form-control me-2"
+      [(ngModel)]="chatInput"
+      placeholder="Ask about your project"
+      (keyup.enter)="sendMessage()"
+      [disabled]="chatLoading"
+    />
+    <button class="btn btn-primary" (click)="sendMessage()" [disabled]="chatLoading || !chatInput.trim()">Send</button>
+  </div>
+</div>
 
 <div *ngIf="result" class="card mt-4 p-3 shadow-sm">
 
@@ -86,7 +118,10 @@
       {{rule}}
     </li>
   </ul>
-
+  
+  <div>
+    
+  </div>
   <h5>AI Explanation</h5>
   <p style="white-space: pre-line">
     {{result.ai_explanation}}
