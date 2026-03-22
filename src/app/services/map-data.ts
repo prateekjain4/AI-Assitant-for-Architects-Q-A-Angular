@@ -6,6 +6,7 @@ import { Injectable } from '@angular/core';
 export class MapData {
   plotCoordinates: any[] = [];
   plotArea: number = 0;
+  detectedZone: any = null;
 
   setPlotData(coords: any[], area: number) {
     this.plotCoordinates = coords;
@@ -18,5 +19,13 @@ export class MapData {
 
   getPlotArea() {
     return this.plotArea;
+  }
+
+  setDetectedZone(zone: any) {
+    this.detectedZone = zone;
+  }
+
+  getDetectedZone() {
+    return this.detectedZone;
   }
 }

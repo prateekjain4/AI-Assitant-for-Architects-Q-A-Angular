@@ -11,9 +11,14 @@
       <div class="row g-3">
         <div class="col-12 col-md-6">
           <label class="form-label">Zone <span class="text-danger">*</span></label>
-          <input class="form-control" type="text" formControlName="zoneDetails" placeholder="e.g. R1 Residential">
-          <div class="invalid-feedback d-block" *ngIf="plotCalculator.get('zoneDetails')?.invalid && plotCalculator.get('zoneDetails')?.touched">
-            Zone is required.
+          <input class="form-control" type="text" formControlName="zoneDetails"
+            placeholder="Click map to auto-detect or type manually">
+          <div *ngIf="mapData.getDetectedZone()" style="font-size:12px; color:#16a34a; margin-top:4px;">
+            ✓ Auto-detected — {{ mapData.getDetectedZone()?.locality }}, {{ mapData.getDetectedZone()?.ward }}
+          </div>
+          <div class="invalid-feedback d-block"
+            *ngIf="plotCalculator.get('zoneDetails')?.invalid && plotCalculator.get('zoneDetails')?.touched">
+              Zone is required.
           </div>
         </div>
 
@@ -44,11 +49,8 @@
         </div>
 
         <div class="col-12 col-md-4">
-          <label class="form-label">Usage <span class="text-danger">*</span></label>
+          <label class="form-label">Usage</label>
           <input class="form-control" type="text" formControlName="usage" placeholder="e.g. Residential">
-          <div class="invalid-feedback d-block" *ngIf="plotCalculator.get('usage')?.invalid && plotCalculator.get('usage')?.touched">
-            Usage is required.
-          </div>
         </div>
 
         <div class="col-12 text-end mt-2">

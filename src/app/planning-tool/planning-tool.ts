@@ -32,7 +32,7 @@ export class PlanningTool implements OnInit {
     }, 25);
   }
 
-  constructor(private fb: FormBuilder, private http: HttpClient, private mapData: MapData, private cdr: ChangeDetectorRef, private ngZone: NgZone) {}
+  constructor(private fb: FormBuilder, private http: HttpClient, public mapData: MapData, private cdr: ChangeDetectorRef, private ngZone: NgZone) {}
 
   toggleChat(): void {
     this.chatOpen = !this.chatOpen;
@@ -52,8 +52,18 @@ export class PlanningTool implements OnInit {
       plotWidth: [''],
       roadWidth: ['', Validators.required],
       buildingHeight: ['', Validators.required],
-      usage: ['', Validators.required]
+      usage: ['']
     });
+
+    setInterval(() => {
+      const zone = this.mapData.getDetectedZone();
+      if (zone?.zone_code && zone.zone_code !== this.plotCalculator.value.zoneDetails) {
+        this.ngZone.run(() => {
+        this.plotCalculator.patchValue({ zoneDetails: zone.zone_code });
+        this.cdr.detectChanges();
+        });
+      }
+    }, 500);
 
   }
 
