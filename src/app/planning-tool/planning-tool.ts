@@ -20,7 +20,7 @@ export class PlanningTool implements OnInit {
   chatInput: string = '';
   chatLoading: boolean = false;
   chatOpen: boolean = false;
-
+  
   private scrollToBottom() {
     const body = this.chatBody?.nativeElement;
     if (!body) {
@@ -33,7 +33,7 @@ export class PlanningTool implements OnInit {
   }
 
   constructor(private fb: FormBuilder, private http: HttpClient, public mapData: MapData, private cdr: ChangeDetectorRef, private ngZone: NgZone) {}
-
+  
   toggleChat(): void {
     this.chatOpen = !this.chatOpen;
 
@@ -44,15 +44,23 @@ export class PlanningTool implements OnInit {
       });
     }
   }
-
+  
   ngOnInit(): void {
+    const detectedZone = this.mapData.getDetectedZone();
     this.plotCalculator = this.fb.group({
       zoneDetails: ['', Validators.required],
       plotLength: [''],
       plotWidth: [''],
       roadWidth: ['', Validators.required],
       buildingHeight: ['', Validators.required],
-      usage: ['']
+      usage: [''],
+      // new fields
+      locality:        detectedZone?.locality ?? '',
+      ward:            detectedZone?.ward ?? '',
+      corner_plot:     this.plotCalculator.value.cornerPlot === 'true',
+      basement:        this.plotCalculator.value.basement === 'true',
+      number_of_units: Number(this.plotCalculator.value.numberOfUnits) || 1,
+      property_type:   this.plotCalculator.value.propertyType || 'residential',
     });
 
     setInterval(() => {
@@ -65,6 +73,28 @@ export class PlanningTool implements OnInit {
       }
     }, 500);
 
+  }
+
+  downloadReport() {
+    const payload = {
+      ...this.result,
+      zone: this.plotCalculator.value.zoneDetails,
+      road_width: this.plotCalculator.value.roadWidth,
+      locality: this.mapData.getDetectedZone()?.locality || '',
+      ward: this.mapData.getDetectedZone()?.ward || '',
+      confidence: this.mapData.getDetectedZone()?.confidence || 'approximate',
+    };
+
+    this.http.post('http://localhost:8000/generate-report', payload, {
+      responseType: 'blob' 
+    }).subscribe(blob => {
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = url;
+      anchor.download = `planning-report-${payload.locality || 'bangalore'}-${Date.now()}.pdf`;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+    });
   }
 
   sendMessage() {
@@ -81,7 +111,7 @@ export class PlanningTool implements OnInit {
 
     const payload = {
       question: userMessage,
-      planning_data: this.result || null   // 🔥 VERY IMPORTANT
+      planning_data: this.result || null
     };
 
     this.http.post('http://localhost:8000/chat', payload)
@@ -147,6 +177,7 @@ export class PlanningTool implements OnInit {
         next: (response: any) => {
           this.ngZone.run(() => {
             this.result = { ...response };
+            this.mapData.setPlanningResult(response);
             this.loading = false;
             this.errorMessage = '';
             this.cdr.detectChanges();

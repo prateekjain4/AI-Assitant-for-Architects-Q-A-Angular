@@ -84,3 +84,20 @@
   border: 1.5px solid var(--c);
   border-radius: 999px;
 }
+
+/* add to map.css */
+.zone-approximate {
+  background: #fffbeb;
+  border-color: #fcd34d;
+}
+.zone-chip-approx {
+  background: #d97706;
+}
+.zone-source-precise {
+  font-size: 11px;
+  color: #16a34a;
+}
+.zone-source-approx {
+  font-size: 11px;
+  color: #b45309;
+}

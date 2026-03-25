@@ -103,9 +103,23 @@
 
 <div *ngIf="result" class="card mt-4 p-3 shadow-sm">
 
-  <h4>Planning Result</h4>
+   <!-- Your existing result display -->
+  <div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Planning Result</h4>
+    <button class="btn btn-outline-primary btn-sm d-flex align-items-center gap-2"
+            (click)="downloadReport()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      Download PDF Report
+    </button>
+  </div>
 
-  <p><b>Plot Area:</b> {{result.plot_area}}</p>
+  <p><b>Plot Area:</b> {{result.plot_area | number:'1.0-0'}} sq ft 
+   ({{(result.plot_area / 10.764) | number:'1.0-0'}} sq m)</p>
   <p><b>FAR:</b> {{result.far}}</p>
   <p><b>Maximum Built Area:</b> {{result.max_built_area}}</p>
 
@@ -114,12 +128,16 @@
   <p>Side: {{result.setbacks?.side}} m</p>
   <p>Rear: {{result.setbacks?.rear}} m</p>
 
-  <h5>Fire Rules</h5>
-  <ul>
-    <li *ngFor="let rule of result.fire_rules">
-      {{rule}}
-    </li>
-  </ul>
+  <!-- <h5>Fire Rules</h5>
+  <div *ngIf="result.fire_rules && result.fire_rules.length > 0">
+    <ul>
+      <li *ngFor="let rule of result.fire_rules">{{ rule }}</li>
+    </ul>
+  </div>
+  <div *ngIf="!result.fire_rules || result.fire_rules.length === 0"
+      style="font-size: 13px; color: #6b7280;">
+      No mandatory fire rules for this building height. Standard precautions apply.
+  </div> -->
   
   <div>
     

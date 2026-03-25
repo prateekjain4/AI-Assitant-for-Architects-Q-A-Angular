@@ -3,22 +3,33 @@
 <!-- Zone detection status -->
 <div class="zone-status-bar mt-2">
 
+  <!-- Loading state -->
   <div *ngIf="detecting" class="zone-detecting">
     <span class="spinner"></span> Detecting zone...
   </div>
 
-  <div *ngIf="detectedZone && !detecting" class="zone-detected">
+  <!-- Zone found — precise (from GeoJSON polygon) -->
+  <div *ngIf="detectedZone && !detecting && detectedZone.confidence === 'precise'" class="zone-detected">
     <span class="zone-chip">{{ detectedZone.zone_code }}</span>
     <span class="zone-locality">{{ detectedZone.zone_name }} — {{ detectedZone.locality }}, {{ detectedZone.ward }}</span>
+    <span class="zone-source-precise">✓ Verified polygon</span>
   </div>
 
+  <!-- Zone found — approximate (from Nominatim ward lookup) -->
+  <div *ngIf="detectedZone && !detecting && detectedZone.confidence === 'approximate'" class="zone-detected zone-approximate">
+    <span class="zone-chip zone-chip-approx">{{ detectedZone.zone_code }}</span>
+    <span class="zone-locality">{{ detectedZone.locality }}, {{ detectedZone.ward }}</span>
+    <span class="zone-source-approx">⚠ Approximate — verify with BDA before submission</span>
+  </div>
+
+  <!-- No zone found -->
   <div *ngIf="zoneError && !detecting" class="zone-error">
     ⚠ {{ zoneError }}
   </div>
 
 </div>
 
-<!-- Plot area (existing) -->
+<!-- Plot area -->
 <div class="mt-2" *ngIf="plotArea !== 0">
   <b>Plot Area:</b> {{ plotArea }} sq ft
 </div>

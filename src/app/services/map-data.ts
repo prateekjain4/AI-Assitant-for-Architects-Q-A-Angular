@@ -8,6 +8,10 @@ export class MapData {
   plotArea: number = 0;
   detectedZone: any = null;
 
+  private planningResult: any = null;
+  setPlanningResult(result: any) { this.planningResult = result; }
+  getPlanningResult() { return this.planningResult; }
+
   setPlotData(coords: any[], area: number) {
     this.plotCoordinates = coords;
     this.plotArea = area;

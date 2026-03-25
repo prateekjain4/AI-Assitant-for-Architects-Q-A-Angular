@@ -22,7 +22,7 @@ export class Map implements AfterViewInit {
 
   private clickMarker: any = null;
   private L: any = null;
-
+  private setbackLayer: any = null;
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
     private mapData: MapData,
@@ -98,7 +98,16 @@ export class Map implements AfterViewInit {
 
       this.mapData.setPlotData(coordinates, plotArea);
       this.cdr.detectChanges();
-      console.log('Plot area:', plotArea, 'Coordinates:', coordinates);
+
+      // ── Draw setback once planning result exists ──────────────────
+      // Listen for result from MapData service
+      const checkResult = setInterval(() => {
+        const result = this.mapData.getPlanningResult();
+        if (result?.setbacks) {
+          clearInterval(checkResult);
+          this.drawSetbackPolygon(latlngs, result.setbacks, L);
+        }
+      }, 500);
     });
 
     // ── Single click → detect zone ─────────────────────────────────
@@ -152,6 +161,49 @@ export class Map implements AfterViewInit {
     });
   }
 
+  private drawSetbackPolygon(latlngs: any[], setbacks: { front: number, rear: number, side: number }, L: any) {
+    // Remove previous setback layer if exists
+    if (this.setbackLayer) {
+      this.map.removeLayer(this.setbackLayer);
+      this.setbackLayer = null;
+    }
+
+    // Convert to turf polygon (lng, lat)
+    const turfCoords = latlngs.map((p: any) => [p.lng, p.lat]);
+    turfCoords.push(turfCoords[0]);
+    const plotPolygon = turf.polygon([turfCoords]);
+
+    // Inset polygon by setback distance in meters
+    // turf.buffer with negative value shrinks the polygon
+    const setbackMeters = Math.min(setbacks.front, setbacks.rear, setbacks.side);
+    const inset = turf.buffer(plotPolygon, -setbackMeters / 1000, { units: 'kilometers' });
+
+    if (!inset || !inset.geometry) {
+      console.warn('Plot too small for setback visualisation');
+      return;
+    }
+
+    // Draw buildable area (green fill)
+    const buildableCoords = inset.geometry.coordinates[0].map(
+      (c) => [c[1], c[0]] as [number, number]
+    );
+
+    this.setbackLayer = L.layerGroup();
+
+    // Buildable area polygon
+    const buildablePolygon = L.polygon(buildableCoords, {
+      color: '#16a34a',
+      fillColor: '#16a34a',
+      fillOpacity: 0.15,
+      weight: 2,
+      dashArray: '6 4'
+    }).addTo(this.setbackLayer);
+
+    buildablePolygon.bindTooltip('Buildable area (after setbacks)', { sticky: true });
+
+    this.setbackLayer.addTo(this.map);
+  }
+
   // Prevents zone detection click firing while draw toolbar is active
   private isDrawing(): boolean {
     return document.querySelector('.leaflet-draw-toolbar-used') !== null;
@@ -169,6 +221,7 @@ export class Map implements AfterViewInit {
     };
     return {
       color:       colours[zoneCode] ?? '#6b7280',
+      fillColor: colours[zoneCode] ?? '#6b7280',
       weight:      1.5,
       opacity:     0.8,
       fillOpacity: 0.12
