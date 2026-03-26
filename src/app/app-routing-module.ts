@@ -4,11 +4,13 @@ import { Home } from './home/home';
 import { Askai } from './askai/askai';
 import { UpdatedBylaw } from './updated-bylaw/updated-bylaw';
 import { PlanningTool } from './planning-tool/planning-tool';
+import { About } from './about/about';
 
 const routes: Routes = [ { path: '', component: Home },
   { path: 'ask', component: Askai },
   { path: 'updates', component: UpdatedBylaw },
   { path: 'planning', component: PlanningTool },
+  { path: 'about', component: About },
   { path: '**', redirectTo: '' }];
 
 @NgModule({

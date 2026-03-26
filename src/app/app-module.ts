@@ -10,20 +10,25 @@ import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { provideHttpClient } from '@angular/common/http';
 import { PlanningTool } from './planning-tool/planning-tool';
 import { Map } from './map/map';
+import { NavbarModule } from './navbar/navbar-module';
+import { About } from './about/about'
 @NgModule({
   declarations: [
     App,
     Askai,
     UpdatedBylaw,
     PlanningTool,
-    Map
+    Map,
+    About
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     HomeModule,
     FormsModule,
-    ReactiveFormsModule
+    ReactiveFormsModule,
+    NavbarModule
+
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),
