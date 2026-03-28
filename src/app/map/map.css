@@ -1,3 +1,110 @@
+
+.map-search-wrapper {
+  width: 100%;
+  max-width: 680px;
+  margin-bottom: 10px;
+}
+
+.map-search-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid #3b82f6;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 12px rgba(59, 130, 246, 0.12);
+}
+
+.search-icon {
+  color: #64748b;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  font-size: 14px;
+  color: #1e293b;
+  background: transparent;
+}
+
+.search-input::placeholder {
+  color: #94a3b8;
+}
+
+.search-clear {
+  background: none;
+  border: none;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.search-clear:hover {
+  color: #475569;
+}
+
+/* ── Autocomplete dropdown ───────────────────────────────────────── */
+.search-dropdown {
+  position: relative;
+  margin-top: 4px;
+  background: #ffffff;
+  border: 1.5px solid #3b82f6;
+  border-top: 1px solid #bfdbfe;
+  border-radius: 0 0 10px 10px;
+  box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+  z-index: 5;
+  overflow: hidden;
+  max-height: 260px;
+  overflow-y: auto;
+}
+
+.search-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  font-size: 13px;
+  color: #334155;
+  cursor: pointer;
+  border-bottom: 0.5px solid #f1f5f9;
+  transition: background 0.1s;
+}
+
+.search-result-item:last-child {
+  border-bottom: none;
+}
+
+.search-result-item:hover {
+  background: #f0f9ff;
+  color: #1d4ed8;
+}
+
+
+/* Ward label badge */
+.ward-label {
+  font-size: 11px;
+  color: #b45309;
+  background: #fef3c7;
+  border-radius: 999px;
+  padding: 1px 6px;
+  margin-left: 4px;
+}
+
+.result-icon {
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.search-result-item:hover .result-icon {
+  color: #3b82f6;
+}
+
 .zone-status-bar {
   min-height: 36px;
   display: flex;

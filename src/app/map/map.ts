@@ -18,11 +18,15 @@ export class Map implements AfterViewInit {
   detecting: boolean = false;
   detectedZone: any = null;
   zoneError: string = '';
+  searchQuery: string = '';
+  searchResults: any[] = [];   
+  showDropdown: boolean = false;
 
   private clickMarker: any = null;
   private setbackLayer: any = null;
   private L: any = null;
-  private isDrawingActive: boolean = false;  // ← reliable draw state flag
+  private isDrawingActive: boolean = false;
+  private searchTimeout: any = null;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
@@ -123,7 +127,7 @@ export class Map implements AfterViewInit {
       // ── 4. Detect zone from polygon centroid ─────────────────────
       const centroid = turf.centroid(polygon);
       const [cLng, cLat] = centroid.geometry.coordinates;
-      this.detectZone(cLat, cLng, L);
+      this.detectZone(cLat, cLng);
 
       // ── 5. Watch for planning result → draw setbacks ─────────────
       this.mapData.setPlanningResult(null);  // reset previous result
@@ -153,12 +157,137 @@ export class Map implements AfterViewInit {
         weight:      2
       }).addTo(this.map);
 
-      this.detectZone(lat, lng, L);
+      this.detectZone(lat, lng);
     });
   }
 
+  onSearchInput() {
+    const query = this.searchQuery.trim();
+
+    // Clear previous timer
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
+
+    if (query.length < 3) {
+      this.searchResults = [];
+      this.showDropdown = false;
+      return;
+    }
+
+    // Debounce 400ms — don't fire on every keystroke
+    this.searchTimeout = setTimeout(() => {
+      this.fetchSearchResults(query);
+    }, 400);
+  }
+
+  private fetchSearchResults(query: string) {
+    // Nominatim search — restricted to Bangalore bounding box
+    // viewbox: SW corner to NE corner of Bangalore
+    const url = `https://nominatim.openstreetmap.org/search`
+      + `?q=${encodeURIComponent(query + ', Bangalore')}`
+      + `&format=json`
+      + `&limit=6`
+      + `&viewbox=77.4601,12.7342,77.7814,13.1399`  // Bangalore bbox
+      + `&bounded=1`                                   // restrict to bbox
+      + `&addressdetails=1`;
+
+    this.http.get<any[]>(url, {
+      headers: { 'Accept-Language': 'en' }
+    }).subscribe({
+      next: (results) => {
+        this.ngZone.run(() => {
+          this.searchResults = results.map(r => ({
+            display_name: this.formatDisplayName(r.display_name),
+            full_name:    r.display_name,
+            lat:          parseFloat(r.lat),
+            lng:          parseFloat(r.lon),
+            type:         r.type,
+            class:        r.class
+          }));
+          this.showDropdown = this.searchResults.length > 0;
+          this.cdr.detectChanges();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.searchResults = [];
+          this.showDropdown = false;
+        });
+      }
+    });
+  }
+
+  // Shorten display name — remove country/state clutter
+  private formatDisplayName(fullName: string): string {
+    const parts = fullName.split(',');
+    // Return first 2-3 meaningful parts
+    return parts.slice(0, 3).join(',').trim();
+  }
+
+  // ── User selects a search result ──────────────────────────────
+  selectResult(result: any) {
+    const { lat, lng } = result;
+    // Close dropdown
+    this.showDropdown  = false;
+    this.searchQuery   = result.display_name;
+    this.searchResults = [];
+
+    // Fly map to location
+    this.map.flyTo([lat, lng], 16, { duration: 1.2 });
+
+    // Drop pin and detect zone
+    if (this.clickMarker) this.map.removeLayer(this.clickMarker);
+    this.clickMarker = this.L.circleMarker([lat, lng], {
+      radius:      9,
+      color:       '#1d4ed8',
+      fillColor:   '#3b82f6',
+      fillOpacity: 0.9,
+      weight:      2
+    }).addTo(this.map);
+
+    // Add popup with name
+    this.clickMarker.bindPopup(
+      `<b>${result.display_name}</b>`,
+      { closeButton: false }
+    ).openPopup();
+
+    // Detect zone at this location
+    this.detectZone(lat, lng);
+
+    this.cdr.detectChanges();
+  }
+
+  // Close dropdown when clicking outside
+  onSearchBlur() {
+    // Delay so click on result registers first
+    setTimeout(() => {
+      this.showDropdown = false;
+      this.cdr.detectChanges();
+    }, 200);
+  }
+
+  clearSearch() {
+    this.searchQuery   = '';
+    this.searchResults = [];
+    this.showDropdown  = false;
+
+    // Remove pin
+    if (this.clickMarker) {
+      this.map.removeLayer(this.clickMarker);
+      this.clickMarker = null;
+    }
+
+    // Reset zone
+    this.ngZone.run(() => {
+      this.detectedZone = null;
+      this.zoneError    = '';
+      this.mapData.setDetectedZone(null);
+      this.cdr.detectChanges();
+    });
+  }
+
+
   // ── Shared zone detection method ─────────────────────────────────
-  private detectZone(lat: number, lng: number, L: any) {
+  private detectZone(lat: number, lng: number) {
     this.ngZone.run(() => {
       this.detecting  = true;
       this.zoneError  = '';
