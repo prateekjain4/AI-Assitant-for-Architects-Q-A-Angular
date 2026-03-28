@@ -1,25 +1,145 @@
-<h3 class="mt-5 mb-3">Ask the AI</h3>
+<div class="chat-page">
 
-<!-- question form -->
-<form (ngSubmit)="sendQuestion()" class="mb-4">
-  <div class="form-group">
-    <label for="questionInput">Enter your question:</label>
+  <!-- Header -->
+  <div class="chat-header">
+    <div class="chat-header-info">
+      <div class="ai-avatar-header">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="10" rx="2"/>
+          <circle cx="12" cy="5" r="3"/>
+          <line x1="8" y1="15" x2="8.01" y2="15"/>
+          <line x1="12" y1="15" x2="12.01" y2="15"/>
+          <line x1="16" y1="15" x2="16.01" y2="15"/>
+        </svg>
+      </div>
+      <div>
+        <h2 class="chat-title">PlanIQ Assistant</h2>
+        <span class="chat-subtitle">Ask anything about Bangalore bylaws &amp; zoning</span>
+      </div>
+    </div>
+    <button *ngIf="messages.length > 0" class="clear-btn" (click)="clearChat()" title="Clear conversation">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14H6L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+        <path d="M9 6V4h6v2"/>
+      </svg>
+      Clear
+    </button>
+  </div>
+
+  <!-- Chat window -->
+  <div class="chat-window" #chatContainer>
+
+    <!-- Empty state with suggestions -->
+    <div *ngIf="messages.length === 0 && !loading" class="empty-state">
+      <div class="empty-icon">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
+        </svg>
+      </div>
+      <h3 class="empty-title">How can I help you?</h3>
+      <p class="empty-subtitle">Ask about building bylaws, FAR, setbacks, zoning regulations and more.</p>
+      <div class="suggestions">
+        <button
+          *ngFor="let q of suggestedQuestions"
+          class="suggestion-chip"
+          (click)="askSuggested(q)"
+        >{{ q }}</button>
+      </div>
+    </div>
+
+    <!-- Messages -->
+    <ng-container *ngFor="let msg of messages; let i = index">
+
+      <!-- AI / Error -->
+      <div *ngIf="msg.role !== 'user'" class="msg-row ai-row">
+        <div class="ai-avatar">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="10" rx="2"/>
+            <circle cx="12" cy="5" r="3"/>
+          </svg>
+        </div>
+        <div class="bubble ai-bubble" [ngClass]="{ 'error-bubble': msg.role === 'error' }">
+          <div *ngIf="msg.role === 'ai'" [innerHTML]="msg.safeHtml"></div>
+          <div *ngIf="msg.role === 'error'" class="error-msg">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/>
+              <line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {{ msg.text }}
+          </div>
+          <div class="bubble-footer">
+            <span class="msg-time">{{ msg.time }}</span>
+            <button *ngIf="msg.role === 'ai'" class="copy-btn" (click)="copyText(msg.text, i)" [title]="copiedIndex === i ? 'Copied!' : 'Copy'">
+              <svg *ngIf="copiedIndex !== i" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2"/>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+              </svg>
+              <svg *ngIf="copiedIndex === i" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5">
+                <polyline points="20 6 9 17 4 12"/>
+              </svg>
+              {{ copiedIndex === i ? 'Copied' : 'Copy' }}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- User -->
+      <div *ngIf="msg.role === 'user'" class="msg-row user-row">
+        <div class="bubble user-bubble">
+          {{ msg.text }}
+          <div class="bubble-footer user-footer">
+            <span class="msg-time">{{ msg.time }}</span>
+          </div>
+        </div>
+      </div>
+
+    </ng-container>
+
+    <!-- Typing indicator -->
+    <div *ngIf="loading" class="msg-row ai-row">
+      <div class="ai-avatar">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="11" width="18" height="10" rx="2"/>
+          <circle cx="12" cy="5" r="3"/>
+        </svg>
+      </div>
+      <div class="bubble ai-bubble typing-bubble">
+        <span class="dot"></span>
+        <span class="dot"></span>
+        <span class="dot"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Input area -->
+  <div class="chat-input-area">
     <textarea
-      id="questionInput"
-      class="form-control"
-      rows="3"
+      class="chat-input"
+      rows="1"
       [(ngModel)]="question"
-      name="question"
-      placeholder="Type something and hit Ask"
-      required
+      (keydown)="onKeydown($event)"
+      placeholder="Ask about bylaws, FAR, setbacks, zoning..."
+      [disabled]="loading"
+      autocomplete="off"
     ></textarea>
+    <button
+      class="send-btn"
+      (click)="sendQuestion()"
+      [disabled]="loading || !question.trim()"
+      title="Send (Enter)"
+    >
+      <svg *ngIf="!loading" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <line x1="22" y1="2" x2="11" y2="13"/>
+        <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+      </svg>
+      <span *ngIf="loading" class="send-spinner"></span>
+    </button>
   </div>
-  <button type="submit" class="btn btn-primary mt-2">Ask</button>
-</form>
+  <p class="input-hint">
+    Press <kbd>Enter</kbd> to send &nbsp;·&nbsp; <kbd>Shift+Enter</kbd> for new line
+  </p>
 
-<div *ngIf="answer">
-  <h4>Answer</h4>
-  <div style="white-space: pre-line;">
-    {{ answer }}
-  </div>
 </div>
