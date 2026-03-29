@@ -21,6 +21,23 @@ export class PlanningTool implements OnInit {
   chatLoading: boolean = false;
   chatOpen: boolean = false;
   
+  // ── Accordion state for result sections ───────────────────────
+  openSections: Record<string, boolean> = {
+    metrics:    true,
+    setbacks:   true,
+    far:        true,
+    staircase:  true,
+    projections:false,
+    basement:   false,
+    fire:       true,
+    compliance: false,
+    ai:         true,
+  };
+ 
+  toggleSection(key: string) {
+    this.openSections[key] = !this.openSections[key];
+  }
+
   private scrollToBottom() {
     const body = this.chatBody?.nativeElement;
     if (!body) {
@@ -46,7 +63,6 @@ export class PlanningTool implements OnInit {
   }
   
   ngOnInit(): void {
-    const detectedZone = this.mapData.getDetectedZone();
     this.plotCalculator = this.fb.group({
       zoneDetails: ['', Validators.required],
       plotLength: [''],
@@ -55,12 +71,9 @@ export class PlanningTool implements OnInit {
       buildingHeight: ['', Validators.required],
       usage: [''],
       // new fields
-      locality:        detectedZone?.locality ?? '',
-      ward:            detectedZone?.ward ?? '',
-      corner_plot:     this.plotCalculator.value.cornerPlot === 'true',
-      basement:        this.plotCalculator.value.basement === 'true',
-      number_of_units: Number(this.plotCalculator.value.numberOfUnits) || 1,
-      property_type:   this.plotCalculator.value.propertyType || 'residential',
+      cornerPlot:     ['false'],
+      basement:       ['false'],
+      floorHeight:    [3.2],
     });
 
     setInterval(() => {
@@ -80,6 +93,7 @@ export class PlanningTool implements OnInit {
       ...this.result,
       zone: this.plotCalculator.value.zoneDetails,
       road_width: this.plotCalculator.value.roadWidth,
+      building_height: Number(this.plotCalculator.value.buildingHeight),
       locality: this.mapData.getDetectedZone()?.locality || '',
       ward: this.mapData.getDetectedZone()?.ward || '',
       confidence: this.mapData.getDetectedZone()?.confidence || 'approximate',
@@ -114,7 +128,10 @@ export class PlanningTool implements OnInit {
       planning_data: this.result || null
     };
 
-    this.http.post('http://localhost:8000/chat', payload)
+    this.http.post('http://localhost:8000/chat', {
+      question:      userMessage,
+      planning_data: this.result || null
+    })
       .subscribe({
         next: (res: any) => {
           this.ngZone.run(() => {
@@ -160,8 +177,8 @@ export class PlanningTool implements OnInit {
     this.loading = true;
     this.result = null;
 
-    const formData = this.plotCalculator.value;
     const coordinates = this.mapData.getPlotCoordinates();
+    const detectedZone = this.mapData.getDetectedZone();
     const payload = {
       zone: this.plotCalculator.value.zoneDetails,
       plot_length: Number(this.plotCalculator.value.plotLength),
@@ -169,7 +186,12 @@ export class PlanningTool implements OnInit {
       coordinates: coordinates,
       road_width: Number(this.plotCalculator.value.roadWidth),
       building_height: Number(this.plotCalculator.value.buildingHeight),
-      usage: this.plotCalculator.value.usage
+      usage: this.plotCalculator.value.usage,
+      corner_plot:     this.plotCalculator.value.cornerPlot === 'true',
+      basement:        this.plotCalculator.value.basement === 'true',
+      floor_height:    Number(this.plotCalculator.value.floorHeight) || 3.2,
+      locality:        detectedZone?.locality || '',
+      ward:            detectedZone?.ward || '',
     };
     console.log(payload);
     this.http.post('http://localhost:8000/planning', payload)
@@ -178,6 +200,20 @@ export class PlanningTool implements OnInit {
           this.ngZone.run(() => {
             this.result = { ...response };
             this.mapData.setPlanningResult(response);
+
+            // Open key sections by default
+            this.openSections = {
+              metrics:    true,
+              setbacks:   true,
+              far:        true,
+              staircase:  true,
+              projections:false,
+              basement:   response.basement?.requested ?? false,
+              fire:       true,
+              compliance: false,
+              ai:         true,
+            };
+            
             this.loading = false;
             this.errorMessage = '';
             this.cdr.detectChanges();
