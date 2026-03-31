@@ -1,0 +1,181 @@
+<div class="sc-wrap" *ngIf="plotAreaSqft > 0 && zone">
+
+  <!-- Loading -->
+  <div *ngIf="loading" class="sc-loading">
+    <span class="sc-spinner"></span> Calculating scenarios...
+  </div>
+
+  <div *ngIf="!loading && scenarioData">
+
+    <!-- Header -->
+    <div class="sc-header">
+      <div class="sc-header-left">
+        <span class="sc-title">Scenario Comparison</span>
+        <span class="sc-sub">{{ scenarioData.zone }} zone · {{ scenarioData.road_width }}m road · FAR {{ scenarioData.far }}</span>
+      </div>
+      <div class="sc-rec-badge">
+        Recommended: <strong>{{ scenarioData.recommended }}</strong>
+      </div>
+    </div>
+
+    <!-- Scenario tabs -->
+    <div class="sc-tabs">
+      <button
+        *ngFor="let s of scenarioData.scenarios"
+        class="sc-tab"
+        [class.active]="s.label === selectedTab"
+        [class.recommended]="s.label === scenarioData.recommended"
+        (click)="selectTab(s.label)">
+        {{ s.label }}
+        <span *ngIf="s.label === scenarioData.recommended" class="rec-dot">★</span>
+      </button>
+    </div>
+
+    <!-- Comparison bar chart — all scenarios -->
+    <div class="sc-chart-section">
+      <p class="sc-chart-title">Total built-up area comparison</p>
+      <div class="sc-bars">
+        <div *ngFor="let s of scenarioData.scenarios" class="sc-bar-row">
+          <span class="sc-bar-label">{{ s.label }}</span>
+          <div class="sc-bar-track">
+            <div class="sc-bar-fill"
+              [style.width.%]="barWidth(s.total_built_sqft, scenarioData.far * scenarioData.plot_area_sqft)"
+              [style.background]="s.label === scenarioData.recommended ? '#1d4ed8' : '#93c5fd'"
+              [class.active-bar]="s.label === selectedTab">
+            </div>
+          </div>
+          <span class="sc-bar-value">{{ s.total_built_sqft | number:'1.0-0' }} sq ft</span>
+          <span class="sc-bar-noc" *ngIf="s.fire_noc_required">🔥</span>
+        </div>
+      </div>
+      <p class="sc-chart-note">🔥 = Fire NOC required</p>
+    </div>
+
+    <!-- Selected scenario detail -->
+    <div class="sc-detail" *ngIf="selectedScenario">
+
+      <!-- Key metrics -->
+      <div class="sc-metrics">
+        <div class="sc-metric">
+          <span class="sc-metric-label">Total built-up</span>
+          <span class="sc-metric-value">{{ selectedScenario.total_built_sqft | number:'1.0-0' }}</span>
+          <span class="sc-metric-unit">sq ft</span>
+        </div>
+        <div class="sc-metric">
+          <span class="sc-metric-label">Building height</span>
+          <span class="sc-metric-value">{{ selectedScenario.building_height_m }}</span>
+          <span class="sc-metric-unit">m</span>
+        </div>
+        <div class="sc-metric">
+          <span class="sc-metric-label">FAR utilised</span>
+          <span class="sc-metric-value" [style.color]="efficiencyColor(selectedScenario.far_efficiency_pct)">
+            {{ selectedScenario.far_efficiency_pct }}%
+          </span>
+          <span class="sc-metric-unit">of {{ selectedScenario.far }}</span>
+        </div>
+        <div class="sc-metric">
+          <span class="sc-metric-label">Footprint</span>
+          <span class="sc-metric-value">{{ selectedScenario.footprint_sqft | number:'1.0-0' }}</span>
+          <span class="sc-metric-unit">sq ft</span>
+        </div>
+        <div class="sc-metric">
+          <span class="sc-metric-label">Fire NOC</span>
+          <span class="sc-metric-value"
+            [style.color]="selectedScenario.fire_noc_required ? '#dc2626' : '#16a34a'">
+            {{ selectedScenario.fire_noc_required ? 'Required' : 'Not required' }}
+          </span>
+          <span class="sc-metric-unit">&nbsp;</span>
+        </div>
+        <div class="sc-metric">
+          <span class="sc-metric-label">Lift</span>
+          <span class="sc-metric-value"
+            [style.color]="selectedScenario.lift_mandatory ? '#dc2626' : '#16a34a'">
+            {{ selectedScenario.lift_mandatory ? 'Mandatory' : 'Optional' }}
+          </span>
+          <span class="sc-metric-unit">&nbsp;</span>
+        </div>
+      </div>
+
+      <!-- Setbacks -->
+      <div class="sc-sub-section">
+        <p class="sc-sub-title">Setbacks</p>
+        <div class="sc-setback-row">
+          <div class="sc-setback-pill">Front <strong>{{ selectedScenario.setbacks.front }}m</strong></div>
+          <div class="sc-setback-pill">Side <strong>{{ selectedScenario.setbacks.side }}m</strong></div>
+          <div class="sc-setback-pill">Rear <strong>{{ selectedScenario.setbacks.rear }}m</strong></div>
+        </div>
+        <p class="sc-note sc-note-amber" *ngIf="selectedScenario.setbacks.high_rise_rule">
+          ⚠ 5m all-sides rule applies — building exceeds 11.5m threshold
+        </p>
+      </div>
+
+      <!-- Parking -->
+      <div class="sc-sub-section">
+        <p class="sc-sub-title">Parking required</p>
+        <div class="sc-setback-row">
+          <div class="sc-setback-pill">Car spaces <strong>{{ selectedScenario.parking_car }}</strong></div>
+          <div class="sc-setback-pill">Two-wheelers <strong>{{ selectedScenario.parking_2w }}</strong></div>
+        </div>
+      </div>
+
+      <!-- Fire rules -->
+      <div class="sc-sub-section" *ngIf="selectedScenario.fire_rules?.length > 0">
+        <p class="sc-sub-title">Fire safety requirements</p>
+        <div *ngFor="let rule of selectedScenario.fire_rules" class="sc-fire-item">
+          <span class="sc-fire-dot">●</span> {{ rule }}
+        </div>
+      </div>
+
+      <!-- Warnings -->
+      <div class="sc-sub-section" *ngIf="selectedScenario.warnings?.length > 0">
+        <p class="sc-sub-title">Watch out</p>
+        <div *ngFor="let w of selectedScenario.warnings" class="sc-warning-item">
+          ⚠ {{ w }}
+        </div>
+      </div>
+
+      <!-- Floor breakdown toggle -->
+      <div class="sc-sub-section">
+        <div class="sc-floor-toggle" (click)="toggleFloor(selectedScenario.label)">
+          <span class="sc-sub-title" style="cursor:pointer">
+            Floor-wise breakdown
+            <span class="sc-chevron">{{ expandedFloor === selectedScenario.label ? '▲' : '▼' }}</span>
+          </span>
+        </div>
+        <div *ngIf="expandedFloor === selectedScenario.label" class="sc-floor-table">
+          <table>
+            <thead>
+              <tr>
+                <th>Floor</th>
+                <th class="text-end">Area (sq ft)</th>
+                <th class="text-end">Area (sq m)</th>
+                <th>Setback rule</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let f of selectedScenario.floor_table"
+                  [class.high-rise-row]="f.is_high_rise">
+                <td>
+                  {{ f.label }}
+                  <span *ngIf="f.is_high_rise" class="hr-badge">above 11.5m</span>
+                </td>
+                <td class="text-end">{{ f.area_sqft | number:'1.0-0' }}</td>
+                <td class="text-end text-muted">{{ f.area_sqm }}</td>
+                <td class="text-muted small">{{ f.setback_rule }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr class="total-row">
+                <td><strong>Total</strong></td>
+                <td class="text-end"><strong>{{ selectedScenario.total_built_sqft | number:'1.0-0' }}</strong></td>
+                <td class="text-end">{{ selectedScenario.total_built_sqm }}</td>
+                <td>FAR used: {{ selectedScenario.far_used }}</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>

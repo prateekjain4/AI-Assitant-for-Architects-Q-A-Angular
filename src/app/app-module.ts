@@ -11,7 +11,8 @@ import { provideHttpClient } from '@angular/common/http';
 import { PlanningTool } from './planning-tool/planning-tool';
 import { Map } from './map/map';
 import { NavbarModule } from './navbar/navbar-module';
-import { About } from './about/about'
+import { About } from './about/about';
+import { ScenarioComparison } from './scenario-comparison/scenario-comparison'
 @NgModule({
   declarations: [
     App,
@@ -19,7 +20,8 @@ import { About } from './about/about'
     UpdatedBylaw,
     PlanningTool,
     Map,
-    About
+    About,
+    ScenarioComparison
   ],
   imports: [
     BrowserModule,

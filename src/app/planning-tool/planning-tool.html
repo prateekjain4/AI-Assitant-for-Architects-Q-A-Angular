@@ -414,4 +414,25 @@
     </div>
   </div>
 
+  <!-- Scenario Comparison -->
+  <div class="result-section">
+    <div class="section-header" (click)="toggleSection('scenarios')">
+      <span class="section-icon">📊</span>
+      <span class="section-title">Scenario Comparison — G+1 to G+4</span>
+      <span class="section-toggle">{{ openSections['scenarios'] ? '▲' : '▼' }}</span>
+    </div>
+    <div class="section-body" *ngIf="openSections['scenarios']" style="padding: 0;">
+      <app-scenario-comparison
+        [zone]="plotCalculator.value.zoneDetails"
+        [roadWidth]="plotCalculator.value.roadWidth"
+        [plotAreaSqft]="result.plot_area"
+        [plotLengthM]="plotCalculator.value.plotLength"
+        [plotWidthM]="plotCalculator.value.plotWidth"
+        [usage]="plotCalculator.value.usage || 'residential'"
+        [cornerPlot]="plotCalculator.value.cornerPlot === 'true'"
+        [basement]="plotCalculator.value.basement === 'true'">
+      </app-scenario-comparison>
+    </div>
+  </div>
+
 </div>
