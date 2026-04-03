@@ -392,6 +392,26 @@
         </div>
       </div>
 
+      <!-- Parking Layout -->
+      <div class="result-section">
+        <div class="section-header" (click)="toggleSection('parking')">
+          <span class="section-icon">🚗</span>
+          <span class="section-title">Parking Layout</span>
+          <span class="section-toggle">{{ openSections['parking'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="section-body" *ngIf="openSections['parking']" style="padding:0;">
+          <app-parking-layout
+            [usage]="plotCalculator.value.usage || 'residential'"
+            [builtUpSqft]="result.max_built_area"
+            [numUnits]="plotCalculator.value.numberOfUnits || 1"
+            [plotLengthM]="plotCalculator.value.plotLength || 0"
+            [plotWidthM]="plotCalculator.value.plotWidth || 0"
+            [basement]="plotCalculator.value.basement === 'true'"
+            [stilt]="false">
+          </app-parking-layout>
+        </div>
+      </div>
+
       <!-- Refuge area -->
       <div *ngIf="result.fire_data?.refuge_area?.required" class="info-note note-amber mt-2">
         ⚠ Refuge area required every {{ result.fire_data.refuge_area.frequency }} —

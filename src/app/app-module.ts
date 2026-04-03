@@ -12,7 +12,8 @@ import { PlanningTool } from './planning-tool/planning-tool';
 import { Map } from './map/map';
 import { NavbarModule } from './navbar/navbar-module';
 import { About } from './about/about';
-import { ScenarioComparison } from './scenario-comparison/scenario-comparison'
+import { ScenarioComparison } from './scenario-comparison/scenario-comparison';
+import { ParkingLayout } from './parking-layout/parking-layout'
 @NgModule({
   declarations: [
     App,
@@ -21,7 +22,8 @@ import { ScenarioComparison } from './scenario-comparison/scenario-comparison'
     PlanningTool,
     Map,
     About,
-    ScenarioComparison
+    ScenarioComparison,
+    ParkingLayout
   ],
   imports: [
     BrowserModule,

@@ -32,7 +32,8 @@ export class PlanningTool implements OnInit {
     fire:       true,
     compliance: false,
     ai:         true,
-    scenarios: true
+    scenarios: true,
+    parking: true,
   };
  
   toggleSection(key: string) {
