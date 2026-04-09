@@ -164,31 +164,56 @@
 
 
   <!-- ── KEY METRICS ──────────────────────────────────────────── -->
+  <div class="rs-metrics-grid">
+    <div class="rs-metric">
+      <span class="rs-metric-label">Plot Area</span>
+      <span class="rs-metric-value">{{ result.plot_area | number:'1.0-0' }}</span>
+      <span class="rs-metric-unit">sq ft</span>
+      <span class="rs-metric-sub">{{ (result.plot_area / 10.764) | number:'1.0-0' }} sq m</span>
+    </div>
+    <div class="rs-metric rs-metric-hi">
+      <span class="rs-metric-label">FAR</span>
+      <span class="rs-metric-value">{{ result.far }}</span>
+      <span class="rs-metric-unit">ratio</span>
+      <span class="rs-metric-sub">{{ result.ground_coverage_pct }}% ground coverage</span>
+    </div>
+    <div class="rs-metric">
+      <span class="rs-metric-label">Max Built-up</span>
+      <span class="rs-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
+      <span class="rs-metric-unit">sq ft</span>
+      <span class="rs-metric-sub">{{ (result.max_built_area / 10.764) | number:'1.0-0' }} sq m</span>
+    </div>
+    <div class="rs-metric">
+      <span class="rs-metric-label">Floors Feasible</span>
+      <span class="rs-metric-value">{{ result.staircase?.num_floors }}</span>
+      <span class="rs-metric-unit">floors</span>
+      <span class="rs-metric-sub">G + {{ (result.staircase?.num_floors ?? 1) - 1 }} upper</span>
+    </div>
+  </div>
 
-  <div class="metrics-grid">
-    <div class="metric-card">
-      <span class="metric-label">Plot Area</span>
-      <span class="metric-value">{{ result.plot_area | number:'1.0-0' }}</span>
-      <span class="metric-unit">sq ft</span>
-      <span class="metric-sub">({{ (result.plot_area / 10.764) | number:'1.0-0' }} sq m)</span>
+  <!-- ── 2D SITE PLAN DIAGRAM ──────────────────────────────────── -->
+  <div class="result-section">
+    <div class="section-header" (click)="toggleSection('sitePlan')">
+      <span class="section-icon">🗺️</span>
+      <span class="section-title">2D Site Plan Diagram</span>
+      <span class="section-toggle">{{ openSections['sitePlan'] ? '▲' : '▼' }}</span>
     </div>
-    <div class="metric-card metric-accent">
-      <span class="metric-label">FAR</span>
-      <span class="metric-value">{{ result.far }}</span>
-      <span class="metric-unit">ratio</span>
-      <span class="metric-sub">{{ result.ground_coverage_pct }}% ground coverage</span>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Max Built-up</span>
-      <span class="metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
-      <span class="metric-unit">sq ft</span>
-      <span class="metric-sub">({{ (result.max_built_area / 10.764) | number:'1.0-0' }} sq m)</span>
-    </div>
-    <div class="metric-card">
-      <span class="metric-label">Floors feasible</span>
-      <span class="metric-value">{{ result.staircase?.num_floors }}</span>
-      <span class="metric-unit">floors</span>
-      <span class="metric-sub">G + {{ (result.staircase?.num_floors ?? 1) - 1 }} upper</span>
+    <div class="section-body" *ngIf="openSections['sitePlan']" style="padding:0;">
+      <app-site-plan
+        [plotLengthM]="+(plotCalculator.value.plotLength || 20)"
+        [plotWidthM]="+(plotCalculator.value.plotWidth || 15)"
+        [roadWidthM]="+(plotCalculator.value.roadWidth || 6)"
+        [buildingHeightM]="+(plotCalculator.value.buildingHeight || 10)"
+        [numFloors]="result.staircase?.num_floors || 3"
+        [floorHeightM]="+(plotCalculator.value.floorHeight || 3.2)"
+        [setbackFront]="result.setbacks?.front || 3"
+        [setbackSide]="result.setbacks?.side || 1.5"
+        [setbackRear]="result.setbacks?.rear || 1.5"
+        [usage]="plotCalculator.value.usage || 'residential'"
+        [cornerPlot]="plotCalculator.value.cornerPlot === 'true'"
+        [groundCovPct]="result.ground_coverage_pct || 60"
+        [zone]="plotCalculator.value.zoneDetails || 'RM'">
+      </app-site-plan>
     </div>
   </div>
 
@@ -200,24 +225,30 @@
       <span class="section-toggle">{{ openSections['setbacks'] ? '▲' : '▼' }}</span>
     </div>
     <div class="section-body" *ngIf="openSections['setbacks']">
-      <div class="setback-row">
-        <div class="setback-card">
-          <span class="setback-dir">Front</span>
-          <span class="setback-val">{{ result.setbacks?.front }} m</span>
+      <div class="rs-cards">
+        <div class="rs-card">
+          <span class="rs-card-label">Front</span>
+          <span class="rs-card-value">{{ result.setbacks?.front }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">From road boundary</span>
         </div>
-        <div class="setback-card">
-          <span class="setback-dir">Side</span>
-          <span class="setback-val">{{ result.setbacks?.side }} m</span>
+        <div class="rs-card">
+          <span class="rs-card-label">Side</span>
+          <span class="rs-card-value">{{ result.setbacks?.side }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">Each side boundary</span>
         </div>
-        <div class="setback-card">
-          <span class="setback-dir">Rear</span>
-          <span class="setback-val">{{ result.setbacks?.rear }} m</span>
+        <div class="rs-card">
+          <span class="rs-card-label">Rear</span>
+          <span class="rs-card-value">{{ result.setbacks?.rear }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">From rear boundary</span>
         </div>
       </div>
-      <div *ngIf="result.setbacks?.corner_relaxation" class="info-note note-green mt-2">
+      <div class="rs-note rs-note-green" *ngIf="result.setbacks?.corner_relaxation">
         ✓ {{ result.setbacks.corner_relaxation }}
       </div>
-      <div class="info-note note-amber mt-2">
+      <div class="rs-note rs-note-amber">
         ⚠ Setbacks increase to <strong>5m all sides</strong> above 11.5m height (BDA bylaws)
       </div>
     </div>
@@ -231,10 +262,30 @@
       <span class="section-toggle">{{ openSections['far'] ? '▲' : '▼' }}</span>
     </div>
     <div class="section-body" *ngIf="openSections['far']">
-      <p class="section-intro">The following are <strong>excluded</strong> from FAR calculation:</p>
-      <div class="exclusion-list">
-        <div *ngFor="let item of result.far_exclusions" class="exclusion-item">
-          <span class="excl-check">✓</span> {{ item }}
+      <div class="rs-cards">
+        <div class="rs-card rs-card-hi">
+          <span class="rs-card-label">FAR</span>
+          <span class="rs-card-value">{{ result.far }}</span>
+          <span class="rs-card-unit">ratio</span>
+          <span class="rs-card-sub">BDA RMP 2031</span>
+        </div>
+        <div class="rs-card">
+          <span class="rs-card-label">Ground Coverage</span>
+          <span class="rs-card-value">{{ result.ground_coverage_pct }}</span>
+          <span class="rs-card-unit">%</span>
+          <span class="rs-card-sub">Max permissible</span>
+        </div>
+        <div class="rs-card">
+          <span class="rs-card-label">Max Built-up</span>
+          <span class="rs-card-value">{{ (result.max_built_area / 10.764) | number:'1.0-0' }}</span>
+          <span class="rs-card-unit">sq m</span>
+          <span class="rs-card-sub">All floors combined</span>
+        </div>
+      </div>
+      <div class="rs-list-title">Excluded from FAR calculation:</div>
+      <div class="rs-checklist">
+        <div *ngFor="let item of result.far_exclusions" class="rs-check-item">
+          <span class="rs-check">✓</span> {{ item }}
         </div>
       </div>
     </div>
@@ -248,25 +299,30 @@
       <span class="section-toggle">{{ openSections['staircase'] ? '▲' : '▼' }}</span>
     </div>
     <div class="section-body" *ngIf="openSections['staircase']">
-      <div class="info-grid-3">
-        <div class="info-cell">
-          <span class="info-label">Min staircase width</span>
-          <span class="info-value">{{ result.staircase?.min_staircase_width_m }} m</span>
+      <div class="rs-cards">
+        <div class="rs-card">
+          <span class="rs-card-label">Min Staircase Width</span>
+          <span class="rs-card-value">{{ result.staircase?.min_staircase_width_m }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">BBMP Sec 20.6</span>
         </div>
-        <div class="info-cell">
-          <span class="info-label">No. of staircases</span>
-          <span class="info-value">{{ result.staircase?.num_staircases }}</span>
+        <div class="rs-card">
+          <span class="rs-card-label">No. of Staircases</span>
+          <span class="rs-card-value">{{ result.staircase?.num_staircases }}</span>
+          <span class="rs-card-unit">required</span>
+          <span class="rs-card-sub">Based on BUA</span>
         </div>
-        <div class="info-cell">
-          <span class="info-label">Lift mandatory</span>
-          <span class="info-value"
-            [style.color]="result.staircase?.lift_mandatory ? '#dc2626' : '#16a34a'">
-            {{ result.staircase?.lift_mandatory ? 'Yes' : 'No' }}
-          </span>
+        <div class="rs-card" [class.rs-card-red]="result.staircase?.lift_mandatory" [class.rs-card-green]="!result.staircase?.lift_mandatory">
+          <span class="rs-card-label">Lift Mandatory</span>
+          <span class="rs-card-value">{{ result.staircase?.lift_mandatory ? 'Yes' : 'No' }}</span>
+          <span class="rs-card-unit">&nbsp;</span>
+          <span class="rs-card-sub">BBMP Sec 20.7</span>
         </div>
       </div>
-      <p class="info-note mt-2">{{ result.staircase?.lift_note }}</p>
-      <p class="info-note">{{ result.staircase?.staircase_extra }}</p>
+      <div class="rs-ai-note" *ngIf="result.staircase?.lift_note || result.staircase?.staircase_extra">
+        <span class="rs-ai-icon">✦</span>
+        <span>{{ result.staircase?.lift_note }} {{ result.staircase?.staircase_extra }}</span>
+      </div>
     </div>
   </div>
 
@@ -278,22 +334,30 @@
       <span class="section-toggle">{{ openSections['projections'] ? '▲' : '▼' }}</span>
     </div>
     <div class="section-body" *ngIf="openSections['projections']">
-      <div class="info-grid-3">
-        <div class="info-cell">
-          <span class="info-label">Max balcony projection</span>
-          <span class="info-value">{{ result.projections?.balcony_max_projection_m }} m</span>
+      <div class="rs-cards">
+        <div class="rs-card">
+          <span class="rs-card-label">Max Balcony Projection</span>
+          <span class="rs-card-value">{{ result.projections?.balcony_max_projection_m }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">Sec 4.9.5</span>
         </div>
-        <div class="info-cell">
-          <span class="info-label">Chajja / sun shade</span>
-          <span class="info-value">{{ result.projections?.chajja_max_projection_m }} m</span>
+        <div class="rs-card">
+          <span class="rs-card-label">Chajja / Sun Shade</span>
+          <span class="rs-card-value">{{ result.projections?.chajja_max_projection_m }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">Max projection</span>
         </div>
-        <div class="info-cell">
-          <span class="info-label">Balcony in FAR</span>
-          <span class="info-value" style="color:#16a34a">No (within 20%)</span>
+        <div class="rs-card rs-card-green">
+          <span class="rs-card-label">Balcony in FAR</span>
+          <span class="rs-card-value">No</span>
+          <span class="rs-card-unit">&nbsp;</span>
+          <span class="rs-card-sub">Within 20% rule</span>
         </div>
       </div>
-      <p class="info-note mt-2">{{ result.projections?.balcony_far_note }}</p>
-      <p class="info-note">{{ result.projections?.projection_into_setback }}</p>
+      <div class="rs-ai-note" *ngIf="result.projections?.balcony_far_note">
+        <span class="rs-ai-icon">✦</span>
+        <span>{{ result.projections?.balcony_far_note }} {{ result.projections?.projection_into_setback }}</span>
+      </div>
     </div>
   </div>
 
@@ -305,42 +369,45 @@
       <span class="section-toggle">{{ openSections['basement'] ? '▲' : '▼' }}</span>
     </div>
     <div class="section-body" *ngIf="openSections['basement']">
-      <div class="info-grid-3 mb-3">
-        <div class="info-cell">
-          <span class="info-label">Max basements</span>
-          <span class="info-value">{{ result.basement?.max_basements }}</span>
+      <div class="rs-cards">
+        <div class="rs-card">
+          <span class="rs-card-label">Max Basements</span>
+          <span class="rs-card-value">{{ result.basement?.max_basements }}</span>
+          <span class="rs-card-unit">levels</span>
+          <span class="rs-card-sub">BBMP Sec 18.2</span>
         </div>
-        <div class="info-cell">
-          <span class="info-label">Counted in FAR</span>
-          <span class="info-value" style="color:#16a34a">No</span>
+        <div class="rs-card rs-card-green">
+          <span class="rs-card-label">Counted in FAR</span>
+          <span class="rs-card-value">No</span>
+          <span class="rs-card-unit">&nbsp;</span>
+          <span class="rs-card-sub">Excluded</span>
         </div>
-        <div class="info-cell">
-          <span class="info-label">Max depth</span>
-          <span class="info-value">{{ result.basement?.max_depth_m }} m</span>
+        <div class="rs-card">
+          <span class="rs-card-label">Max Depth</span>
+          <span class="rs-card-value">{{ result.basement?.max_depth_m }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">Below ground</span>
         </div>
       </div>
-
-      <div class="two-col">
+      <div class="rs-two-col">
         <div>
-          <p class="col-heading">✓ Permitted uses</p>
-          <div *ngFor="let use of result.basement?.permitted_uses" class="exclusion-item">
-            <span class="excl-check">✓</span> {{ use }}
+          <div class="rs-list-title">✓ Permitted uses</div>
+          <div *ngFor="let use of result.basement?.permitted_uses" class="rs-check-item">
+            <span class="rs-check">✓</span> {{ use }}
           </div>
         </div>
         <div>
-          <p class="col-heading">✗ Not permitted</p>
-          <div *ngFor="let use of result.basement?.not_permitted" class="exclusion-item" style="color:#dc2626">
-            <span style="color:#dc2626">✗</span> {{ use }}
+          <div class="rs-list-title" style="color:#dc2626">✗ Not permitted</div>
+          <div *ngFor="let use of result.basement?.not_permitted" class="rs-check-item rs-check-no">
+            <span>✗</span> {{ use }}
           </div>
         </div>
       </div>
-
-      <div class="info-note note-blue mt-2">{{ result.basement?.setback_in_basement }}</div>
-      <div class="info-note note-amber mt-1">{{ result.basement?.ventilation }}</div>
-
-      <p class="col-heading mt-2">Fire requirements in basement:</p>
-      <div *ngFor="let r of result.basement?.fire_requirements" class="exclusion-item" style="color:#b91c1c">
-        <span style="color:#dc2626">●</span> {{ r }}
+      <div class="rs-note rs-note-blue" *ngIf="result.basement?.setback_in_basement">{{ result.basement?.setback_in_basement }}</div>
+      <div class="rs-note rs-note-amber" *ngIf="result.basement?.ventilation">⚠ {{ result.basement?.ventilation }}</div>
+      <div class="rs-ai-note" *ngIf="result.basement?.fire_requirements?.length">
+        <span class="rs-ai-icon">🔥</span>
+        <span>Fire requirements: {{ result.basement?.fire_requirements?.join(' · ') }}</span>
       </div>
     </div>
   </div>
@@ -359,37 +426,49 @@
     </div>
     <div class="section-body" *ngIf="openSections['fire']">
 
-      <!-- Fire requirements list -->
-      <div *ngIf="result.fire_rules?.length > 0" class="mb-3">
-        <div *ngFor="let rule of result.fire_rules" class="fire-rule-item">
-          <span class="fire-dot">●</span> {{ rule }}
+      <!-- NOC status card -->
+      <div class="rs-cards" *ngIf="result.fire_data?.tender_access?.required">
+        <div class="rs-card" [class.rs-card-red]="result.fire_data?.noc_required">
+          <span class="rs-card-label">Min Road Width</span>
+          <span class="rs-card-value">{{ result.fire_data.tender_access.min_road_width_m }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">NBC 2016 Cl. 4.1</span>
+        </div>
+        <div class="rs-card">
+          <span class="rs-card-label">Height Clearance</span>
+          <span class="rs-card-value">{{ result.fire_data.tender_access.min_height_clearance_m }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">Tender access</span>
+        </div>
+        <div class="rs-card">
+          <span class="rs-card-label">Turning Radius</span>
+          <span class="rs-card-value">{{ result.fire_data.tender_access.turning_radius_m }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">Min required</span>
+        </div>
+        <div class="rs-card">
+          <span class="rs-card-label">Max Dead-end</span>
+          <span class="rs-card-value">{{ result.fire_data.tender_access.dead_end_max_m }}</span>
+          <span class="rs-card-unit">metres</span>
+          <span class="rs-card-sub">Road length</span>
         </div>
       </div>
-      <div *ngIf="!result.fire_rules?.length" class="info-note note-green">
+
+      <!-- Fire rules -->
+      <div *ngIf="result.fire_rules?.length > 0" class="rs-checklist rs-checklist-fire">
+        <div *ngFor="let rule of result.fire_rules" class="rs-check-item rs-check-fire">
+          <span class="rs-fire-dot">●</span> {{ rule }}
+        </div>
+      </div>
+      <div *ngIf="!result.fire_rules?.length" class="rs-note rs-note-green">
         ✓ No fire NOC required — building under 15m. Standard precautions apply.
       </div>
 
-      <!-- Fire tender access -->
-      <div *ngIf="result.fire_data?.tender_access?.required" class="mt-3">
-        <p class="col-heading">Fire tender access road (NBC 2016 Part IV Cl. 4.1)</p>
-        <div class="info-grid-4">
-          <div class="info-cell">
-            <span class="info-label">Min road width</span>
-            <span class="info-value">{{ result.fire_data.tender_access.min_road_width_m }} m</span>
-          </div>
-          <div class="info-cell">
-            <span class="info-label">Height clearance</span>
-            <span class="info-value">{{ result.fire_data.tender_access.min_height_clearance_m }} m</span>
-          </div>
-          <div class="info-cell">
-            <span class="info-label">Turning radius</span>
-            <span class="info-value">{{ result.fire_data.tender_access.turning_radius_m }} m</span>
-          </div>
-          <div class="info-cell">
-            <span class="info-label">Max dead-end</span>
-            <span class="info-value">{{ result.fire_data.tender_access.dead_end_max_m }} m</span>
-          </div>
-        </div>
+      <!-- Refuge area -->
+      <div *ngIf="result.fire_data?.refuge_area?.required" class="rs-note rs-note-amber">
+        ⚠ Refuge area required every {{ result.fire_data.refuge_area.frequency }} —
+        min {{ result.fire_data.refuge_area.min_area_sqm }} sqm.
+        {{ result.fire_data.refuge_area.note }}
       </div>
 
       <!-- Parking Layout -->
@@ -412,13 +491,6 @@
         </div>
       </div>
 
-      <!-- Refuge area -->
-      <div *ngIf="result.fire_data?.refuge_area?.required" class="info-note note-amber mt-2">
-        ⚠ Refuge area required every {{ result.fire_data.refuge_area.frequency }} —
-        min {{ result.fire_data.refuge_area.min_area_sqm }} sqm.
-        {{ result.fire_data.refuge_area.note }}
-      </div>
-
     </div>
   </div>
 
@@ -429,8 +501,37 @@
       <span class="section-title">Full Regulatory Analysis</span>
       <span class="section-toggle">{{ openSections['ai'] ? '▲' : '▼' }}</span>
     </div>
-    <div class="section-body" *ngIf="openSections['ai']">
-      <p class="ai-text">{{ result.ai_explanation }}</p>
+    <div class="section-body" *ngIf="openSections['ai']" style="padding:0;">
+      <div class="rs-ai-full">
+        <span class="rs-ai-icon">✦</span>
+        <p class="rs-ai-text">{{ result.ai_explanation }}</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── COST ESTIMATOR ───────────────────────────────────────── -->
+  <div class="result-section">
+    <div class="section-header" (click)="toggleSection('cost')">
+      <span class="section-icon">💰</span>
+      <span class="section-title">Contractor & Cost Estimate</span>
+      <span class="section-toggle">{{ openSections['cost'] ? '▲' : '▼' }}</span>
+    </div>
+    <div class="section-body" *ngIf="openSections['cost']" style="padding:0;">
+      <app-cost-estimator
+        [plotLengthM]="+(plotCalculator.value.plotLength || 20)"
+        [plotWidthM]="+(plotCalculator.value.plotWidth || 15)"
+        [builtUpSqm]="+(result.max_built_area / 10.764)"
+        [numFloors]="result.staircase?.num_floors || 3"
+        [floorHeightM]="+(plotCalculator.value.floorHeight || 3.2)"
+        [setbackFront]="result.setbacks?.front || 3"
+        [setbackSide]="result.setbacks?.side || 1.5"
+        [setbackRear]="result.setbacks?.rear || 1.5"
+        [usage]="plotCalculator.value.usage || 'residential'"
+        [zone]="plotCalculator.value.zoneDetails || 'RM'"
+        [fireNocRequired]="!!result.fire_data?.noc_required"
+        [basement]="plotCalculator.value.basement === 'true'"
+        [carSpaces]="result.parking?.cars_required || 0">
+      </app-cost-estimator>
     </div>
   </div>
 

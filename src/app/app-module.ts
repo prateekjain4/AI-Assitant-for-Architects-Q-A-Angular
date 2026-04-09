@@ -14,6 +14,8 @@ import { NavbarModule } from './navbar/navbar-module';
 import { About } from './about/about';
 import { ScenarioComparison } from './scenario-comparison/scenario-comparison';
 import { ParkingLayout } from './parking-layout/parking-layout'
+import { SitePlan } from './site-plan/site-plan'
+import { CostEstimator } from './cost-estimator/cost-estimator'
 @NgModule({
   declarations: [
     App,
@@ -23,7 +25,9 @@ import { ParkingLayout } from './parking-layout/parking-layout'
     Map,
     About,
     ScenarioComparison,
-    ParkingLayout
+    ParkingLayout,
+    SitePlan,
+    CostEstimator,
   ],
   imports: [
     BrowserModule,

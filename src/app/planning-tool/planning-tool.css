@@ -480,3 +480,194 @@
   .setback-row  { gap: 6px; }
   .result-header { flex-direction: column; align-items: flex-start; gap: 10px; }
 }
+
+/* ══════════════════════════════════════════════════════════════
+   UNIFIED RESULT SYSTEM (rs-*)
+   Consistent card + note + AI style across all sections
+══════════════════════════════════════════════════════════════ */
+
+/* ── Top metrics strip ───────────────────────────────────────── */
+.rs-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.rs-metric {
+  padding: 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-right: 1px solid #e2e8f0;
+  background: #fff;
+}
+
+.rs-metric:last-child { border-right: none; }
+.rs-metric-hi         { background: #f0f9ff; }
+
+.rs-metric-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.rs-metric-value {
+  font-size: 28px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.1;
+}
+
+.rs-metric-unit { font-size: 11px; color: #94a3b8; }
+.rs-metric-sub  { font-size: 11px; color: #94a3b8; margin-top: 2px; }
+
+/* ── Section data cards ──────────────────────────────────────── */
+.rs-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.rs-card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.rs-card-hi    { background: #f0f9ff; border-color: #bae6fd; }
+.rs-card-green { background: #f0fdf4; border-color: #86efac; }
+.rs-card-red   { background: #fef2f2; border-color: #fca5a5; }
+
+.rs-card-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+}
+
+.rs-card-value {
+  font-size: 22px;
+  font-weight: 700;
+  color: #1e293b;
+  line-height: 1.1;
+}
+
+.rs-card-green .rs-card-value { color: #16a34a; }
+.rs-card-red   .rs-card-value { color: #dc2626; }
+
+.rs-card-unit { font-size: 11px; color: #94a3b8; }
+.rs-card-sub  { font-size: 10px; color: #94a3b8; margin-top: 2px; }
+
+/* ── Notes ───────────────────────────────────────────────────── */
+.rs-note {
+  font-size: 12px;
+  line-height: 1.5;
+  padding: 7px 11px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+}
+
+.rs-note-amber { background: #fffbeb; border: 1px solid #fcd34d; color: #92400e; }
+.rs-note-green { background: #f0fdf4; border: 1px solid #86efac; color: #14532d; }
+.rs-note-blue  { background: #f0f9ff; border: 1px solid #bae6fd; color: #075985; }
+
+/* ── AI narrative note ───────────────────────────────────────── */
+.rs-ai-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 14px;
+  background: #0f172a;
+  border-radius: 8px;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.rs-ai-icon {
+  color: #7c3aed;
+  font-size: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+/* ── Full AI explanation ─────────────────────────────────────── */
+.rs-ai-full {
+  display: flex;
+  gap: 14px;
+  padding: 16px 20px;
+  background: #0f172a;
+}
+
+.rs-ai-text {
+  white-space: pre-line;
+  font-size: 13px;
+  line-height: 1.8;
+  color: #cbd5e1;
+  margin: 0;
+}
+
+/* ── Checklists ──────────────────────────────────────────────── */
+.rs-list-title {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #64748b;
+  margin-bottom: 6px;
+  margin-top: 4px;
+}
+
+.rs-checklist {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px 16px;
+  margin-bottom: 10px;
+}
+
+.rs-checklist-fire { grid-template-columns: 1fr; }
+
+.rs-check-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: #374151;
+  padding: 2px 0;
+}
+
+.rs-check     { color: #16a34a; flex-shrink: 0; }
+.rs-check-no  { color: #dc2626 !important; }
+.rs-check-no .rs-check { color: #dc2626; }
+
+.rs-check-fire { color: #7f1d1d; }
+.rs-fire-dot   { color: #dc2626; font-size: 9px; flex-shrink: 0; margin-top: 3px; }
+
+/* ── Two-col layout ──────────────────────────────────────────── */
+.rs-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 10px 0;
+}
+
+/* ── Responsive ──────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .rs-metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .rs-checklist    { grid-template-columns: 1fr; }
+  .rs-two-col      { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+  .rs-metrics-grid { grid-template-columns: 1fr 1fr; }
+  .rs-cards        { grid-template-columns: 1fr 1fr; }
+}

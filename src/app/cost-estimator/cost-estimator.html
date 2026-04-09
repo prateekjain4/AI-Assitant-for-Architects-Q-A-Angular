@@ -1,0 +1,112 @@
+<div class="ce-wrap">
+
+  <!-- ── Tier selector ──────────────────────────────────────── -->
+  <div class="ce-tier-bar">
+    <span class="ce-tier-label">Finish Tier:</span>
+    <button class="ce-tier-btn" [class.active]="tier==='low'"  (click)="setTier('low')">
+      Basic (Low)
+    </button>
+    <button class="ce-tier-btn" [class.active]="tier==='mid'"  (click)="setTier('mid')">
+      Standard (Mid)
+    </button>
+    <button class="ce-tier-btn" [class.active]="tier==='high'" (click)="setTier('high')">
+      Premium (High)
+    </button>
+    <span class="ce-source-tag">Structure: KPWD SR 2022 · Finishing: Market est.</span>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────── -->
+  <div class="ce-loading" *ngIf="loading">
+    <div class="ce-spinner"></div> Calculating cost estimate…
+  </div>
+
+  <!-- ── Error ──────────────────────────────────────────────── -->
+  <div class="ce-error" *ngIf="error && !loading">⚠ {{ error }}</div>
+
+  <!-- ── Result ─────────────────────────────────────────────── -->
+  <ng-container *ngIf="result && !loading">
+
+    <!-- Summary cards -->
+    <div class="ce-summary">
+      <div class="ce-card ce-card-total">
+        <span class="ce-card-label">Total Estimate</span>
+        <span class="ce-card-value">{{ formatCr(result.total_cost) }}</span>
+        <span class="ce-card-sub">{{ formatK(result.cost_per_sqm) }} built-up</span>
+      </div>
+      <div class="ce-card">
+        <span class="ce-card-label">Structure</span>
+        <span class="ce-card-value">{{ formatCr(result.structure_cost) }}</span>
+        <span class="ce-card-sub ce-source">KPWD SR 2022</span>
+      </div>
+      <div class="ce-card">
+        <span class="ce-card-label">Finishing</span>
+        <span class="ce-card-value">{{ formatCr(result.finishing_cost) }}</span>
+        <span class="ce-card-sub ce-est">Market estimate</span>
+      </div>
+      <div class="ce-card">
+        <span class="ce-card-label">MEP</span>
+        <span class="ce-card-value">{{ formatCr(result.mep_cost) }}</span>
+        <span class="ce-card-sub ce-est">Market estimate</span>
+      </div>
+      <div class="ce-card" *ngIf="result.basement_cost > 0">
+        <span class="ce-card-label">Basement</span>
+        <span class="ce-card-value">{{ formatCr(result.basement_cost) }}</span>
+        <span class="ce-card-sub ce-source">KPWD SR 2022</span>
+      </div>
+      <div class="ce-card" *ngIf="result.parking_cost > 0">
+        <span class="ce-card-label">Parking</span>
+        <span class="ce-card-value">{{ formatCr(result.parking_cost) }}</span>
+        <span class="ce-card-sub ce-est">Market estimate</span>
+      </div>
+    </div>
+
+    <!-- Bar chart -->
+    <div class="ce-chart">
+      <div class="ce-chart-title">Cost Breakdown</div>
+      <div class="ce-bar-row" *ngFor="let b of bars">
+        <div class="ce-bar-label">
+          <span>{{ b.label }}</span>
+          <span class="ce-bar-pct">{{ pct(b.value) }}%</span>
+        </div>
+        <div class="ce-bar-track">
+          <div class="ce-bar-fill"
+               [style.width.%]="(b.value / maxBar) * 100"
+               [style.background]="b.color">
+          </div>
+        </div>
+        <div class="ce-bar-val">{{ formatCr(b.value) }}</div>
+        <div class="ce-bar-src" [class.kpwd]="b.source.includes('KPWD')">{{ b.source }}</div>
+      </div>
+    </div>
+
+    <!-- Per floor breakdown -->
+    <div class="ce-floors" *ngIf="result.floor_breakdown?.length > 0">
+      <div class="ce-floors-title">Structure Cost by Floor</div>
+      <div class="ce-floor-row" *ngFor="let f of result.floor_breakdown">
+        <span class="ce-floor-label">{{ f.label }}</span>
+        <div class="ce-floor-track">
+          <div class="ce-floor-fill"
+               [style.width.%]="(f.cost / result.floor_breakdown[result.floor_breakdown.length-1].cost) * 100 || 100">
+          </div>
+        </div>
+        <span class="ce-floor-val">{{ formatCr(f.cost) }}</span>
+      </div>
+      <div class="ce-floor-note">↑ Cost increases per floor due to KPWD +1%/floor lift factor</div>
+    </div>
+
+    <!-- AI Narrative -->
+    <div class="ce-narrative" *ngIf="result.narrative">
+      <span class="ce-narrative-icon">✦</span>
+      <span>{{ result.narrative }}</span>
+    </div>
+
+    <!-- Estimate flags -->
+    <div class="ce-flags">
+      <div class="ce-flag" *ngFor="let f of result.estimate_flags">
+        <span class="ce-flag-dot">●</span> {{ f }}
+      </div>
+    </div>
+
+  </ng-container>
+
+</div>

@@ -1,0 +1,339 @@
+/* ── Shell ──────────────────────────────────────────────────────── */
+.sp-shell {
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  border-radius: 0 0 8px 8px;
+  overflow: hidden;
+  font-family: 'Inter', 'Segoe UI', sans-serif;
+}
+
+/* ── Toolbar ────────────────────────────────────────────────────── */
+.sp-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  flex-wrap: wrap;
+}
+
+.sp-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.sp-tab {
+  padding: 5px 14px;
+  border-radius: 5px;
+  border: 1px solid #334155;
+  background: transparent;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.sp-tab:hover  { background: #334155; color: #f1f5f9; }
+.sp-tab.active { background: #f8fafc; color: #1e293b; border-color: #f8fafc; }
+
+/* ── Layer toggles ──────────────────────────────────────────────── */
+.sp-layers {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.layer-label {
+  font-size: 11px;
+  color: #64748b;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.layer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #cbd5e1;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.layer-toggle input[type=checkbox] {
+  accent-color: #38bdf8;
+  width: 12px;
+  height: 12px;
+}
+
+/* ── Actions ────────────────────────────────────────────────────── */
+.sp-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.sp-zoom, .sp-export {
+  display: flex;
+  gap: 3px;
+}
+
+.sp-btn {
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid #334155;
+  background: #0f172a;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  color: #94a3b8;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.sp-btn:hover { background: #334155; color: #f8fafc; }
+
+.export-btn {
+  border-color: #0ea5e9;
+  color: #38bdf8;
+}
+
+.export-btn:hover {
+  background: #0ea5e9;
+  color: #fff;
+}
+
+/* ── Body ───────────────────────────────────────────────────────── */
+.sp-body {
+  display: flex;
+  gap: 0;
+  min-height: 500px;
+  overflow: hidden;
+}
+
+/* ── Canvas wrap ────────────────────────────────────────────────── */
+.sp-canvas-wrap {
+  flex: 1;
+  overflow: hidden;
+  background: #e2e8f0;
+  position: relative;
+  cursor: grab;
+  min-height: 480px;
+}
+
+.sp-canvas-wrap:active { cursor: grabbing; }
+
+.pz-target {
+  display: inline-block;
+  transform-origin: 0 0;
+}
+
+.drawing-svg {
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,0.18));
+}
+
+/* ── Properties panel ───────────────────────────────────────────── */
+.sp-props {
+  width: 200px;
+  min-width: 200px;
+  background: #f8fafc;
+  border-left: 1px solid #e2e8f0;
+  padding: 12px;
+  overflow-y: auto;
+  position: relative;
+  font-size: 12px;
+}
+
+.prop-close {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  cursor: pointer;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1;
+}
+
+.prop-close:hover { color: #dc2626; }
+
+.prop-section {
+  margin-bottom: 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.prop-section:last-child { border-bottom: none; }
+
+.prop-title {
+  font-size: 10px;
+  font-weight: 700;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 6px;
+}
+
+.prop-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 3px 0;
+  font-size: 12px;
+  color: #374151;
+}
+
+.prop-row span  { color: #6b7280; }
+.prop-row strong { font-weight: 600; color: #111827; }
+
+.prop-zone-chip {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #1e293b;
+  margin-bottom: 6px;
+  opacity: 0.85;
+}
+
+.prop-compliance {
+  font-size: 11px;
+  color: #16a34a;
+  padding: 2px 0;
+}
+
+.prop-bylaw {
+  font-size: 11px;
+  color: #2563eb;
+  background: #eff6ff;
+  padding: 4px 6px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.prop-hint {
+  font-size: 11px;
+  color: #94a3b8;
+  text-align: center;
+  padding: 12px 0;
+  font-style: italic;
+}
+
+/* ── AI button ──────────────────────────────────────────────────── */
+.ai-btn {
+  background: linear-gradient(135deg, #7c3aed, #4f46e5);
+  border-color: #7c3aed;
+  color: #fff !important;
+  font-weight: 600;
+  padding: 5px 14px;
+}
+
+.ai-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #6d28d9, #4338ca);
+  color: #fff;
+}
+
+.ai-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.clear-btn {
+  border-color: #f87171;
+  color: #f87171;
+}
+
+.clear-btn:hover { background: #450a0a; color: #fca5a5; }
+
+.sp-divider {
+  width: 1px;
+  height: 22px;
+  background: #334155;
+  margin: 0 4px;
+}
+
+/* ── Error banner ───────────────────────────────────────────────── */
+.sp-ai-error {
+  padding: 8px 14px;
+  background: #450a0a;
+  color: #fca5a5;
+  font-size: 12px;
+  border-top: 1px solid #7f1d1d;
+}
+
+/* ── Annotations ────────────────────────────────────────────────── */
+.sp-annotations {
+  padding: 12px 16px;
+  background: #0f172a;
+  border-top: 1px solid #1e293b;
+}
+
+.ann-title {
+  font-size: 11px;
+  font-weight: 700;
+  color: #a78bfa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 8px;
+}
+
+.ann-row {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #cbd5e1;
+  padding: 3px 0;
+  line-height: 1.5;
+}
+
+.ann-dot { color: #7c3aed; flex-shrink: 0; }
+
+/* ── Legend ─────────────────────────────────────────────────────── */
+.sp-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px;
+  background: #1e293b;
+  border-top: 1px solid #334155;
+}
+
+.leg-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  background: #0f172a;
+  border-radius: 4px;
+  border: 1px solid #334155;
+  transition: border-color 0.15s;
+}
+
+.leg-item:hover { border-color: #7c3aed; }
+
+.leg-color {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid rgba(0,0,0,0.2);
+  flex-shrink: 0;
+}
+
+.leg-label { font-size: 11px; color: #cbd5e1; }
+.leg-area  { font-size: 10px; color: #64748b; }
+
+/* ── Responsive ─────────────────────────────────────────────────── */
+@media (max-width: 640px) {
+  .sp-props { display: none; }
+  .sp-layers { display: none; }
+  .sp-toolbar { gap: 8px; }
+}

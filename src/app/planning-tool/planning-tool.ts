@@ -32,8 +32,10 @@ export class PlanningTool implements OnInit {
     fire:       true,
     compliance: false,
     ai:         true,
-    scenarios: true,
-    parking: true,
+    scenarios:  true,
+    parking:    true,
+    sitePlan:   true,
+    cost:       true,
   };
  
   toggleSection(key: string) {
@@ -214,6 +216,10 @@ export class PlanningTool implements OnInit {
               fire:       true,
               compliance: false,
               ai:         true,
+              scenarios:  true,
+              parking:    true,
+              sitePlan:   true,
+              cost:       true,
             };
             
             this.loading = false;

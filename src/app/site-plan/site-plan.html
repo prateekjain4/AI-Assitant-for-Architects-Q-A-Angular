@@ -1,0 +1,482 @@
+<div class="sp-shell">
+
+  <!-- ══ TOOLBAR ══════════════════════════════════════════════════ -->
+  <div class="sp-toolbar">
+
+    <!-- Tabs -->
+    <div class="sp-tabs">
+      <button class="sp-tab" [class.active]="activeTab==='plan'" (click)="setTab('plan')">
+        Site Plan
+      </button>
+      <button class="sp-tab" [class.active]="activeTab==='elevation'" (click)="setTab('elevation')">
+        Elevation Section
+      </button>
+    </div>
+
+    <!-- Layer toggles -->
+    <div class="sp-layers" *ngIf="activeTab==='plan'">
+      <span class="layer-label">Layers:</span>
+      <label class="layer-toggle"><input type="checkbox" [(ngModel)]="layers.setbacks">   Setbacks</label>
+      <label class="layer-toggle"><input type="checkbox" [(ngModel)]="layers.dimensions"> Dimensions</label>
+      <label class="layer-toggle"><input type="checkbox" [(ngModel)]="layers.grid">       Grid</label>
+      <label class="layer-toggle" *ngIf="aiZones.length > 0">
+        <input type="checkbox" [(ngModel)]="layers.zones"> AI Zones
+      </label>
+      <label class="layer-toggle"><input type="checkbox" [(ngModel)]="layers.annotations"> Notes</label>
+    </div>
+
+    <!-- AI + Zoom + Export -->
+    <div class="sp-actions">
+      <!-- AI Floor Plan button -->
+      <button class="sp-btn ai-btn" (click)="generateFloorPlan()"
+              [disabled]="aiLoading" title="Ask AI to generate a floor layout">
+        <span *ngIf="!aiLoading">✦ Generate AI Floor Plan</span>
+        <span *ngIf="aiLoading">⏳ Generating...</span>
+      </button>
+      <button class="sp-btn clear-btn" *ngIf="aiZones.length > 0"
+              (click)="clearFloorPlan()" title="Clear AI zones">✕ Clear</button>
+
+      <div class="sp-divider"></div>
+
+      <div class="sp-zoom">
+        <button class="sp-btn" (click)="zoomIn()"    title="Zoom in">＋</button>
+        <button class="sp-btn" (click)="zoomOut()"   title="Zoom out">－</button>
+        <button class="sp-btn" (click)="resetZoom()" title="Reset">⟲</button>
+      </div>
+      <div class="sp-export">
+        <button class="sp-btn export-btn" (click)="exportSVG()" title="Export SVG">↓ SVG</button>
+        <button class="sp-btn export-btn" (click)="exportDXF()" title="Export DXF (AutoCAD)">↓ DXF</button>
+        <button class="sp-btn export-btn" (click)="exportPDF()" title="Print / PDF">↓ PDF</button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ MAIN AREA ════════════════════════════════════════════════ -->
+  <div class="sp-body">
+
+    <!-- Drawing canvas (zoomable) -->
+    <div class="sp-canvas-wrap" #svgWrap>
+      <div class="pz-target">
+
+        <!-- ── SITE PLAN SVG ──────────────────────────────────── -->
+        <svg *ngIf="activeTab==='plan'"
+             [attr.width]="svgW" [attr.height]="svgH"
+             [attr.viewBox]="'0 0 '+svgW+' '+svgH"
+             xmlns="http://www.w3.org/2000/svg"
+             class="drawing-svg">
+
+          <defs>
+            <!-- Setback hatch -->
+            <pattern id="hatchSetback" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="8" stroke="#93c5fd" stroke-width="1.2"/>
+            </pattern>
+            <!-- Buildable hatch -->
+            <pattern id="hatchBuild" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
+              <line x1="0" y1="0" x2="0" y2="10" stroke="#fde68a" stroke-width="1"/>
+            </pattern>
+            <!-- Neighbour hatch -->
+            <pattern id="hatchNbr" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-45)">
+              <line x1="0" y1="0" x2="0" y2="7" stroke="#9ca3af" stroke-width="1"/>
+            </pattern>
+          </defs>
+
+          <!-- Background -->
+          <rect width="100%" height="100%" fill="#f8fafc"/>
+
+          <!-- Road -->
+          <rect [attr.x]="0" [attr.y]="roadY" [attr.width]="svgW" [attr.height]="roadH + PAD + TITLE_H"
+                fill="#d1d5db"/>
+          <!-- Road centre line -->
+          <line [attr.x1]="0" [attr.y1]="roadY + roadH/2"
+                [attr.x2]="svgW" [attr.y2]="roadY + roadH/2"
+                stroke="#fbbf24" stroke-width="2" stroke-dasharray="20,10"/>
+          <!-- Road label -->
+          <text [attr.x]="svgW/2" [attr.y]="roadY + roadH/2 - 6"
+                text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">
+            ROAD — {{ roadWidthM }}m wide
+          </text>
+
+          <!-- Neighbours -->
+          <rect [attr.x]="nbrLeftX"  [attr.y]="PAD" [attr.width]="nbrW" [attr.height]="plotH + nbrW" fill="url(#hatchNbr)" stroke="#6b7280" stroke-width="1"/>
+          <rect [attr.x]="nbrRightX" [attr.y]="PAD" [attr.width]="nbrW" [attr.height]="plotH + nbrW" fill="url(#hatchNbr)" stroke="#6b7280" stroke-width="1"/>
+          <rect [attr.x]="PAD"       [attr.y]="PAD" [attr.width]="totalPlotW" [attr.height]="nbrW"   fill="url(#hatchNbr)" stroke="#6b7280" stroke-width="1"/>
+
+          <text [attr.x]="nbrLeftX + nbrW/2"  [attr.y]="PAD + plotH/2 + nbrW/2" text-anchor="middle" font-size="9" fill="#4b5563" transform-origin="center"
+                [attr.transform]="'rotate(-90,' + (nbrLeftX + nbrW/2) + ',' + (PAD + plotH/2 + nbrW/2) + ')'">NEIGHBOR</text>
+          <text [attr.x]="nbrRightX + nbrW/2" [attr.y]="PAD + plotH/2 + nbrW/2" text-anchor="middle" font-size="9" fill="#4b5563"
+                [attr.transform]="'rotate(90,' + (nbrRightX + nbrW/2) + ',' + (PAD + plotH/2 + nbrW/2) + ')'">NEIGHBOR</text>
+          <text [attr.x]="svgW/2" [attr.y]="PAD + nbrW/2 + 4" text-anchor="middle" font-size="9" fill="#4b5563">NEIGHBOR PROPERTY (REAR)</text>
+
+          <!-- ── SETBACKS layer ─────────────────────────────── -->
+          <g *ngIf="layers.setbacks">
+            <!-- Full plot fill (setback colour) -->
+            <rect [attr.x]="plotX" [attr.y]="plotY" [attr.width]="plotW" [attr.height]="plotH"
+                  fill="url(#hatchSetback)" opacity="0.7"/>
+            <!-- Buildable fill on top -->
+            <rect [attr.x]="bldX" [attr.y]="bldY" [attr.width]="bldW" [attr.height]="bldH"
+                  fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3"/>
+
+            <!-- Setback labels -->
+            <text [attr.x]="plotX + plotW/2" [attr.y]="plotY + plotH - setbackFront * S/2 + 4"
+                  text-anchor="middle" font-size="9" font-weight="bold" fill="#1d4ed8">
+              FRONT SETBACK {{ setbackFront }}m
+            </text>
+            <text [attr.x]="plotX + plotW/2" [attr.y]="plotY + setbackRear * S/2 + 4"
+                  text-anchor="middle" font-size="9" font-weight="bold" fill="#1d4ed8">
+              REAR SETBACK {{ setbackRear }}m
+            </text>
+            <text [attr.x]="plotX + setbackSide * S/2" [attr.y]="plotY + plotH/2 + 4"
+                  text-anchor="middle" font-size="9" font-weight="bold" fill="#1d4ed8"
+                  [attr.transform]="'rotate(-90,' + (plotX + setbackSide*S/2) + ',' + (plotY + plotH/2 + 4) + ')'">
+              SIDE {{ setbackSide }}m
+            </text>
+            <text [attr.x]="plotX + plotW - setbackSide * S/2" [attr.y]="plotY + plotH/2 + 4"
+                  text-anchor="middle" font-size="9" font-weight="bold" fill="#1d4ed8"
+                  [attr.transform]="'rotate(90,' + (plotX + plotW - setbackSide*S/2) + ',' + (plotY + plotH/2 + 4) + ')'">
+              SIDE {{ setbackSide }}m
+            </text>
+          </g>
+
+          <!-- ── COLUMN GRID layer ──────────────────────────── -->
+          <g *ngIf="layers.grid">
+            <ng-container *ngFor="let g of gridLines">
+              <line [attr.x1]="g.x1" [attr.y1]="g.y1" [attr.x2]="g.x2" [attr.y2]="g.y2"
+                    stroke="#94a3b8" stroke-width="0.6" stroke-dasharray="4,4"/>
+              <!-- Grid bubble -->
+              <circle *ngIf="g.axis==='x'" [attr.cx]="g.x1" [attr.cy]="bldY - 14" r="9" fill="#fff" stroke="#64748b" stroke-width="1"/>
+              <text   *ngIf="g.axis==='x'" [attr.x]="g.x1" [attr.y]="bldY - 10" text-anchor="middle" font-size="8" fill="#374151">{{g.label}}</text>
+              <circle *ngIf="g.axis==='y'" [attr.cx]="bldX - 14" [attr.cy]="g.y1" r="9" fill="#fff" stroke="#64748b" stroke-width="1"/>
+              <text   *ngIf="g.axis==='y'" [attr.x]="bldX - 14" [attr.y]="g.y1 + 3" text-anchor="middle" font-size="8" fill="#374151">{{g.label}}</text>
+            </ng-container>
+          </g>
+
+          <!-- ── AI ZONES layer ─────────────────────────────── -->
+          <g *ngIf="layers.zones && aiZones.length > 0">
+            <ng-container *ngFor="let z of aiZones">
+              <rect [attr.x]="aiZoneX(z)" [attr.y]="aiZoneY(z)"
+                    [attr.width]="aiZoneW(z)" [attr.height]="aiZoneH(z)"
+                    [attr.fill]="z.color" fill-opacity="0.82"
+                    [attr.stroke]="selectedZone === z ? '#0f172a' : '#475569'"
+                    [attr.stroke-width]="selectedZone === z ? 2.5 : 1.2"
+                    rx="1" style="cursor:pointer"
+                    (click)="selectZone(z)"/>
+              <text [attr.x]="aiZoneCx(z)" [attr.y]="aiZoneCy(z) - 5"
+                    text-anchor="middle" [attr.font-size]="aiZoneFontSize(z)"
+                    font-weight="bold" fill="#1e293b" pointer-events="none">
+                {{z.label}}
+              </text>
+              <text [attr.x]="aiZoneCx(z)" [attr.y]="aiZoneCy(z) + 9"
+                    text-anchor="middle" [attr.font-size]="aiZoneFontSize(z) - 1"
+                    fill="#475569" pointer-events="none">
+                {{aiZoneArea(z)}} ㎡
+              </text>
+            </ng-container>
+          </g>
+
+          <!-- Default buildable label (no AI zones) -->
+          <g *ngIf="!aiZones.length || !layers.zones">
+            <text [attr.x]="bldX + bldW/2" [attr.y]="bldY + bldH/2 - 8"
+                  text-anchor="middle" font-size="11" font-weight="bold" fill="#92400e">
+              MAX BUILDABLE FOOTPRINT
+            </text>
+            <text [attr.x]="bldX + bldW/2" [attr.y]="bldY + bldH/2 + 10"
+                  text-anchor="middle" font-size="10" fill="#78350f">
+              {{ buildableAreaM2 }} sq m  ·  {{ groundCovPct }}% ground coverage
+            </text>
+          </g>
+
+          <!-- Plot boundary (always on top) -->
+          <rect [attr.x]="plotX" [attr.y]="plotY" [attr.width]="plotW" [attr.height]="plotH"
+                fill="none" stroke="#111827" stroke-width="2.5"/>
+
+          <!-- ── DIMENSION STRINGS layer ────────────────────── -->
+          <g *ngIf="layers.dimensions">
+            <!-- Plot width -->
+            <line [attr.x1]="dimPlotW.x1" [attr.y1]="dimPlotW.y" [attr.x2]="dimPlotW.x2" [attr.y2]="dimPlotW.y"
+                  stroke="#374151" stroke-width="0.8"/>
+            <line [attr.x1]="dimPlotW.x1" [attr.y1]="dimPlotW.y - 4" [attr.x2]="dimPlotW.x1" [attr.y2]="dimPlotW.y + 4" stroke="#374151" stroke-width="0.8"/>
+            <line [attr.x1]="dimPlotW.x2" [attr.y1]="dimPlotW.y - 4" [attr.x2]="dimPlotW.x2" [attr.y2]="dimPlotW.y + 4" stroke="#374151" stroke-width="0.8"/>
+            <text [attr.x]="(dimPlotW.x1 + dimPlotW.x2)/2" [attr.y]="dimPlotW.y - 4"
+                  text-anchor="middle" font-size="9" font-weight="bold" fill="#111827">{{ dimPlotW.label }}</text>
+
+            <!-- Plot height -->
+            <line [attr.x1]="dimPlotH.x" [attr.y1]="dimPlotH.y1" [attr.x2]="dimPlotH.x" [attr.y2]="dimPlotH.y2"
+                  stroke="#374151" stroke-width="0.8"/>
+            <line [attr.x1]="dimPlotH.x - 4" [attr.y1]="dimPlotH.y1" [attr.x2]="dimPlotH.x + 4" [attr.y2]="dimPlotH.y1" stroke="#374151" stroke-width="0.8"/>
+            <line [attr.x1]="dimPlotH.x - 4" [attr.y1]="dimPlotH.y2" [attr.x2]="dimPlotH.x + 4" [attr.y2]="dimPlotH.y2" stroke="#374151" stroke-width="0.8"/>
+            <text [attr.x]="dimPlotH.x + 6" [attr.y]="(dimPlotH.y1 + dimPlotH.y2)/2 + 4"
+                  font-size="9" font-weight="bold" fill="#111827">{{ dimPlotH.label }}</text>
+
+            <!-- Buildable width -->
+            <line [attr.x1]="dimBldW.x1" [attr.y1]="dimBldW.y" [attr.x2]="dimBldW.x2" [attr.y2]="dimBldW.y"
+                  stroke="#f97316" stroke-width="0.8"/>
+            <line [attr.x1]="dimBldW.x1" [attr.y1]="dimBldW.y - 3" [attr.x2]="dimBldW.x1" [attr.y2]="dimBldW.y + 3" stroke="#f97316" stroke-width="0.8"/>
+            <line [attr.x1]="dimBldW.x2" [attr.y1]="dimBldW.y - 3" [attr.x2]="dimBldW.x2" [attr.y2]="dimBldW.y + 3" stroke="#f97316" stroke-width="0.8"/>
+            <text [attr.x]="(dimBldW.x1 + dimBldW.x2)/2" [attr.y]="dimBldW.y - 3"
+                  text-anchor="middle" font-size="9" font-weight="bold" fill="#f97316">{{ dimBldW.label }}</text>
+
+            <!-- Road width -->
+            <line [attr.x1]="PAD - 18" [attr.y1]="roadY" [attr.x2]="PAD - 18" [attr.y2]="roadY + roadH"
+                  stroke="#6b7280" stroke-width="0.8"/>
+            <text [attr.x]="PAD - 20" [attr.y]="roadY + roadH/2 + 3"
+                  text-anchor="middle" font-size="8" fill="#6b7280"
+                  [attr.transform]="'rotate(-90,' + (PAD-20) + ',' + (roadY + roadH/2 + 3) + ')'">
+              {{ roadWidthM }}m
+            </text>
+          </g>
+
+          <!-- ── SCALE BAR ──────────────────────────────────── -->
+          <g [attr.transform]="'translate(' + (PAD) + ',' + (titleY - 20) + ')'">
+            <rect x="0" y="0" [attr.width]="10 * S" height="5" fill="#111827"/>
+            <rect [attr.x]="10 * S" y="0" [attr.width]="10 * S" height="5" fill="#f8fafc" stroke="#111827" stroke-width="0.8"/>
+            <rect [attr.x]="20 * S" y="0" [attr.width]="10 * S" height="5" fill="#111827"/>
+            <text x="0"         y="14" font-size="8" fill="#374151" text-anchor="middle">0</text>
+            <text [attr.x]="10*S" y="14" font-size="8" fill="#374151" text-anchor="middle">10m</text>
+            <text [attr.x]="20*S" y="14" font-size="8" fill="#374151" text-anchor="middle">20m</text>
+            <text [attr.x]="30*S" y="14" font-size="8" fill="#374151" text-anchor="middle">30m</text>
+          </g>
+
+          <!-- ── NORTH ARROW ────────────────────────────────── -->
+          <g [attr.transform]="'translate(' + (svgW - PAD + 20) + ',' + (PAD + 30) + ')'">
+            <circle r="16" fill="#fff" stroke="#374151" stroke-width="1.5"/>
+            <polygon points="0,-13 -4,5 0,2 4,5" fill="#111827"/>
+            <text x="0" y="24" text-anchor="middle" font-size="10" font-weight="bold" fill="#111827">N</text>
+          </g>
+
+          <!-- ── TITLE BLOCK ────────────────────────────────── -->
+          <rect [attr.x]="0" [attr.y]="titleY" [attr.width]="svgW" [attr.height]="TITLE_H"
+                fill="#1e293b" stroke="#0f172a" stroke-width="1"/>
+          <!-- Dividers -->
+          <line [attr.x1]="160" [attr.y1]="titleY" [attr.x2]="160" [attr.y2]="titleY + TITLE_H" stroke="#334155" stroke-width="1"/>
+          <line [attr.x1]="svgW - 260" [attr.y1]="titleY" [attr.x2]="svgW - 260" [attr.y2]="titleY + TITLE_H" stroke="#334155" stroke-width="1"/>
+          <line [attr.x1]="svgW - 130" [attr.y1]="titleY" [attr.x2]="svgW - 130" [attr.y2]="titleY + TITLE_H" stroke="#334155" stroke-width="1"/>
+
+          <text x="12" [attr.y]="titleY + 18" font-size="13" font-weight="bold" fill="#f8fafc">PlanIQ</text>
+          <text x="12" [attr.y]="titleY + 32" font-size="9" fill="#94a3b8">Bangalore Bylaw Assistant</text>
+          <text x="12" [attr.y]="titleY + 46" font-size="8" fill="#64748b">planiq.in</text>
+
+          <text x="172" [attr.y]="titleY + 16" font-size="8" fill="#94a3b8">PROJECT</text>
+          <text x="172" [attr.y]="titleY + 28" font-size="10" font-weight="bold" fill="#f8fafc">Site Plan — Setback Diagram</text>
+          <text x="172" [attr.y]="titleY + 40" font-size="9" fill="#cbd5e1">Zone: {{ zone }}  ·  {{ usageLabel }}  ·  {{ cornerPlot ? 'Corner Plot' : 'Interior Plot' }}</text>
+          <text x="172" [attr.y]="titleY + 51" font-size="8" fill="#64748b">Plot: {{ plotLengthM }}m × {{ plotWidthM }}m  |  Road: {{ roadWidthM }}m  |  Height: {{ buildingHeightM }}m</text>
+
+          <text [attr.x]="svgW - 258" [attr.y]="titleY + 16" font-size="8" fill="#94a3b8">SCALE</text>
+          <text [attr.x]="svgW - 258" [attr.y]="titleY + 28" font-size="10" font-weight="bold" fill="#f8fafc">{{ scaleLabel }}</text>
+          <text [attr.x]="svgW - 258" [attr.y]="titleY + 40" font-size="8" fill="#94a3b8">DATE</text>
+          <text [attr.x]="svgW - 258" [attr.y]="titleY + 51" font-size="9" fill="#f8fafc">{{ today }}</text>
+
+          <text [attr.x]="svgW - 128" [attr.y]="titleY + 16" font-size="8" fill="#94a3b8">SHEET</text>
+          <text [attr.x]="svgW - 128" [attr.y]="titleY + 28" font-size="12" font-weight="bold" fill="#f8fafc">A-101</text>
+          <text [attr.x]="svgW - 128" [attr.y]="titleY + 40" font-size="8" fill="#94a3b8">REV</text>
+          <text [attr.x]="svgW - 128" [attr.y]="titleY + 51" font-size="10" font-weight="bold" fill="#f8fafc">00</text>
+
+        </svg>
+
+        <!-- ── ELEVATION SVG ───────────────────────────────────── -->
+        <svg *ngIf="activeTab==='elevation'"
+             [attr.width]="elevSvgW" [attr.height]="elevSvgH"
+             [attr.viewBox]="'0 0 '+elevSvgW+' '+elevSvgH"
+             xmlns="http://www.w3.org/2000/svg"
+             class="drawing-svg">
+
+          <!-- Sky gradient -->
+          <defs>
+            <linearGradient id="skyGrad" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%"   stop-color="#bfdbfe"/>
+              <stop offset="100%" stop-color="#f0f9ff"/>
+            </linearGradient>
+          </defs>
+          <rect width="100%" height="100%" fill="url(#skyGrad)"/>
+
+          <!-- Ground -->
+          <rect [attr.x]="0" [attr.y]="elevGroundY" [attr.width]="elevSvgW" height="60" fill="#92400e"/>
+          <rect [attr.x]="0" [attr.y]="elevGroundY" [attr.width]="elevSvgW" height="4"  fill="#78350f"/>
+
+          <!-- Neighbours -->
+          <rect [attr.x]="PAD/2"                               [attr.y]="elevGroundY - elevNbrH" [attr.width]="elevNbrW" [attr.height]="elevNbrH" fill="#94a3b8" stroke="#475569" stroke-width="1.5"/>
+          <rect [attr.x]="elevPlotX + plotLengthM * elevScale" [attr.y]="elevGroundY - elevNbrH" [attr.width]="elevNbrW" [attr.height]="elevNbrH" fill="#94a3b8" stroke="#475569" stroke-width="1.5"/>
+
+          <!-- Sky plane triangles (1:1.25 slope) -->
+          <polygon [attr.points]="skyPlanePoints" fill="rgba(59,130,246,0.12)" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="6,3"/>
+          <polygon [attr.points]="skyPlanePointsRight" fill="rgba(59,130,246,0.12)" stroke="#2563eb" stroke-width="1.5" stroke-dasharray="6,3"/>
+
+          <!-- Slope labels -->
+          <text [attr.x]="elevBldX - 18" [attr.y]="elevGroundY - elevBldH * 0.3"
+                font-size="10" font-weight="bold" fill="#1d4ed8">1</text>
+          <text [attr.x]="elevBldX - 24" [attr.y]="elevGroundY - elevBldH * 0.3 + 14"
+                font-size="10" font-weight="bold" fill="#1d4ed8">1.25</text>
+
+          <!-- Plot boundary lines -->
+          <line [attr.x1]="elevPlotX" y1="40" [attr.x2]="elevPlotX" [attr.y2]="elevGroundY"
+                stroke="#475569" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <line [attr.x1]="elevPlotX + plotLengthM * elevScale" y1="40"
+                [attr.x2]="elevPlotX + plotLengthM * elevScale" [attr.y2]="elevGroundY"
+                stroke="#475569" stroke-width="1.5" stroke-dasharray="8,4"/>
+          <text [attr.x]="elevPlotX" y="36" text-anchor="middle" font-size="9" font-weight="bold" fill="#374151">LEFT BOUNDARY</text>
+          <text [attr.x]="elevPlotX + plotLengthM * elevScale" y="36" text-anchor="middle" font-size="9" font-weight="bold" fill="#374151">RIGHT BOUNDARY</text>
+
+          <!-- Side setback zones (blue fill) -->
+          <rect [attr.x]="elevPlotX" [attr.y]="40"
+                [attr.width]="setbackSide * elevScale" [attr.height]="elevGroundY - 40"
+                fill="rgba(59,130,246,0.10)"/>
+          <rect [attr.x]="elevBldX + elevBldW" [attr.y]="40"
+                [attr.width]="setbackSide * elevScale" [attr.height]="elevGroundY - 40"
+                fill="rgba(59,130,246,0.10)"/>
+
+          <!-- Building shadow -->
+          <rect [attr.x]="elevBldX + 6" [attr.y]="elevBldTopY + 6" [attr.width]="elevBldW" [attr.height]="elevBldH" fill="rgba(0,0,0,0.15)"/>
+
+          <!-- Building body -->
+          <rect [attr.x]="elevBldX" [attr.y]="elevBldTopY" [attr.width]="elevBldW" [attr.height]="elevBldH" fill="#1e293b"/>
+
+          <!-- Floor lines -->
+          <ng-container *ngFor="let fl of floorLines">
+            <line [attr.x1]="elevBldX" [attr.y1]="fl.y" [attr.x2]="elevBldX + elevBldW" [attr.y2]="fl.y"
+                  stroke="rgba(255,255,255,0.2)" stroke-width="1"/>
+            <text [attr.x]="elevBldX - 6" [attr.y]="fl.y + 4" text-anchor="end"
+                  font-size="9" fill="#94a3b8">{{fl.label}}</text>
+          </ng-container>
+
+          <!-- Windows -->
+          <rect *ngFor="let w of windowRects"
+                [attr.x]="w.x" [attr.y]="w.y" [attr.width]="w.w" [attr.height]="w.h"
+                fill="#7dd3fc" opacity="0.85"/>
+
+          <!-- Building outline -->
+          <rect [attr.x]="elevBldX" [attr.y]="elevBldTopY" [attr.width]="elevBldW" [attr.height]="elevBldH"
+                fill="none" stroke="#0f172a" stroke-width="2.5"/>
+
+          <!-- Building label -->
+          <text [attr.x]="elevBldX + elevBldW/2" [attr.y]="elevBldTopY + elevBldH/2 - 8"
+                text-anchor="middle" font-size="12" font-weight="bold" fill="#f8fafc">BUILDING</text>
+          <text [attr.x]="elevBldX + elevBldW/2" [attr.y]="elevBldTopY + elevBldH/2 + 10"
+                text-anchor="middle" font-size="10" fill="#cbd5e1">
+            {{ numFloors }} floors · {{ buildingHeightM }}m
+          </text>
+
+          <!-- Height dimension -->
+          <line [attr.x1]="elevBldX + elevBldW + 20" [attr.y1]="elevBldTopY"
+                [attr.x2]="elevBldX + elevBldW + 20" [attr.y2]="elevGroundY"
+                stroke="#111827" stroke-width="0.9"/>
+          <line [attr.x1]="elevBldX + elevBldW + 15" [attr.y1]="elevBldTopY"
+                [attr.x2]="elevBldX + elevBldW + 25" [attr.y2]="elevBldTopY" stroke="#111827" stroke-width="0.9"/>
+          <line [attr.x1]="elevBldX + elevBldW + 15" [attr.y1]="elevGroundY"
+                [attr.x2]="elevBldX + elevBldW + 25" [attr.y2]="elevGroundY" stroke="#111827" stroke-width="0.9"/>
+          <text [attr.x]="elevBldX + elevBldW + 28" [attr.y]="(elevBldTopY + elevGroundY)/2 + 4"
+                font-size="10" font-weight="bold" fill="#111827">{{ buildingHeightM }}m</text>
+
+          <!-- Width dimension -->
+          <line [attr.x1]="elevBldX" [attr.y1]="elevGroundY + 18"
+                [attr.x2]="elevBldX + elevBldW" [attr.y2]="elevGroundY + 18"
+                stroke="#f97316" stroke-width="0.9"/>
+          <text [attr.x]="elevBldX + elevBldW/2" [attr.y]="elevGroundY + 14"
+                text-anchor="middle" font-size="9" font-weight="bold" fill="#f97316">
+            {{ (plotLengthM - 2 * setbackSide).toFixed(1) }}m buildable width
+          </text>
+
+          <!-- Plot width dimension -->
+          <line [attr.x1]="elevPlotX" [attr.y1]="elevGroundY + 32"
+                [attr.x2]="elevPlotX + plotLengthM * elevScale" [attr.y2]="elevGroundY + 32"
+                stroke="#374151" stroke-width="0.9"/>
+          <text [attr.x]="elevPlotX + plotLengthM * elevScale / 2" [attr.y]="elevGroundY + 28"
+                text-anchor="middle" font-size="9" font-weight="bold" fill="#374151">
+            {{ plotLengthM }}m plot width
+          </text>
+
+          <!-- Title block (reuse same pattern) -->
+          <rect [attr.x]="0" [attr.y]="elevTitleY" [attr.width]="elevSvgW" [attr.height]="TITLE_H"
+                fill="#1e293b"/>
+          <line [attr.x1]="160" [attr.y1]="elevTitleY" [attr.x2]="160" [attr.y2]="elevTitleY + TITLE_H" stroke="#334155" stroke-width="1"/>
+          <line [attr.x1]="elevSvgW - 260" [attr.y1]="elevTitleY" [attr.x2]="elevSvgW - 260" [attr.y2]="elevTitleY + TITLE_H" stroke="#334155" stroke-width="1"/>
+          <line [attr.x1]="elevSvgW - 130" [attr.y1]="elevTitleY" [attr.x2]="elevSvgW - 130" [attr.y2]="elevTitleY + TITLE_H" stroke="#334155" stroke-width="1"/>
+
+          <text x="12" [attr.y]="elevTitleY + 18" font-size="13" font-weight="bold" fill="#f8fafc">PlanIQ</text>
+          <text x="12" [attr.y]="elevTitleY + 32" font-size="9"  fill="#94a3b8">Bangalore Bylaw Assistant</text>
+
+          <text x="172" [attr.y]="elevTitleY + 16" font-size="8"  fill="#94a3b8">DRAWING</text>
+          <text x="172" [attr.y]="elevTitleY + 28" font-size="10" font-weight="bold" fill="#f8fafc">Front Elevation — Section A-A</text>
+          <text x="172" [attr.y]="elevTitleY + 40" font-size="9"  fill="#cbd5e1">Sky Plane (1:1.25) · Side Setback Regulations · BDA Bylaws</text>
+
+          <text [attr.x]="elevSvgW - 258" [attr.y]="elevTitleY + 16" font-size="8"  fill="#94a3b8">SCALE</text>
+          <text [attr.x]="elevSvgW - 258" [attr.y]="elevTitleY + 28" font-size="10" font-weight="bold" fill="#f8fafc">{{ scaleLabel }}</text>
+          <text [attr.x]="elevSvgW - 258" [attr.y]="elevTitleY + 40" font-size="8"  fill="#94a3b8">DATE</text>
+          <text [attr.x]="elevSvgW - 258" [attr.y]="elevTitleY + 51" font-size="9"  fill="#f8fafc">{{ today }}</text>
+
+          <text [attr.x]="elevSvgW - 128" [attr.y]="elevTitleY + 16" font-size="8"  fill="#94a3b8">SHEET</text>
+          <text [attr.x]="elevSvgW - 128" [attr.y]="elevTitleY + 28" font-size="12" font-weight="bold" fill="#f8fafc">A-201</text>
+          <text [attr.x]="elevSvgW - 128" [attr.y]="elevTitleY + 40" font-size="8"  fill="#94a3b8">REV</text>
+          <text [attr.x]="elevSvgW - 128" [attr.y]="elevTitleY + 51" font-size="10" font-weight="bold" fill="#f8fafc">00</text>
+
+        </svg>
+
+      </div><!-- /.pz-target -->
+    </div><!-- /.sp-canvas-wrap -->
+
+    <!-- ══ PROPERTIES PANEL ═════════════════════════════════════ -->
+    <div class="sp-props" *ngIf="selectedZone || aiZones.length === 0">
+
+      <ng-container *ngIf="!selectedZone">
+        <div class="prop-section">
+          <div class="prop-title">Plot Summary</div>
+          <div class="prop-row"><span>Plot Area</span><strong>{{ plotLengthM * plotWidthM | number:'1.0-0' }} sq m</strong></div>
+          <div class="prop-row"><span>Buildable</span><strong>{{ buildableAreaM2 }} sq m</strong></div>
+          <div class="prop-row"><span>Gnd Coverage</span><strong>{{ groundCovPct }}%</strong></div>
+          <div class="prop-row"><span>Floors</span><strong>G + {{ numFloors - 1 }}</strong></div>
+          <div class="prop-row"><span>Height</span><strong>{{ buildingHeightM }}m</strong></div>
+        </div>
+        <div class="prop-section">
+          <div class="prop-title">Setbacks</div>
+          <div class="prop-row"><span>Front</span><strong>{{ setbackFront }}m</strong></div>
+          <div class="prop-row"><span>Side</span><strong>{{ setbackSide }}m</strong></div>
+          <div class="prop-row"><span>Rear</span><strong>{{ setbackRear }}m</strong></div>
+        </div>
+        <div class="prop-hint" *ngIf="aiZones.length === 0">
+          Click a zone to inspect details
+        </div>
+      </ng-container>
+
+      <ng-container *ngIf="selectedZone">
+        <div class="prop-close" (click)="selectZone(null)">✕</div>
+        <div class="prop-section">
+          <div class="prop-zone-chip" [style.background]="selectedZone.color">{{ selectedZone.type }}</div>
+          <div class="prop-title">{{ selectedZone.label }}</div>
+          <div class="prop-row"><span>Area</span><strong>{{ aiZoneArea(selectedZone) }} sq m</strong></div>
+          <div class="prop-row"><span>Width</span><strong>{{ selectedZone.w }}m</strong></div>
+          <div class="prop-row"><span>Depth</span><strong>{{ selectedZone.h }}m</strong></div>
+        </div>
+        <div class="prop-section" *ngIf="selectedZone.compliance?.length">
+          <div class="prop-title">Compliance</div>
+          <div class="prop-compliance" *ngFor="let c of selectedZone.compliance">✓ {{ c }}</div>
+        </div>
+        <div class="prop-section" *ngIf="selectedZone.bylawRef">
+          <div class="prop-title">Bylaw Reference</div>
+          <div class="prop-bylaw">{{ selectedZone.bylawRef }}</div>
+        </div>
+      </ng-container>
+
+    </div>
+
+  </div><!-- /.sp-body -->
+
+  <!-- AI error -->
+  <div class="sp-ai-error" *ngIf="aiError">⚠ {{ aiError }}</div>
+
+  <!-- AI annotations panel -->
+  <div class="sp-annotations" *ngIf="aiAnnotations.length > 0">
+    <div class="ann-title">✦ AI Design Notes</div>
+    <div class="ann-row" *ngFor="let a of aiAnnotations">
+      <span class="ann-dot">●</span> {{ a }}
+    </div>
+  </div>
+
+  <!-- Legend (shown when AI zones present) -->
+  <div class="sp-legend" *ngIf="aiZones.length > 0 && layers.zones">
+    <div class="leg-item" *ngFor="let z of aiZones" (click)="selectZone(z)" style="cursor:pointer">
+      <span class="leg-color" [style.background]="z.color"></span>
+      <span class="leg-label">{{ z.label }}</span>
+      <span class="leg-area">{{ aiZoneArea(z) }}㎡</span>
+    </div>
+  </div>
+
+</div><!-- /.sp-shell -->
