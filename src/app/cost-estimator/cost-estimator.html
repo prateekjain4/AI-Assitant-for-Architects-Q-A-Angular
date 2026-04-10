@@ -58,6 +58,11 @@
         <span class="ce-card-value">{{ formatCr(result.parking_cost) }}</span>
         <span class="ce-card-sub ce-est">Market estimate</span>
       </div>
+      <div class="ce-card">
+        <span class="ce-card-label">Site Development</span>
+        <span class="ce-card-value">{{ formatCr(result.site_dev_cost) }}</span>
+        <span class="ce-card-sub ce-source">KPWD SR 2022</span>
+      </div>
     </div>
 
     <!-- Bar chart -->
@@ -104,6 +109,114 @@
     <div class="ce-flags">
       <div class="ce-flag" *ngFor="let f of result.estimate_flags">
         <span class="ce-flag-dot">●</span> {{ f }}
+      </div>
+    </div>
+
+    <!-- ── Finishing Breakdown ────────────────────────────────── -->
+    <div class="ce-floors" *ngIf="result.finishing_breakdown">
+      <div class="ce-floors-title">Finishing Cost Breakdown</div>
+      <div class="ce-fin-row" *ngFor="let key of ['brickwork','plastering','waterproofing_terrace','flooring','doors_windows','painting']">
+        <span class="ce-fin-label">{{ key | titlecase | slice:0:20 }}</span>
+        <div class="ce-floor-track">
+          <div class="ce-floor-fill"
+            [style.width.%]="(result.finishing_breakdown[key]?.cost / result.finishing_cost) * 100 || 0"
+            [style.background]="result.finishing_breakdown[key]?.source?.includes('KPWD') ? '#3b82f6' : '#f59e0b'">
+          </div>
+        </div>
+        <span class="ce-fin-val">{{ formatCr(result.finishing_breakdown[key]?.cost) }}</span>
+        <span class="ce-fin-src" [class.kpwd]="result.finishing_breakdown[key]?.source?.includes('KPWD')">
+          {{ result.finishing_breakdown[key]?.source?.includes('KPWD') ? 'KPWD' : 'Est.' }}
+        </span>
+      </div>
+      <div class="ce-floor-note">Blue bars = KPWD SR 2022 rates · Amber bars = market estimates</div>
+    </div>
+
+    <!-- ── Site Development Breakdown ─────────────────────────── -->
+    <div class="ce-floors" *ngIf="result.site_dev_breakdown">
+      <div class="ce-floors-title">Site Development — KPWD SR 2022</div>
+      <ng-container *ngFor="let key of ['compound_wall','underground_sump','septic_tank','approach_road','gate']">
+        <div class="ce-fin-row" *ngIf="result.site_dev_breakdown[key]?.cost > 0">
+          <span class="ce-fin-label">{{ key | titlecase | slice:0:20 }}</span>
+          <div class="ce-floor-track">
+            <div class="ce-floor-fill"
+              [style.width.%]="(result.site_dev_breakdown[key]?.cost / result.site_dev_cost) * 100 || 0"
+              [style.background]="result.site_dev_breakdown[key]?.source?.includes('KPWD') ? '#0ea5e9' : '#f59e0b'">
+            </div>
+          </div>
+          <span class="ce-fin-val">{{ formatCr(result.site_dev_breakdown[key]?.cost) }}</span>
+          <span class="ce-fin-qty">{{ result.site_dev_breakdown[key]?.qty }}</span>
+        </div>
+      </ng-container>
+      <div class="ce-floor-note">Compound wall, sump, septic & approach road from KPWD SR 2022 · Gate = market estimate</div>
+    </div>
+
+    <!-- ── Payment Milestone Schedule ──────────────────────────── -->
+    <div class="ce-milestone-wrap">
+      <div class="ce-section-title">
+        <span>Payment Milestone Schedule</span>
+        <span class="ce-section-sub">Standard construction disbursement — use in client agreements &amp; bank loan applications</span>
+      </div>
+      <div class="ce-timeline">
+        <div class="ce-ms-row" *ngFor="let m of milestones">
+          <div class="ce-ms-left">
+            <div class="ce-ms-dot">{{ m.stage }}</div>
+            <div class="ce-ms-line" *ngIf="m.stage < 5"></div>
+          </div>
+          <div class="ce-ms-body">
+            <div class="ce-ms-header">
+              <span class="ce-ms-name">{{ m.name }}</span>
+              <span class="ce-ms-pct">{{ m.pct }}%</span>
+              <span class="ce-ms-amt">{{ formatCr(m.amount) }}</span>
+            </div>
+            <div class="ce-ms-note">{{ m.note }}</div>
+            <div class="ce-ms-progress-track">
+              <div class="ce-ms-progress-fill" [style.width.%]="m.cumulative"></div>
+              <span class="ce-ms-cumulative">Cumulative: {{ m.cumulative }}% · {{ formatCr(m.amount * m.cumulative / m.pct) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="ce-ms-footnote">
+        ● Percentages follow standard RERA-aligned disbursement schedule. Adjust per contractor negotiation.
+      </div>
+    </div>
+
+    <!-- ── Material Rate Card ──────────────────────────────────── -->
+    <div class="ce-rate-wrap">
+      <button class="ce-rate-toggle" (click)="showRates = !showRates">
+        <span>{{ showRates ? '▲' : '▼' }} KPWD SR 2022 — Material Rate Card</span>
+        <span class="ce-rate-badge">{{ showRates ? 'Collapse' : 'Expand' }}</span>
+      </button>
+
+      <div class="ce-rate-table-wrap" *ngIf="showRates">
+        <table class="ce-rate-table">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Unit</th>
+              <th>KPWD Base (₹)</th>
+              <th>BBMP +10%</th>
+              <th>Rate Used (₹)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <ng-container *ngFor="let r of rateCard; let i = index">
+              <tr class="ce-rate-group-row" *ngIf="i === 0 || rateCard[i-1].group !== r.group">
+                <td colspan="5" class="ce-rate-group">{{ r.group }}</td>
+              </tr>
+              <tr>
+                <td>{{ r.item }}</td>
+                <td class="ce-rate-unit">{{ r.unit }}</td>
+                <td class="ce-rate-num">{{ r.base | number }}</td>
+                <td class="ce-rate-surcharge">+{{ r.surcharge | number }}</td>
+                <td class="ce-rate-final">{{ r.final | number }}</td>
+              </tr>
+            </ng-container>
+          </tbody>
+        </table>
+        <div class="ce-rate-source">
+          Source: KPWD Common Schedule of Rates 2022, Vol I · BBMP surcharge 10% as per circular · Steel: Fe500D market-linked
+        </div>
       </div>
     </div>
 

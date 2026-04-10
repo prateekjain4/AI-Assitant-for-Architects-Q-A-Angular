@@ -251,6 +251,10 @@
       <div class="rs-note rs-note-amber">
         ⚠ Setbacks increase to <strong>5m all sides</strong> above 11.5m height (BDA bylaws)
       </div>
+      <div class="rs-ai-note" *ngIf="result.section_summaries?.setbacks">
+        <span class="rs-ai-icon">✦</span>
+        <span>{{ result.section_summaries.setbacks }}</span>
+      </div>
     </div>
   </div>
 
@@ -288,6 +292,10 @@
           <span class="rs-check">✓</span> {{ item }}
         </div>
       </div>
+      <div class="rs-ai-note" *ngIf="result.section_summaries?.far">
+        <span class="rs-ai-icon">✦</span>
+        <span>{{ result.section_summaries.far }}</span>
+      </div>
     </div>
   </div>
 
@@ -319,9 +327,9 @@
           <span class="rs-card-sub">BBMP Sec 20.7</span>
         </div>
       </div>
-      <div class="rs-ai-note" *ngIf="result.staircase?.lift_note || result.staircase?.staircase_extra">
+      <div class="rs-ai-note" *ngIf="result.section_summaries?.staircase">
         <span class="rs-ai-icon">✦</span>
-        <span>{{ result.staircase?.lift_note }} {{ result.staircase?.staircase_extra }}</span>
+        <span>{{ result.section_summaries.staircase }}</span>
       </div>
     </div>
   </div>
@@ -354,9 +362,9 @@
           <span class="rs-card-sub">Within 20% rule</span>
         </div>
       </div>
-      <div class="rs-ai-note" *ngIf="result.projections?.balcony_far_note">
+      <div class="rs-ai-note" *ngIf="result.section_summaries?.projections">
         <span class="rs-ai-icon">✦</span>
-        <span>{{ result.projections?.balcony_far_note }} {{ result.projections?.projection_into_setback }}</span>
+        <span>{{ result.section_summaries.projections }}</span>
       </div>
     </div>
   </div>
@@ -405,9 +413,9 @@
       </div>
       <div class="rs-note rs-note-blue" *ngIf="result.basement?.setback_in_basement">{{ result.basement?.setback_in_basement }}</div>
       <div class="rs-note rs-note-amber" *ngIf="result.basement?.ventilation">⚠ {{ result.basement?.ventilation }}</div>
-      <div class="rs-ai-note" *ngIf="result.basement?.fire_requirements?.length">
-        <span class="rs-ai-icon">🔥</span>
-        <span>Fire requirements: {{ result.basement?.fire_requirements?.join(' · ') }}</span>
+      <div class="rs-ai-note" *ngIf="result.section_summaries?.basement">
+        <span class="rs-ai-icon">✦</span>
+        <span>{{ result.section_summaries.basement }}</span>
       </div>
     </div>
   </div>
@@ -470,6 +478,10 @@
         min {{ result.fire_data.refuge_area.min_area_sqm }} sqm.
         {{ result.fire_data.refuge_area.note }}
       </div>
+      <div class="rs-ai-note" *ngIf="result.section_summaries?.fire">
+        <span class="rs-ai-icon">✦</span>
+        <span>{{ result.section_summaries.fire }}</span>
+      </div>
 
       <!-- Parking Layout -->
       <div class="result-section">
@@ -488,23 +500,53 @@
             [basement]="plotCalculator.value.basement === 'true'"
             [stilt]="false">
           </app-parking-layout>
+          <div class="rs-ai-note" style="margin:12px 16px;" *ngIf="result.section_summaries?.parking">
+            <span class="rs-ai-icon">✦</span>
+            <span>{{ result.section_summaries.parking }}</span>
+          </div>
         </div>
       </div>
 
     </div>
   </div>
 
-  <!-- ── AI EXPLANATION ────────────────────────────────────────── -->
+  <!-- ── MANDATORY COMPLIANCE ──────────────────────────────────── -->
   <div class="result-section">
-    <div class="section-header" (click)="toggleSection('ai')">
-      <span class="section-icon">🤖</span>
-      <span class="section-title">Full Regulatory Analysis</span>
-      <span class="section-toggle">{{ openSections['ai'] ? '▲' : '▼' }}</span>
+    <div class="section-header" (click)="toggleSection('compliance')">
+      <span class="section-icon">✅</span>
+      <span class="section-title">Mandatory Compliances</span>
+      <span class="section-toggle">{{ openSections['compliance'] ? '▲' : '▼' }}</span>
     </div>
-    <div class="section-body" *ngIf="openSections['ai']" style="padding:0;">
-      <div class="rs-ai-full">
+    <div class="section-body" *ngIf="openSections['compliance']">
+      <div class="rs-cards">
+        <div class="rs-card" [class.rs-card-green]="result.plot_area >= 2400">
+          <span class="rs-card-label">Rainwater Harvesting</span>
+          <span class="rs-card-value">{{ result.plot_area >= 2400 ? 'Required' : 'Optional' }}</span>
+          <span class="rs-card-unit">&nbsp;</span>
+          <span class="rs-card-sub">{{ result.plot_area >= 2400 ? '≥2400 sqft — mandatory' : 'Below threshold' }}</span>
+        </div>
+        <div class="rs-card" [class.rs-card-green]="(result.staircase?.num_floors || 0) >= 6">
+          <span class="rs-card-label">Solar Panels</span>
+          <span class="rs-card-value">{{ (result.staircase?.num_floors || 0) >= 6 ? 'Required' : 'Optional' }}</span>
+          <span class="rs-card-unit">&nbsp;</span>
+          <span class="rs-card-sub">Mandatory above 20m height</span>
+        </div>
+        <div class="rs-card" [class.rs-card-green]="result.fire_data?.noc_required">
+          <span class="rs-card-label">STP</span>
+          <span class="rs-card-value">{{ result.fire_data?.noc_required ? 'Required' : 'Optional' }}</span>
+          <span class="rs-card-unit">&nbsp;</span>
+          <span class="rs-card-sub">Above 15m / large complexes</span>
+        </div>
+        <div class="rs-card">
+          <span class="rs-card-label">Accessibility Ramp</span>
+          <span class="rs-card-value">{{ result.fire_data?.noc_required ? 'Required' : 'Recommended' }}</span>
+          <span class="rs-card-unit">&nbsp;</span>
+          <span class="rs-card-sub">NBC Part 3 — PwD access</span>
+        </div>
+      </div>
+      <div class="rs-ai-note" *ngIf="result.section_summaries?.compliance">
         <span class="rs-ai-icon">✦</span>
-        <p class="rs-ai-text">{{ result.ai_explanation }}</p>
+        <span>{{ result.section_summaries.compliance }}</span>
       </div>
     </div>
   </div>
@@ -539,7 +581,7 @@
   <div class="result-section">
     <div class="section-header" (click)="toggleSection('scenarios')">
       <span class="section-icon">📊</span>
-      <span class="section-title">Scenario Comparison — G+1 to G+4</span>
+      <span class="section-title">Scenario Comparison — G+{{ (result.staircase?.num_floors || 3) - 2 }} to G+{{ (result.staircase?.num_floors || 3) + 1 }}</span>
       <span class="section-toggle">{{ openSections['scenarios'] ? '▲' : '▼' }}</span>
     </div>
     <div class="section-body" *ngIf="openSections['scenarios']" style="padding: 0;">
@@ -551,7 +593,10 @@
         [plotWidthM]="plotCalculator.value.plotWidth"
         [usage]="plotCalculator.value.usage || 'residential'"
         [cornerPlot]="plotCalculator.value.cornerPlot === 'true'"
-        [basement]="plotCalculator.value.basement === 'true'">
+        [basement]="plotCalculator.value.basement === 'true'"
+        [floorHeightM]="+(plotCalculator.value.floorHeight || 3.2)"
+        [buildingHeightM]="+(plotCalculator.value.buildingHeight || 0)"
+        [idealFloors]="result.staircase?.num_floors || 3">
       </app-scenario-comparison>
     </div>
   </div>

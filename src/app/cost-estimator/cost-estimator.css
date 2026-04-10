@@ -261,3 +261,260 @@
 }
 
 .ce-flag-dot { color: #f59e0b; flex-shrink: 0; }
+
+/* ── Section title shared ───────────────────────────────────── */
+.ce-section-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 14px;
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.ce-section-title > span:first-child {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #374151;
+}
+
+.ce-section-sub {
+  font-size: 10px !important;
+  color: #94a3b8 !important;
+  font-style: italic;
+  text-transform: none !important;
+  letter-spacing: 0 !important;
+  font-weight: 400 !important;
+}
+
+/* ── Payment Milestone Timeline ─────────────────────────────── */
+.ce-milestone-wrap {
+  margin-bottom: 4px;
+}
+
+.ce-timeline {
+  display: flex;
+  flex-direction: column;
+}
+
+.ce-ms-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ce-ms-left {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  width: 28px;
+}
+
+.ce-ms-dot {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1e293b;
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.ce-ms-line {
+  width: 2px;
+  flex: 1;
+  min-height: 20px;
+  background: #e2e8f0;
+  margin: 4px 0;
+}
+
+.ce-ms-body {
+  flex: 1;
+  padding-bottom: 16px;
+}
+
+.ce-ms-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+
+.ce-ms-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: #111827;
+  flex: 1;
+}
+
+.ce-ms-pct {
+  font-size: 11px;
+  font-weight: 700;
+  color: #3b82f6;
+  background: #eff6ff;
+  padding: 1px 7px;
+  border-radius: 10px;
+}
+
+.ce-ms-amt {
+  font-size: 12px;
+  font-weight: 700;
+  color: #111827;
+  white-space: nowrap;
+}
+
+.ce-ms-note {
+  font-size: 10px;
+  color: #64748b;
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.ce-ms-progress-track {
+  height: 6px;
+  background: #e2e8f0;
+  border-radius: 3px;
+  position: relative;
+  overflow: visible;
+}
+
+.ce-ms-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3b82f6, #6366f1);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+
+.ce-ms-cumulative {
+  display: block;
+  font-size: 9px;
+  color: #94a3b8;
+  margin-top: 3px;
+}
+
+.ce-ms-footnote {
+  font-size: 10px;
+  color: #94a3b8;
+  font-style: italic;
+  margin-top: 4px;
+  padding-top: 8px;
+}
+
+/* ── Material Rate Card ─────────────────────────────────────── */
+.ce-rate-wrap {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.ce-rate-toggle {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: #374151;
+  text-align: left;
+  transition: background 0.15s;
+}
+
+.ce-rate-toggle:hover { background: #f1f5f9; }
+
+.ce-rate-badge {
+  font-size: 10px;
+  color: #94a3b8;
+  font-weight: 400;
+}
+
+.ce-rate-table-wrap {
+  margin-top: 10px;
+  overflow-x: auto;
+}
+
+.ce-rate-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.ce-rate-table th {
+  background: #1e293b;
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 7px 10px;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.ce-rate-table td {
+  padding: 6px 10px;
+  border-bottom: 1px solid #f1f5f9;
+  color: #374151;
+  font-size: 11px;
+}
+
+.ce-rate-table tr:last-child td { border-bottom: none; }
+.ce-rate-table tr:nth-child(even) td { background: #f8fafc; }
+
+.ce-rate-unit     { color: #94a3b8; font-size: 10px; }
+.ce-rate-num      { text-align: right; color: #374151; }
+.ce-rate-surcharge{ text-align: right; color: #f59e0b; }
+.ce-rate-final    { text-align: right; font-weight: 700; color: #111827; }
+
+.ce-rate-source {
+  font-size: 9px;
+  color: #94a3b8;
+  font-style: italic;
+  margin-top: 8px;
+  line-height: 1.5;
+}
+
+.ce-rate-group-row td.ce-rate-group {
+  background: #f1f5f9;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: #475569;
+  padding: 5px 10px 4px;
+}
+
+/* ── Finishing & Site Dev breakdown rows ────────────────────── */
+.ce-fin-row {
+  display: grid;
+  grid-template-columns: 110px 1fr 70px 36px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.ce-fin-label { font-size: 11px; font-weight: 500; color: #374151; }
+.ce-fin-val   { font-size: 11px; font-weight: 600; color: #111827; text-align: right; }
+.ce-fin-qty   { font-size: 9px;  color: #94a3b8; text-align: right; }
+
+.ce-fin-src {
+  font-size: 9px;
+  font-weight: 600;
+  color: #f59e0b;
+  text-align: right;
+}
+
+.ce-fin-src.kpwd { color: #2563eb; }

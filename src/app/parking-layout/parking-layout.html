@@ -9,95 +9,77 @@
     <!-- Header -->
     <div class="pk-header">
       <div>
-        <span class="pk-title">Parking Layout</span>
+        <span class="pk-title">Parking Summary</span>
         <span class="pk-sub">{{ parkingData.location }} · {{ parkingData.bylaw_ref }}</span>
       </div>
-      <div class="pk-header-right">
-        <span class="pk-compliant" [class.ok]="parkingData.compliant" [class.fail]="!parkingData.compliant">
-          {{ parkingData.compliant ? '✓ Compliant' : '⚠ Review needed' }}
-        </span>
-        <button class="pk-export" (click)="exportPNG()">Export PNG</button>
+      <span class="pk-compliant" [class.ok]="parkingData.compliant" [class.fail]="!parkingData.compliant">
+        {{ parkingData.compliant ? '✓ Compliant' : '⚠ Review needed' }}
+      </span>
+    </div>
+
+    <!-- Required spaces -->
+    <p class="pk-section-title">Required spaces (BBMP Table 23)</p>
+    <div class="pk-space-grid">
+      <div class="pk-space-card pk-car">
+        <span class="pk-space-num">{{ parkingData.required.cars }}</span>
+        <span class="pk-space-label">Total car spaces</span>
+        <span class="pk-space-sub">{{ parkingData.required.cars_resident }} resident + {{ parkingData.required.cars_visitor }} visitor</span>
+      </div>
+      <div class="pk-space-card pk-bike">
+        <span class="pk-space-num">{{ parkingData.required.bikes }}</span>
+        <span class="pk-space-label">Two-wheeler spaces</span>
+        <span class="pk-space-sub">{{ parkingData.required.bikes }} × (2m × 1m)</span>
       </div>
     </div>
 
-    <!-- Tabs -->
-    <div class="pk-tabs">
-      <button class="pk-tab" [class.active]="activeTab==='layout'"  (click)="setTab('layout')">Layout diagram</button>
-      <button class="pk-tab" [class.active]="activeTab==='summary'" (click)="setTab('summary')">Summary</button>
+    <!-- Area breakdown -->
+    <p class="pk-section-title mt-3">Area breakdown</p>
+    <div class="pk-area-rows">
+      <div class="pk-area-row">
+        <span>Car spaces ({{ parkingData.required.cars }} × 12.5 sqm)</span>
+        <span>{{ parkingData.area.car_spaces_sqm }} sqm</span>
+      </div>
+      <div class="pk-area-row">
+        <span>Two-wheeler spaces ({{ parkingData.required.bikes }} × 2 sqm)</span>
+        <span>{{ parkingData.area.bike_spaces_sqm }} sqm</span>
+      </div>
+      <div class="pk-area-row">
+        <span>Drive aisles (6m wide)</span>
+        <span>{{ parkingData.area.aisles_sqm }} sqm</span>
+      </div>
+      <div class="pk-area-row" *ngIf="parkingData.area.ramp_sqm > 0">
+        <span>Ramp area allowance</span>
+        <span>{{ parkingData.area.ramp_sqm }} sqm</span>
+      </div>
+      <div class="pk-area-row pk-area-total">
+        <span><strong>Total parking area</strong></span>
+        <span><strong>{{ parkingData.area.total_sqm }} sqm</strong></span>
+      </div>
     </div>
 
-    <!-- Layout tab -->
-    <div *ngIf="activeTab === 'layout'" class="pk-canvas-wrap">
-      <canvas #parkCanvas style="width:100%;"></canvas>
+    <!-- Dimensions reference -->
+    <p class="pk-section-title mt-3">Standard dimensions (IRC + BBMP)</p>
+    <div class="pk-dim-grid">
+      <div class="pk-dim-card">
+        <span class="pk-dim-label">Car space</span>
+        <span class="pk-dim-value">{{ parkingData.dimensions.car_space_m }}</span>
+      </div>
+      <div class="pk-dim-card">
+        <span class="pk-dim-label">Two-wheeler</span>
+        <span class="pk-dim-value">{{ parkingData.dimensions.bike_space_m }}</span>
+      </div>
+      <div class="pk-dim-card">
+        <span class="pk-dim-label">Drive aisle</span>
+        <span class="pk-dim-value">{{ parkingData.dimensions.drive_aisle_m }}</span>
+      </div>
     </div>
 
-    <!-- Summary tab -->
-    <div *ngIf="activeTab === 'summary'" class="pk-summary">
-
-      <!-- Required spaces -->
-      <p class="pk-section-title">Required spaces (BBMP Table 23)</p>
-      <div class="pk-space-grid">
-        <div class="pk-space-card pk-car">
-          <span class="pk-space-num">{{ parkingData.required.cars }}</span>
-          <span class="pk-space-label">Total car spaces</span>
-          <span class="pk-space-sub">{{ parkingData.required.cars_resident }} resident + {{ parkingData.required.cars_visitor }} visitor</span>
-        </div>
-        <div class="pk-space-card pk-bike">
-          <span class="pk-space-num">{{ parkingData.required.bikes }}</span>
-          <span class="pk-space-label">Two-wheeler spaces</span>
-          <span class="pk-space-sub">{{ parkingData.required.bikes }} × (2m × 1m)</span>
-        </div>
+    <!-- Warnings -->
+    <div *ngIf="parkingData.warnings?.length > 0" class="pk-warnings">
+      <div *ngFor="let w of parkingData.warnings" class="pk-warning-item">
+        ⚠ {{ w }}
       </div>
-
-      <!-- Area breakdown -->
-      <p class="pk-section-title mt-3">Area breakdown</p>
-      <div class="pk-area-rows">
-        <div class="pk-area-row">
-          <span>Car spaces ({{ parkingData.required.cars }} × 12.5 sqm)</span>
-          <span>{{ parkingData.area.car_spaces_sqm }} sqm</span>
-        </div>
-        <div class="pk-area-row">
-          <span>Two-wheeler spaces ({{ parkingData.required.bikes }} × 2 sqm)</span>
-          <span>{{ parkingData.area.bike_spaces_sqm }} sqm</span>
-        </div>
-        <div class="pk-area-row">
-          <span>Drive aisles (6m wide)</span>
-          <span>{{ parkingData.area.aisles_sqm }} sqm</span>
-        </div>
-        <div class="pk-area-row" *ngIf="parkingData.area.ramp_sqm > 0">
-          <span>Ramp area allowance</span>
-          <span>{{ parkingData.area.ramp_sqm }} sqm</span>
-        </div>
-        <div class="pk-area-row pk-area-total">
-          <span><strong>Total parking area</strong></span>
-          <span><strong>{{ parkingData.area.total_sqm }} sqm</strong></span>
-        </div>
-      </div>
-
-      <!-- Dimensions reference -->
-      <p class="pk-section-title mt-3">Standard dimensions (IRC + BBMP)</p>
-      <div class="pk-dim-grid">
-        <div class="pk-dim-card">
-          <span class="pk-dim-label">Car space</span>
-          <span class="pk-dim-value">{{ parkingData.dimensions.car_space_m }}</span>
-        </div>
-        <div class="pk-dim-card">
-          <span class="pk-dim-label">Two-wheeler</span>
-          <span class="pk-dim-value">{{ parkingData.dimensions.bike_space_m }}</span>
-        </div>
-        <div class="pk-dim-card">
-          <span class="pk-dim-label">Drive aisle</span>
-          <span class="pk-dim-value">{{ parkingData.dimensions.drive_aisle_m }}</span>
-        </div>
-      </div>
-
-      <!-- Warnings -->
-      <div *ngIf="parkingData.warnings?.length > 0" class="pk-warnings">
-        <div *ngFor="let w of parkingData.warnings" class="pk-warning-item">
-          ⚠ {{ w }}
-        </div>
-      </div>
-
     </div>
+
   </div>
 </div>
