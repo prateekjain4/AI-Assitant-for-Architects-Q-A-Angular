@@ -44,6 +44,48 @@
           About
         </a>
       </li>
+
+      <!-- Auth: logged out -->
+      <ng-container *ngIf="!auth.isLoggedIn">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/login" routerLinkActive="active">Sign In</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link nav-signup-btn" routerLink="/signup">Start Free Trial</a>
+        </li>
+      </ng-container>
+
+      <!-- Auth: logged in -->
+      <ng-container *ngIf="auth.isLoggedIn">
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle nav-user-pill"
+             href="#" role="button"
+             data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="nav-user-icon">👤</span>
+            {{ auth.currentUser?.user_name }}
+          </a>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+              <span class="dropdown-item-text nav-firm-label">
+                {{ auth.currentUser?.firm_name }}
+                <span class="nav-plan-badge nav-plan-{{ auth.currentUser?.plan_tier }}">
+                  {{ auth.currentUser?.plan_tier | titlecase }}
+                </span>
+              </span>
+            </li>
+            <li *ngIf="auth.currentUser?.subscription_status === 'trial'">
+              <span class="dropdown-item-text nav-trial-note">
+                ⏳ {{ auth.trialDaysLeft() }} days left in trial
+              </span>
+            </li>
+            <li><hr class="dropdown-divider"></li>
+            <li>
+              <button class="dropdown-item text-danger" (click)="auth.logout()">Sign Out</button>
+            </li>
+          </ul>
+        </li>
+      </ng-container>
+
     </ul>
   </div>
 </nav>

@@ -1,0 +1,83 @@
+<div class="auth-page">
+  <div class="auth-card">
+
+    <div class="auth-brand">
+      <span class="auth-logo">📐</span>
+      <h1 class="auth-title">PlanIQ</h1>
+      <p class="auth-subtitle">Register your architectural firm — 14-day free trial</p>
+    </div>
+
+    <!-- Trial banner -->
+    <div class="trial-banner">
+      ✅ Free 14-day trial &nbsp;·&nbsp; No credit card required &nbsp;·&nbsp; Full access
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <div class="auth-field">
+        <label>Firm / Studio Name</label>
+        <input type="text" formControlName="firmName" placeholder="e.g. Studio Artha Architects">
+        <div class="field-error" *ngIf="form.get('firmName')?.invalid && form.get('firmName')?.touched">
+          Firm name must be at least 2 characters.
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label>Your Full Name</label>
+        <input type="text" formControlName="fullName" placeholder="Principal Architect">
+        <div class="field-error" *ngIf="form.get('fullName')?.invalid && form.get('fullName')?.touched">
+          Please enter your full name.
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label>Work Email</label>
+        <input type="email" formControlName="email" placeholder="you@yourfirm.com" autocomplete="email">
+        <div class="field-error" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+          Enter a valid email address.
+        </div>
+      </div>
+
+      <div class="auth-row">
+        <div class="auth-field">
+          <label>Password</label>
+          <input type="password" formControlName="password" placeholder="Min 8 characters" autocomplete="new-password">
+          <div class="field-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+            Password must be at least 8 characters.
+          </div>
+        </div>
+        <div class="auth-field">
+          <label>Confirm Password</label>
+          <input type="password" formControlName="confirmPassword" placeholder="Repeat password" autocomplete="new-password">
+          <div class="field-error" *ngIf="form.errors?.['mismatch'] && form.get('confirmPassword')?.touched">
+            Passwords do not match.
+          </div>
+        </div>
+      </div>
+
+      <div class="auth-checkbox">
+        <input type="checkbox" formControlName="agreeTerms" id="terms">
+        <label for="terms">
+          I agree to the <a href="#" target="_blank">Terms of Service</a> and <a href="#" target="_blank">Privacy Policy</a>
+        </label>
+      </div>
+      <div class="field-error" *ngIf="form.get('agreeTerms')?.invalid && form.get('agreeTerms')?.touched">
+        You must accept the terms to continue.
+      </div>
+
+      <div class="auth-error" *ngIf="error">{{ error }}</div>
+
+      <button type="submit" class="auth-btn" [disabled]="loading">
+        <span *ngIf="!loading">Create Firm Account</span>
+        <span *ngIf="loading">Creating account…</span>
+      </button>
+
+    </form>
+
+    <div class="auth-footer">
+      Already have an account?
+      <a routerLink="/login">Sign in</a>
+    </div>
+
+  </div>
+</div>

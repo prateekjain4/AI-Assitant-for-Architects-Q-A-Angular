@@ -1,0 +1,43 @@
+<div class="auth-page">
+  <div class="auth-card">
+
+    <div class="auth-brand">
+      <span class="auth-logo">📐</span>
+      <h1 class="auth-title">PlanIQ</h1>
+      <p class="auth-subtitle">Sign in to your firm account</p>
+    </div>
+
+    <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+      <div class="auth-field">
+        <label>Work Email</label>
+        <input type="email" formControlName="email" placeholder="you@yourfirm.com" autocomplete="email">
+        <div class="field-error" *ngIf="form.get('email')?.invalid && form.get('email')?.touched">
+          Enter a valid email address.
+        </div>
+      </div>
+
+      <div class="auth-field">
+        <label>Password</label>
+        <input type="password" formControlName="password" placeholder="••••••••" autocomplete="current-password">
+        <div class="field-error" *ngIf="form.get('password')?.invalid && form.get('password')?.touched">
+          Password is required.
+        </div>
+      </div>
+
+      <div class="auth-error" *ngIf="error">{{ error }}</div>
+
+      <button type="submit" class="auth-btn" [disabled]="loading">
+        <span *ngIf="!loading">Sign In</span>
+        <span *ngIf="loading">Signing in…</span>
+      </button>
+
+    </form>
+
+    <div class="auth-footer">
+      Don't have an account?
+      <a routerLink="/signup">Register your firm</a>
+    </div>
+
+  </div>
+</div>

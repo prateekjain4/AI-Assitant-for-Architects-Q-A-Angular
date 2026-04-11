@@ -1,7 +1,26 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, NgZone } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, NgZone, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { MapData } from '../services/map-data';
+import { CostEstimator } from '../cost-estimator/cost-estimator';
+import { ScenarioComparison } from '../scenario-comparison/scenario-comparison';
+
+// ── Chat session types ────────────────────────────────────────────
+export interface ChatMessage {
+  role: 'user' | 'ai';
+  text: string;
+  ts:   string; // ISO timestamp
+}
+
+export interface ChatSession {
+  id:        string;
+  title:     string;  // first user message (truncated)
+  messages:  ChatMessage[];
+  createdAt: string;
+  updatedAt: string;
+}
+
 @Component({
   selector: 'app-planning-tool',
   standalone: false,
@@ -10,16 +29,33 @@ import { MapData } from '../services/map-data';
 })
 export class PlanningTool implements OnInit {
   @ViewChild('chatBody', { static: false }) chatBody?: ElementRef;
+  @ViewChild('costEstimatorRef') costEstimatorRef?: CostEstimator;
+  @ViewChild('scenarioCompRef') scenarioCompRef?: ScenarioComparison;
 
   plotCalculator: FormGroup = new FormGroup({});
 
   result: any = null;
   loading: boolean = false;
   errorMessage: string = '';
-  messages: any[] = [];
   chatInput: string = '';
   chatLoading: boolean = false;
   chatOpen: boolean = false;
+
+  // ── Chat session state ────────────────────────────────────────
+  chatSessions:  ChatSession[] = [];
+  activeChatId:  string = '';
+  historyOpen:   boolean = false;
+
+  private readonly SESSIONS_KEY = 'bylaw_chat_sessions';
+  private readonly isBrowser: boolean;
+
+  get activeSession(): ChatSession | undefined {
+    return this.chatSessions.find(s => s.id === this.activeChatId);
+  }
+
+  get activeMessages(): ChatMessage[] {
+    return this.activeSession?.messages ?? [];
+  }
   
   // ── Accordion state for result sections ───────────────────────
   openSections: Record<string, boolean> = {
@@ -56,17 +92,102 @@ export class PlanningTool implements OnInit {
     }, 25);
   }
 
-  constructor(private fb: FormBuilder, private http: HttpClient, public mapData: MapData, private cdr: ChangeDetectorRef, private ngZone: NgZone) {}
-  
+  constructor(
+    private fb: FormBuilder,
+    private http: HttpClient,
+    public mapData: MapData,
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone,
+    @Inject(PLATFORM_ID) platformId: object,
+  ) {
+    this.isBrowser = isPlatformBrowser(platformId);
+    if (this.isBrowser) this.loadSessions();
+  }
+
+  // ── Chat session management ───────────────────────────────────
+
   toggleChat(): void {
     this.chatOpen = !this.chatOpen;
-
-    if (this.chatOpen && this.messages.length === 0) {
-      this.messages.push({
-        role: 'AI',
-        text: 'Hi! I am your Planning Assistant. Ask anything about zoning, setbacks, FAR, or your current calculated results.'
-      });
+    if (this.chatOpen) {
+      if (!this.activeChatId || !this.activeSession) this.createNewSession();
     }
+  }
+
+  toggleHistory(): void {
+    this.historyOpen = !this.historyOpen;
+  }
+
+  newChat(): void {
+    this.createNewSession();
+    this.historyOpen = false;
+  }
+
+  switchSession(id: string): void {
+    this.activeChatId = id;
+    this.historyOpen  = false;
+    setTimeout(() => this.scrollToBottom(), 50);
+  }
+
+  deleteSession(id: string, event?: Event): void {
+    event?.stopPropagation();
+    this.chatSessions = this.chatSessions.filter(s => s.id !== id);
+    this.saveSessions();
+    if (this.activeChatId === id) {
+      if (this.chatSessions.length > 0) {
+        this.activeChatId = this.chatSessions[0].id;
+      } else {
+        this.createNewSession();
+      }
+    }
+  }
+
+  deleteCurrentChat(): void {
+    if (this.activeChatId) this.deleteSession(this.activeChatId);
+  }
+
+  private createNewSession(): void {
+    const session: ChatSession = {
+      id:        crypto.randomUUID(),
+      title:     'New Chat',
+      messages:  [{
+        role: 'ai',
+        text: 'Hi! I\'m your Planning Assistant. Ask me anything about zoning, setbacks, FAR, or your project.',
+        ts:   new Date().toISOString(),
+      }],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    this.chatSessions.unshift(session);
+    this.activeChatId = session.id;
+    this.saveSessions();
+  }
+
+  private saveSessions(): void {
+    if (!this.isBrowser) return;
+    // Keep only last 20 sessions
+    this.chatSessions = this.chatSessions.slice(0, 20);
+    localStorage.setItem(this.SESSIONS_KEY, JSON.stringify(this.chatSessions));
+  }
+
+  private loadSessions(): void {
+    try {
+      const raw = localStorage.getItem(this.SESSIONS_KEY);
+      this.chatSessions = raw ? JSON.parse(raw) : [];
+    } catch {
+      this.chatSessions = [];
+    }
+  }
+
+  private pushMessage(msg: ChatMessage): void {
+    const session = this.activeSession;
+    if (!session) return;
+    session.messages.push(msg);
+    session.updatedAt = new Date().toISOString();
+    // Use first user message as title
+    if (msg.role === 'user' && session.title === 'New Chat') {
+      session.title = msg.text.length > 40 ? msg.text.slice(0, 40) + '…' : msg.text;
+    }
+    this.saveSessions();
   }
   
   ngOnInit(): void {
@@ -104,10 +225,12 @@ export class PlanningTool implements OnInit {
       locality: this.mapData.getDetectedZone()?.locality || '',
       ward: this.mapData.getDetectedZone()?.ward || '',
       confidence: this.mapData.getDetectedZone()?.confidence || 'approximate',
+      cost_estimate: this.costEstimatorRef?.result ?? null,
+      scenarios: this.scenarioCompRef?.scenarioData ?? null,
     };
 
     this.http.post('http://localhost:8000/generate-report', payload, {
-      responseType: 'blob' 
+      responseType: 'blob'
     }).subscribe(blob => {
       const url = window.URL.createObjectURL(blob);
       const anchor = document.createElement('a');
@@ -119,59 +242,36 @@ export class PlanningTool implements OnInit {
   }
 
   sendMessage() {
-    if (!this.chatInput.trim()) return;
-    const userMessage = this.chatInput;
-    // Add user message
-    this.messages.push({
-      role: 'User',
-      text: userMessage
-    });
+    const text = this.chatInput.trim();
+    if (!text || this.chatLoading) return;
 
-    this.chatInput = '';
+    this.pushMessage({ role: 'user', text, ts: new Date().toISOString() });
+    this.chatInput  = '';
     this.chatLoading = true;
+    this.scrollToBottom();
 
-    const payload = {
-      question: userMessage,
-      planning_data: this.result || null
-    };
-
-    this.http.post('http://localhost:8000/chat', {
-      question:      userMessage,
-      planning_data: this.result || null
-    })
-      .subscribe({
-        next: (res: any) => {
-          this.ngZone.run(() => {
-            const aiText = res?.answer ?? res?.text ?? JSON.stringify(res) ?? 'No response from server';
-            this.messages.push({
-              role: 'AI',
-              text: aiText
-            });
-            console.log('Received AI response:', aiText);
-            this.chatLoading = false;
-            this.cdr.detectChanges();
-            this.scrollToBottom();
-          });
-        },
-        error: (err) => {
-          this.ngZone.run(() => {
-            console.error('Chat API error:', err);
-            this.messages.push({
-              role: 'AI',
-              text: 'Sorry, I could not fetch your answer. Please try again.'
-            });
-            this.chatLoading = false;
-            this.cdr.detectChanges();
-            this.scrollToBottom();
-          });
-        },
-        complete: () => {
-          this.ngZone.run(() => {
-            this.chatLoading = false;
-            this.cdr.detectChanges();
-          });
-        }
-      });
+    this.http.post<any>('http://localhost:8000/chat', {
+      question:      text,
+      planning_data: this.result || null,
+    }).subscribe({
+      next: (res) => {
+        this.ngZone.run(() => {
+          const aiText = res?.answer ?? res?.text ?? JSON.stringify(res);
+          this.pushMessage({ role: 'ai', text: aiText, ts: new Date().toISOString() });
+          this.chatLoading = false;
+          this.cdr.detectChanges();
+          this.scrollToBottom();
+        });
+      },
+      error: () => {
+        this.ngZone.run(() => {
+          this.pushMessage({ role: 'ai', text: 'Sorry, I could not reach the server. Please try again.', ts: new Date().toISOString() });
+          this.chatLoading = false;
+          this.cdr.detectChanges();
+          this.scrollToBottom();
+        });
+      },
+    });
   }
 
   onSubmit() {

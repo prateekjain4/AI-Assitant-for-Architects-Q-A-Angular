@@ -103,36 +103,107 @@
     <span *ngIf="!chatOpen">🤖</span>
     <span *ngIf="chatOpen">✕</span>
   </button>
+  <span class="chat-session-count" *ngIf="!chatOpen && chatSessions.length > 0">
+    {{ chatSessions.length }}
+  </span>
 </div>
 
 <!-- ── Chat Widget ────────────────────────────────────────────── -->
-<div class="chat-widget" *ngIf="chatOpen">
-  <div class="chat-widget-header d-flex justify-content-between align-items-center">
-    <h5 class="m-0">Planning Assistant</h5>
-    <button class="btn btn-sm btn-outline-secondary" (click)="toggleChat()" aria-label="Close chat">✕</button>
+<div class="cw" *ngIf="chatOpen">
+
+  <!-- Header -->
+  <div class="cw-header">
+    <button class="cw-icon-btn" (click)="toggleHistory()" [class.cw-icon-btn-active]="historyOpen" title="Chat History">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/>
+      </svg>
+    </button>
+    <span class="cw-title">Planning Assistant</span>
+    <div class="cw-header-actions">
+      <button class="cw-icon-btn" (click)="newChat()" title="New Chat">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 013 3L7 19l-4 1 1-4L16.5 3.5z"/>
+        </svg>
+      </button>
+      <button class="cw-icon-btn cw-icon-btn-danger" (click)="deleteCurrentChat()" title="Delete this chat">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
+        </svg>
+      </button>
+      <button class="cw-icon-btn" (click)="toggleChat()" title="Close">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+        </svg>
+      </button>
+    </div>
   </div>
 
-  <div #chatBody class="chat-widget-body" style="max-height: 320px; overflow-y: auto;">
-    <div *ngFor="let msg of messages" class="mb-2">
-      <strong>{{msg.role}}:</strong>
-      <div style="white-space: pre-line;">{{msg.text}}</div>
+  <!-- Main row: left sidebar + right chat -->
+  <div class="cw-main">
+
+    <!-- History sidebar -->
+    <div class="cw-history" *ngIf="historyOpen">
+      <button class="cw-new-chat-btn" (click)="newChat()">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+        </svg>
+        New chat
+      </button>
+      <div class="cw-history-label">Recent</div>
+      <div *ngIf="chatSessions.length === 0" class="cw-hist-empty">No chats yet</div>
+      <div
+        *ngFor="let s of chatSessions"
+        class="cw-hist-item"
+        [class.cw-hist-item-active]="s.id === activeChatId"
+        (click)="switchSession(s.id)">
+        <div class="cw-hist-content">
+          <span class="cw-hist-title">{{ s.title }}</span>
+          <span class="cw-hist-date">{{ s.createdAt | date:'MMM d' }}</span>
+        </div>
+        <button class="cw-hist-del" (click)="deleteSession(s.id, $event)" title="Delete">
+          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+          </svg>
+        </button>
+      </div>
     </div>
 
-    <div *ngIf="chatLoading" class="text-muted">
-      <i>AI is typing...</i>
+    <!-- Right: messages + input -->
+    <div class="cw-chat-area">
+
+      <div class="cw-body" #chatBody>
+        <ng-container *ngFor="let msg of activeMessages">
+          <div class="cw-msg" [class.cw-msg-user]="msg.role === 'user'" [class.cw-msg-ai]="msg.role === 'ai'">
+            <div class="cw-bubble">{{ msg.text }}</div>
+            <div class="cw-ts">{{ msg.ts | date:'h:mm a' }}</div>
+          </div>
+        </ng-container>
+        <div class="cw-typing" *ngIf="chatLoading">
+          <div class="cw-typing-dot"></div>
+          <div class="cw-typing-dot"></div>
+          <div class="cw-typing-dot"></div>
+        </div>
+      </div>
+
+      <div class="cw-input-row">
+        <input
+          class="cw-input"
+          [(ngModel)]="chatInput"
+          placeholder="Ask about your project…"
+          (keyup.enter)="sendMessage()"
+          [disabled]="chatLoading"
+          autocomplete="off"
+        />
+        <button class="cw-send-btn" (click)="sendMessage()" [disabled]="chatLoading || !chatInput.trim()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+          </svg>
+        </button>
+      </div>
+
     </div>
   </div>
 
-  <div class="chat-widget-input mt-2 d-flex">
-    <input
-      class="form-control me-2"
-      [(ngModel)]="chatInput"
-      placeholder="Ask about your project"
-      (keyup.enter)="sendMessage()"
-      [disabled]="chatLoading"
-    />
-    <button class="btn btn-primary" (click)="sendMessage()" [disabled]="chatLoading || !chatInput.trim()">Send</button>
-  </div>
 </div>
 
 <!-- ══════════════════════════════════════════════════════════════
@@ -559,7 +630,7 @@
       <span class="section-toggle">{{ openSections['cost'] ? '▲' : '▼' }}</span>
     </div>
     <div class="section-body" *ngIf="openSections['cost']" style="padding:0;">
-      <app-cost-estimator
+      <app-cost-estimator #costEstimatorRef
         [plotLengthM]="+(plotCalculator.value.plotLength || 20)"
         [plotWidthM]="+(plotCalculator.value.plotWidth || 15)"
         [builtUpSqm]="+(result.max_built_area / 10.764)"
@@ -585,7 +656,7 @@
       <span class="section-toggle">{{ openSections['scenarios'] ? '▲' : '▼' }}</span>
     </div>
     <div class="section-body" *ngIf="openSections['scenarios']" style="padding: 0;">
-      <app-scenario-comparison
+      <app-scenario-comparison #scenarioCompRef
         [zone]="plotCalculator.value.zoneDetails"
         [roadWidth]="plotCalculator.value.roadWidth"
         [plotAreaSqft]="result.plot_area"

@@ -15,3 +15,52 @@
   font-weight: bold;
   border-bottom: 2px solid #0d6efd;
 }
+
+/* ── Auth nav items ─────────────────────────────── */
+.nav-signup-btn {
+  background: #2563eb;
+  color: #fff !important;
+  border-radius: 6px;
+  padding: 5px 14px !important;
+  font-weight: 600;
+  font-size: 13px;
+}
+.nav-signup-btn:hover { background: #1d4ed8; color: #fff !important; }
+
+.nav-user-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.nav-user-icon { font-size: 15px; }
+
+.nav-firm-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #374151;
+  padding: 4px 16px;
+}
+
+.nav-trial-note {
+  font-size: 11px;
+  color: #d97706;
+  padding: 2px 16px 4px;
+}
+
+.nav-plan-badge {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 4px;
+  padding: 2px 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.nav-plan-trial        { background: #fef3c7; color: #92400e; }
+.nav-plan-professional { background: #dbeafe; color: #1e40af; }
+.nav-plan-enterprise   { background: #f3e8ff; color: #6b21a8; }
