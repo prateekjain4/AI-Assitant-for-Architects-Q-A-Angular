@@ -16,9 +16,13 @@ import { ScenarioComparison } from './scenario-comparison/scenario-comparison';
 import { ParkingLayout } from './parking-layout/parking-layout';
 import { SitePlan } from './site-plan/site-plan';
 import { CostEstimator } from './cost-estimator/cost-estimator';
+import { CostAnalysisPage } from './cost-analysis/cost-analysis';
+import { RanchiPlanningTool } from './ranchi-planning/ranchi-planning';
+import { BengaluruPlanningTool } from './bengaluru-planning/bengaluru-planning';
 import { Login } from './auth/login/login';
 import { Signup } from './auth/signup/signup';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { ToastComponent } from './toast/toast.component';
 
 @NgModule({
   declarations: [
@@ -32,8 +36,12 @@ import { AuthInterceptor } from './interceptors/auth.interceptor';
     ParkingLayout,
     SitePlan,
     CostEstimator,
+    CostAnalysisPage,
+    RanchiPlanningTool,
+    BengaluruPlanningTool,
     Login,
     Signup,
+    ToastComponent,
   ],
   imports: [
     BrowserModule,

@@ -2,6 +2,7 @@ import { Component } from '@angular/core';
 import { FormBuilder, FormGroup, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { ToastService } from '../../services/toast.service';
 
 function passwordMatch(group: AbstractControl): ValidationErrors | null {
   const pass    = group.get('password')?.value;
@@ -20,7 +21,7 @@ export class Signup {
   loading = false;
   error   = '';
 
-  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router) {
+  constructor(private fb: FormBuilder, private auth: AuthService, private router: Router, private toast: ToastService) {
     this.form = this.fb.group({
       firmName:        ['', [Validators.required, Validators.minLength(2)]],
       fullName:        ['', [Validators.required, Validators.minLength(2)]],
@@ -38,9 +39,13 @@ export class Signup {
 
     const { firmName, fullName, email, password } = this.form.value;
     this.auth.register(firmName, fullName, email, password).subscribe({
-      next: () => this.router.navigate(['/planning']),
+      next: () => {
+        this.toast.success('Account created! Welcome aboard.');
+        this.router.navigate(['/planning']);
+      },
       error: (err) => {
         this.error   = err?.error?.detail ?? 'Registration failed. Please try again.';
+        this.toast.error(this.error);
         this.loading = false;
       },
     });

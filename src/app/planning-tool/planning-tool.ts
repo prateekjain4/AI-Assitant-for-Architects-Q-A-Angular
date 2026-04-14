@@ -1,10 +1,15 @@
-import { Component, OnInit, ChangeDetectorRef, ViewChild, ElementRef, NgZone, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, AfterViewInit, ChangeDetectorRef, ViewChild, ElementRef, NgZone, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 import { MapData } from '../services/map-data';
 import { CostEstimator } from '../cost-estimator/cost-estimator';
 import { ScenarioComparison } from '../scenario-comparison/scenario-comparison';
+import { ProjectService, ProjectSummary } from '../services/project.service';
+import { AuthService } from '../services/auth.service';
+import { ToastService } from '../services/toast.service';
+import { CostDataService, PlanningState } from '../services/cost-data.service';
 
 // ── Chat session types ────────────────────────────────────────────
 export interface ChatMessage {
@@ -27,7 +32,7 @@ export interface ChatSession {
   templateUrl: './planning-tool.html',
   styleUrl: './planning-tool.css',
 })
-export class PlanningTool implements OnInit {
+export class PlanningTool implements OnInit, AfterViewInit {
   @ViewChild('chatBody', { static: false }) chatBody?: ElementRef;
   @ViewChild('costEstimatorRef') costEstimatorRef?: CostEstimator;
   @ViewChild('scenarioCompRef') scenarioCompRef?: ScenarioComparison;
@@ -57,6 +62,140 @@ export class PlanningTool implements OnInit {
     return this.activeSession?.messages ?? [];
   }
   
+  // ── Saved projects ────────────────────────────────────────────
+  projectsOpen     = false;
+  saveModalOpen    = false;
+  projectName      = '';
+  projectSaving    = false;
+  projectSaveMsg   = '';
+  savedProjects:   ProjectSummary[] = [];
+  projectsLoading  = false;
+
+  toggleProjects() {
+    this.projectsOpen = !this.projectsOpen;
+    if (this.projectsOpen) this.loadProjects();
+  }
+
+  openSaveModal() {
+    const locality = this.mapData.getDetectedZone()?.locality || '';
+    const zone     = this.plotCalculator.value.zoneDetails || '';
+    this.projectName  = locality ? `${locality} — ${zone}` : zone;
+    this.projectSaveMsg = '';
+    this.saveModalOpen  = true;
+  }
+
+  closeSaveModal() { this.saveModalOpen = false; }
+
+  saveProject() {
+    if (!this.projectName.trim() || !this.result) return;
+    this.projectSaving = true;
+    this.projectService.save({
+      name:            this.projectName.trim(),
+      zone:            this.plotCalculator.value.zoneDetails || '',
+      locality:        this.mapData.getDetectedZone()?.locality || '',
+      plot_inputs:     this.plotCalculator.value,
+      planning_result: this.result,
+      cost_estimate:   this.costEstimatorRef?.result ?? {},
+      scenarios:       this.scenarioCompRef?.scenarioData ?? {},
+    }).subscribe({
+      next: () => {
+        this.projectSaving  = false;
+        this.projectSaveMsg = 'saved';
+        this.toast.success('Project saved successfully!');
+        setTimeout(() => { this.saveModalOpen = false; this.projectSaveMsg = ''; }, 1200);
+      },
+      error: () => {
+        this.projectSaving  = false;
+        this.projectSaveMsg = 'error';
+        this.toast.error('Failed to save project. Please try again.');
+      },
+    });
+  }
+
+  loadProjects() {
+    this.projectsLoading = true;
+    this.projectService.list().subscribe({
+      next:  (list) => { this.savedProjects = list; this.projectsLoading = false; },
+      error: ()     => { this.projectsLoading = false; },
+    });
+  }
+
+  loadProject(id: number) {
+    this.projectService.get(id).subscribe({
+      next: (p) => {
+        this.result = p.planning_result;
+        this.plotCalculator.patchValue(p.plot_inputs);
+        this.projectsOpen = false;
+        this.cdr.detectChanges();
+      },
+    });
+  }
+
+  deleteProject(id: number, event: Event) {
+    event.stopPropagation();
+    this.projectService.delete(id).subscribe(() => {
+      this.savedProjects = this.savedProjects.filter(p => p.id !== id);
+    });
+  }
+
+  // ── Indian cities drawer ──────────────────────────────────────
+  cityDrawerOpen = false;
+  toggleCityDrawer() { this.cityDrawerOpen = !this.cityDrawerOpen; }
+
+  navigateCity(city: { name: string; active: boolean }) {
+    if (!city.active) return;
+    this.cityDrawerOpen = false;
+    if (city.name === 'Bengaluru') {
+      this.router.navigate(['/bengaluru']);
+    } else if (city.name === 'Ranchi') {
+      this.router.navigate(['/ranchi']);
+    }
+  }
+
+  readonly cities = [
+    { name: 'Bengaluru',       state: 'Karnataka',       active: true  },
+    { name: 'Ranchi',          state: 'Jharkhand',       active: true  },
+    { name: 'Mumbai',          state: 'Maharashtra',     active: false },
+    { name: 'Delhi',           state: 'Delhi',           active: false },
+    { name: 'Chennai',         state: 'Tamil Nadu',      active: false },
+    { name: 'Hyderabad',       state: 'Telangana',       active: false },
+    { name: 'Pune',            state: 'Maharashtra',     active: false },
+    { name: 'Kolkata',         state: 'West Bengal',     active: false },
+    { name: 'Ahmedabad',       state: 'Gujarat',         active: false },
+    { name: 'Jaipur',          state: 'Rajasthan',       active: false },
+    { name: 'Surat',           state: 'Gujarat',         active: false },
+    { name: 'Lucknow',         state: 'Uttar Pradesh',   active: false },
+    { name: 'Kanpur',          state: 'Uttar Pradesh',   active: false },
+    { name: 'Nagpur',          state: 'Maharashtra',     active: false },
+    { name: 'Indore',          state: 'Madhya Pradesh',  active: false },
+    { name: 'Thane',           state: 'Maharashtra',     active: false },
+    { name: 'Bhopal',          state: 'Madhya Pradesh',  active: false },
+    { name: 'Visakhapatnam',   state: 'Andhra Pradesh',  active: false },
+    { name: 'Patna',           state: 'Bihar',           active: false },
+    { name: 'Vadodara',        state: 'Gujarat',         active: false },
+    { name: 'Ludhiana',        state: 'Punjab',          active: false },
+    { name: 'Agra',            state: 'Uttar Pradesh',   active: false },
+    { name: 'Nashik',          state: 'Maharashtra',     active: false },
+    { name: 'Faridabad',       state: 'Haryana',         active: false },
+    { name: 'Meerut',          state: 'Uttar Pradesh',   active: false },
+    { name: 'Rajkot',          state: 'Gujarat',         active: false },
+    { name: 'Varanasi',        state: 'Uttar Pradesh',   active: false },
+    { name: 'Srinagar',        state: 'J & K',           active: false },
+    { name: 'Aurangabad',      state: 'Maharashtra',     active: false },
+    { name: 'Amritsar',        state: 'Punjab',          active: false },
+    { name: 'Navi Mumbai',     state: 'Maharashtra',     active: false },
+    { name: 'Prayagraj',       state: 'Uttar Pradesh',   active: false },
+    { name: 'Howrah',          state: 'West Bengal',     active: false },
+    { name: 'Guwahati',        state: 'Assam',           active: false },
+    { name: 'Chandigarh',      state: 'Punjab',          active: false },
+    { name: 'Coimbatore',      state: 'Tamil Nadu',      active: false },
+    { name: 'Kochi',           state: 'Kerala',          active: false },
+    { name: 'Thiruvananthapuram', state: 'Kerala',       active: false },
+    { name: 'Mysuru',          state: 'Karnataka',       active: false },
+    { name: 'Gurgaon',         state: 'Haryana',         active: false },
+    { name: 'Noida',           state: 'Uttar Pradesh',   active: false },
+  ];
+
   // ── Accordion state for result sections ───────────────────────
   openSections: Record<string, boolean> = {
     metrics:       true,
@@ -99,9 +238,44 @@ export class PlanningTool implements OnInit {
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone,
     @Inject(PLATFORM_ID) platformId: object,
+    private projectService: ProjectService,
+    public auth: AuthService,
+    private toast: ToastService,
+    private router: Router,
+    private costData: CostDataService,
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
     if (this.isBrowser) this.loadSessions();
+  }
+
+  openCostAnalysis() {
+    if (!this.result) return;
+    const v = this.plotCalculator.value;
+    this.costData.set({
+      plotLengthM:     +(v.plotLength  || 20),
+      plotWidthM:      +(v.plotWidth   || 15),
+      builtUpSqm:      +(this.result.max_built_area / 10.764),
+      numFloors:        this.result.staircase?.num_floors || 3,
+      floorHeightM:    +(v.floorHeight  || 3.2),
+      setbackFront:     this.result.setbacks?.front  || 3,
+      setbackSide:      this.result.setbacks?.side   || 1.5,
+      setbackRear:      this.result.setbacks?.rear   || 1.5,
+      usage:            v.usage || 'residential',
+      zone:             v.zoneDetails || 'RM',
+      fireNocRequired: !!this.result.fire_data?.noc_required,
+      basement:         v.basement === 'true',
+      carSpaces:        this.result.parking?.required?.cars || 0,
+      plotAreaSqft:     this.result.plot_area,
+      far:              this.result.far,
+      farBase:          this.result.far_base,
+      farTdr:           this.result.far_tdr,
+      maxBuiltSqft:     this.result.max_built_area,
+      planningZone:     this.result.planning_zone || 'zone_A',
+      roadWidth:        +(v.roadWidth || 9),
+      groundCovPct:     this.result.ground_coverage_pct,
+      scenarios:        this.scenarioCompRef?.scenarioData?.scenarios || [],
+    });
+    this.router.navigate(['/cost-analysis']);
   }
 
   // ── Chat session management ───────────────────────────────────
@@ -204,6 +378,8 @@ export class PlanningTool implements OnInit {
       floorHeight:    [3.2],
     });
 
+
+
     setInterval(() => {
       const zone = this.mapData.getDetectedZone();
       if (zone?.zone_code && zone.zone_code !== this.plotCalculator.value.zoneDetails) {
@@ -214,6 +390,20 @@ export class PlanningTool implements OnInit {
       }
     }, 500);
 
+  }
+
+  ngAfterViewInit(): void {
+    // Restore last planning result after the view is fully initialized
+    try {
+      const raw = localStorage.getItem("bylaw_planning_state");
+      if (raw) {
+        const saved = JSON.parse(raw);
+        this.plotCalculator.patchValue(saved.formValues);
+        this.result = saved.result;
+        this.openSections = saved.openSections;
+        this.cdr.detectChanges();
+      }
+    } catch (_) {}
   }
 
   downloadReport() {
@@ -229,15 +419,20 @@ export class PlanningTool implements OnInit {
       scenarios: this.scenarioCompRef?.scenarioData ?? null,
     };
 
+    this.toast.info('Generating PDF report…');
     this.http.post('http://localhost:8000/generate-report', payload, {
       responseType: 'blob'
-    }).subscribe(blob => {
-      const url = window.URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = url;
-      anchor.download = `planning-report-${payload.locality || 'bangalore'}-${Date.now()}.pdf`;
-      anchor.click();
-      window.URL.revokeObjectURL(url);
+    }).subscribe({
+      next: blob => {
+        const url = window.URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = `planning-report-${payload.locality || 'bangalore'}-${Date.now()}.pdf`;
+        anchor.click();
+        window.URL.revokeObjectURL(url);
+        this.toast.success('Report downloaded!');
+      },
+      error: () => this.toast.error('Failed to generate report. Please try again.'),
     });
   }
 
@@ -252,7 +447,9 @@ export class PlanningTool implements OnInit {
 
     this.http.post<any>('http://localhost:8000/chat', {
       question:      text,
-      planning_data: this.result || null,
+      planning_data:   this.result || null,
+      scenario_data:   this.scenarioCompRef?.scenarioData || null,
+      cost_estimate:   this.costEstimatorRef?.result || null,
     }).subscribe({
       next: (res) => {
         this.ngZone.run(() => {
@@ -307,7 +504,6 @@ export class PlanningTool implements OnInit {
           this.ngZone.run(() => {
             this.result = { ...response };
             this.mapData.setPlanningResult(response);
-
             // Open key sections by default
             this.openSections = {
               metrics:    true,
@@ -323,7 +519,14 @@ export class PlanningTool implements OnInit {
               sitePlan:   true,
               cost:       true,
             };
-            
+            // Persist so state survives navigation to /cost-analysis and back
+            try {
+              localStorage.setItem("bylaw_planning_state", JSON.stringify({
+                formValues:   this.plotCalculator.value,
+                result:       this.result,
+                openSections: this.openSections,
+              }));
+            } catch (_) {}
             this.loading = false;
             this.errorMessage = '';
             this.cdr.detectChanges();
@@ -334,6 +537,7 @@ export class PlanningTool implements OnInit {
           this.ngZone.run(() => {
             console.error('Planning API error:', error);
             this.errorMessage = 'Failed to calculate regulations.';
+            this.toast.error('Failed to calculate regulations. Check your inputs and try again.');
             this.loading = false;
             this.cdr.detectChanges();
           });

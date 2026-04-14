@@ -1,5 +1,7 @@
 import { Component, Input, NgZone, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
+import { CostDataService } from '../services/cost-data.service';
 
 @Component({
   selector: 'app-scenario-comparison',
@@ -20,16 +22,23 @@ export class ScenarioComparison {
   @Input() floorHeightM:     number  = 3.2;
   @Input() buildingHeightM:  number  = 0;
   @Input() idealFloors:      number  = 0;  // feasible floors from planning result
+  @Input() carSpaces:        number  = 0;
 
   scenarioData: any    = null;
   loading:      boolean = false;
   selectedTab:  string  = '';
   expandedFloor: string = '';
 
+  // Per-scenario cost estimates
+  scenarioCosts:        { [label: string]: any }     = {};
+  scenarioCostLoading:  { [label: string]: boolean } = {};
+
   constructor(
     private http: HttpClient,
     private ngZone: NgZone,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private router: Router,
+    private costData: CostDataService,
   ) {}
 
   ngOnChanges() {
@@ -49,7 +58,7 @@ export class ScenarioComparison {
       usage:              this.usage,
       corner_plot:        this.cornerPlot,
       basement:           this.basement,
-      scenarios:          this.buildScenarios(),
+      // scenarios field omitted — backend derives from BBMP bylaw height thresholds
       floor_height_m:     this.floorHeightM    || 3.2,
       building_height_m:  this.buildingHeightM || 0,
     };
@@ -58,15 +67,12 @@ export class ScenarioComparison {
       .subscribe({
         next: (res) => {
           this.ngZone.run(() => {
-            // Override backend recommendation with the ideal floor label
-            // Backend prefers no-NOC which may be below ideal — use planning result instead
-            const idealLabel = `G+${(this.idealFloors || 3) - 1}`;
-            const hasIdeal   = res.scenarios?.some((s: any) => s.label === idealLabel);
-            res.recommended  = hasIdeal ? idealLabel : res.recommended;
             this.scenarioData = res;
             this.selectedTab  = res.recommended;
             this.loading      = false;
             this.cdr.detectChanges();
+            // Pre-fetch cost for the recommended scenario
+            this.fetchScenarioCost(this.selectedScenario);
           });
         },
         error: () => {
@@ -78,21 +84,6 @@ export class ScenarioComparison {
       });
   }
 
-  buildScenarios(): number[] {
-    // ideal = feasible floors from planning result, fallback to 3
-    const ideal = this.idealFloors > 0 ? this.idealFloors : 3;
-    // Show: one below ideal, ideal, one above, two above
-    // Minimum floor count = 1 (G+0), cap at 15
-    const s = [
-      Math.max(1, ideal - 1),
-      ideal,
-      Math.min(15, ideal + 1),
-      Math.min(15, ideal + 2),
-    ];
-    // Deduplicate (e.g. if ideal=1, ideal-1 also=1)
-    return [...new Set(s)];
-  }
-
   get selectedScenario(): any {
     return this.scenarioData?.scenarios?.find(
       (s: any) => s.label === this.selectedTab
@@ -101,6 +92,76 @@ export class ScenarioComparison {
 
   selectTab(label: string) {
     this.selectedTab = label;
+    this.fetchScenarioCost(this.selectedScenario);
+  }
+
+  fetchScenarioCost(scenario: any) {
+    if (!scenario) return;
+    const label = scenario.label;
+    if (this.scenarioCosts[label] || this.scenarioCostLoading[label]) return;
+    this.scenarioCostLoading[label] = true;
+
+    const plotLenM = this.plotLengthM || Math.sqrt(this.plotAreaSqft / 10.7639);
+    const plotWdM  = this.plotWidthM  || Math.sqrt(this.plotAreaSqft / 10.7639);
+
+    this.http.post<any>('http://localhost:8000/estimate-cost', {
+      plot_length_m:     plotLenM,
+      plot_width_m:      plotWdM,
+      built_up_sqm:      scenario.total_built_sqm,
+      num_floors:        scenario.num_floors,
+      floor_height_m:    this.floorHeightM || 3.2,
+      setback_front:     scenario.setbacks?.front  ?? 3,
+      setback_side:      scenario.setbacks?.side   ?? 1.5,
+      setback_rear:      scenario.setbacks?.rear   ?? 1.5,
+      usage:             this.usage,
+      zone:              this.zone,
+      fire_noc_required: !!scenario.fire_noc_required,
+      basement:          this.basement,
+      car_spaces:        scenario.parking_car || this.carSpaces,
+      tier:              'mid',
+    }).subscribe({
+      next: (res) => this.ngZone.run(() => {
+        this.scenarioCosts[label] = res;
+        this.scenarioCostLoading[label] = false;
+        this.cdr.detectChanges();
+      }),
+      error: () => this.ngZone.run(() => {
+        this.scenarioCostLoading[label] = false;
+        this.cdr.detectChanges();
+      }),
+    });
+  }
+
+  openCostAnalysis() {
+    if (!this.scenarioData) return;
+    const plotLenM = this.plotLengthM || Math.sqrt(this.plotAreaSqft / 10.7639);
+    const plotWdM  = this.plotWidthM  || Math.sqrt(this.plotAreaSqft / 10.7639);
+    const rec = this.selectedScenario || this.scenarioData.scenarios[0];
+    this.costData.set({
+      plotLengthM:     plotLenM,
+      plotWidthM:      plotWdM,
+      builtUpSqm:      rec?.total_built_sqm ?? this.plotAreaSqft * this.scenarioData.far / 10.7639,
+      numFloors:        rec?.num_floors ?? 3,
+      floorHeightM:    this.floorHeightM || 3.2,
+      setbackFront:    rec?.setbacks?.front  ?? 3,
+      setbackSide:     rec?.setbacks?.side   ?? 1.5,
+      setbackRear:     rec?.setbacks?.rear   ?? 1.5,
+      usage:           this.usage,
+      zone:            this.zone,
+      fireNocRequired: !!rec?.fire_noc_required,
+      basement:        this.basement,
+      carSpaces:       rec?.parking_car || this.carSpaces,
+      plotAreaSqft:    this.plotAreaSqft,
+      far:             this.scenarioData.far,
+      farBase:         this.scenarioData.far_base,
+      farTdr:          this.scenarioData.far_tdr,
+      maxBuiltSqft:    this.scenarioData.max_built_sqft,
+      planningZone:    this.scenarioData.planning_zone || 'zone_A',
+      roadWidth:       this.roadWidth,
+      groundCovPct:    rec?.ground_coverage_pct ?? 60,
+      scenarios:       this.scenarioData.scenarios,
+    });
+    this.router.navigate(['/cost-analysis']);
   }
 
   toggleFloor(label: string) {

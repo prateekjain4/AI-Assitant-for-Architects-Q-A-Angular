@@ -10,15 +10,18 @@
     <!-- Header -->
     <div class="sc-header">
       <div class="sc-header-left">
-        <span class="sc-title">Scenario Comparison</span>
-        <span class="sc-sub">{{ scenarioData.zone }} zone · {{ scenarioData.road_width }}m road · FAR {{ scenarioData.far }}</span>
+        <span class="sc-title">Building Scenarios — Bylaw Thresholds</span>
+        <span class="sc-sub">
+          {{ scenarioData.zone }} zone · {{ scenarioData.road_width }}m road ·
+          FAR {{ scenarioData.far }} · Max built-up {{ scenarioData.max_built_sqft | number:'1.0-0' }} sq ft
+        </span>
       </div>
       <div class="sc-rec-badge">
-        Recommended: <strong>{{ scenarioData.recommended }}</strong>
+        Best option: <strong>{{ scenarioData.recommended }}</strong>
       </div>
     </div>
 
-    <!-- Scenario tabs -->
+    <!-- Scenario tabs — one per FAR utilisation level -->
     <div class="sc-tabs">
       <button
         *ngFor="let s of scenarioData.scenarios"
@@ -26,29 +29,38 @@
         [class.active]="s.label === selectedTab"
         [class.recommended]="s.label === scenarioData.recommended"
         (click)="selectTab(s.label)">
-        {{ s.label }}
+        <span class="sc-tab-pct">{{ s.label }}</span>
+        <span class="sc-tab-sub">{{ s.floors_label }} · {{ s.building_height_m }}m</span>
         <span *ngIf="s.label === scenarioData.recommended" class="rec-dot">★</span>
       </button>
     </div>
 
-    <!-- Comparison bar chart — all scenarios -->
+    <!-- Building height + built-up comparison -->
     <div class="sc-chart-section">
-      <p class="sc-chart-title">Total built-up area comparison</p>
+      <p class="sc-chart-title">Built-up area vs FAR target</p>
       <div class="sc-bars">
         <div *ngFor="let s of scenarioData.scenarios" class="sc-bar-row">
           <span class="sc-bar-label">{{ s.label }}</span>
           <div class="sc-bar-track">
             <div class="sc-bar-fill"
-              [style.width.%]="barWidth(s.total_built_sqft, scenarioData.far * scenarioData.plot_area_sqft)"
+              [style.width.%]="barWidth(s.total_built_sqft, scenarioData.max_built_sqft)"
               [style.background]="s.label === scenarioData.recommended ? '#1d4ed8' : '#93c5fd'"
               [class.active-bar]="s.label === selectedTab">
             </div>
+            <!-- FAR target marker -->
+            <div class="sc-bar-target"
+              [style.left.%]="barWidth(s.far_target_sqft, scenarioData.max_built_sqft)"
+              title="FAR target: {{ s.far_target_sqft | number:'1.0-0' }} sq ft">
+            </div>
           </div>
-          <span class="sc-bar-value">{{ s.total_built_sqft | number:'1.0-0' }} sq ft</span>
-          <span class="sc-bar-noc" *ngIf="s.fire_noc_required">🔥</span>
+          <div class="sc-bar-right">
+            <span class="sc-bar-value">{{ s.total_built_sqft | number:'1.0-0' }} sqft</span>
+            <span class="sc-bar-height">{{ s.building_height_m }}m · {{ s.floors_label }}</span>
+          </div>
+          <span class="sc-bar-noc" *ngIf="s.fire_noc_required" title="Fire NOC required">🔥</span>
         </div>
       </div>
-      <p class="sc-chart-note">🔥 = Fire NOC required</p>
+      <p class="sc-chart-note">🔥 = Fire NOC required · Tick mark = 100% FAR ceiling ({{ scenarioData.max_built_sqft | number:'1.0-0' }} sq ft)</p>
     </div>
 
     <!-- Selected scenario detail -->
@@ -56,27 +68,37 @@
 
       <!-- Key metrics -->
       <div class="sc-metrics">
-        <div class="sc-metric">
-          <span class="sc-metric-label">Total built-up</span>
-          <span class="sc-metric-value">{{ selectedScenario.total_built_sqft | number:'1.0-0' }}</span>
-          <span class="sc-metric-unit">sq ft</span>
-        </div>
-        <div class="sc-metric">
+        <div class="sc-metric sc-metric-primary">
           <span class="sc-metric-label">Building height</span>
           <span class="sc-metric-value">{{ selectedScenario.building_height_m }}</span>
-          <span class="sc-metric-unit">m</span>
+          <span class="sc-metric-unit">m · {{ selectedScenario.floors_label }}</span>
         </div>
-        <div class="sc-metric">
+        <div class="sc-metric sc-metric-primary">
           <span class="sc-metric-label">FAR utilised</span>
           <span class="sc-metric-value" [style.color]="efficiencyColor(selectedScenario.far_efficiency_pct)">
             {{ selectedScenario.far_efficiency_pct }}%
           </span>
-          <span class="sc-metric-unit">of {{ selectedScenario.far }}</span>
+          <span class="sc-metric-unit">of max {{ selectedScenario.far }}</span>
         </div>
         <div class="sc-metric">
-          <span class="sc-metric-label">Footprint</span>
-          <span class="sc-metric-value">{{ selectedScenario.footprint_sqft | number:'1.0-0' }}</span>
+          <span class="sc-metric-label">Total built-up</span>
+          <span class="sc-metric-value">{{ selectedScenario.total_built_sqft | number:'1.0-0' }}</span>
+          <span class="sc-metric-unit">sq ft ({{ selectedScenario.total_built_sqm }} sqm)</span>
+        </div>
+        <div class="sc-metric">
+          <span class="sc-metric-label">FAR target</span>
+          <span class="sc-metric-value">{{ selectedScenario.far_target_sqft | number:'1.0-0' }}</span>
           <span class="sc-metric-unit">sq ft</span>
+        </div>
+        <div class="sc-metric">
+          <span class="sc-metric-label">Avg floor area</span>
+          <span class="sc-metric-value">{{ selectedScenario.avg_floor_area_sqft | number:'1.0-0' }}</span>
+          <span class="sc-metric-unit">sq ft / floor</span>
+        </div>
+        <div class="sc-metric">
+          <span class="sc-metric-label">Ground footprint</span>
+          <span class="sc-metric-value">{{ selectedScenario.footprint_sqft | number:'1.0-0' }}</span>
+          <span class="sc-metric-unit">sq ft (physical)</span>
         </div>
         <div class="sc-metric">
           <span class="sc-metric-label">Fire NOC</span>
@@ -105,7 +127,7 @@
           <div class="sc-setback-pill">Rear <strong>{{ selectedScenario.setbacks.rear }}m</strong></div>
         </div>
         <p class="sc-note sc-note-amber" *ngIf="selectedScenario.setbacks.high_rise_rule">
-          ⚠ 5m all-sides rule applies — building exceeds 11.5m threshold
+          ⚠ Progressive setbacks apply above 15m (BDA RMP 2031 Table 2) — setbacks increase with each height tier; G+3 is often optimal for narrow plots
         </p>
       </div>
 
@@ -134,6 +156,47 @@
         </div>
       </div>
 
+      <!-- Cost estimate mini-card -->
+      <div class="sc-sub-section sc-cost-section">
+        <div class="sc-cost-header">
+          <p class="sc-sub-title" style="margin:0">Cost Estimate <span class="sc-cost-tier">Mid finish</span></p>
+          <button class="sc-cost-full-btn" (click)="openCostAnalysis()">Full Cost Analysis →</button>
+        </div>
+
+        <div class="sc-cost-loading" *ngIf="scenarioCostLoading[selectedScenario.label]">
+          <span class="sc-spinner-sm"></span> Calculating…
+        </div>
+
+        <ng-container *ngIf="scenarioCosts[selectedScenario.label] as cost">
+          <div class="sc-cost-hero">
+            <div class="sc-cost-total">
+              <span class="sc-cost-total-label">Total Estimate</span>
+              <span class="sc-cost-total-val">
+                {{ cost.total_cost >= 10000000 ? ('₹' + (cost.total_cost/10000000 | number:'1.2-2') + ' Cr') :
+                   cost.total_cost >= 100000   ? ('₹' + (cost.total_cost/100000   | number:'1.1-1') + ' L') : '₹' + cost.total_cost }}
+              </span>
+            </div>
+            <div class="sc-cost-perqsm">
+              ₹{{ (cost.cost_per_sqm / 1000) | number:'1.0-0' }}K / sqm · {{ cost.built_up_sqm }} sqm
+            </div>
+          </div>
+          <div class="sc-cost-bars">
+            <div class="sc-cost-bar-row" *ngFor="let ph of [
+              {l:'Structure', v:cost.structure_cost, c:'#3b82f6'},
+              {l:'Finishing',  v:cost.finishing_cost,  c:'#10b981'},
+              {l:'MEP',        v:cost.mep_cost,        c:'#f59e0b'},
+              {l:'Site Dev',   v:cost.site_dev_cost,   c:'#0ea5e9'}
+            ]">
+              <span class="sc-cost-bar-label">{{ ph.l }}</span>
+              <div class="sc-cost-bar-track">
+                <div class="sc-cost-bar-fill" [style.width.%]="(ph.v/cost.total_cost)*100" [style.background]="ph.c"></div>
+              </div>
+              <span class="sc-cost-bar-val">{{ ph.v >= 100000 ? ('₹'+(ph.v/100000|number:'1.1-1')+'L') : '₹'+ph.v }}</span>
+            </div>
+          </div>
+        </ng-container>
+      </div>
+
       <!-- Floor breakdown toggle -->
       <div class="sc-sub-section">
         <div class="sc-floor-toggle" (click)="toggleFloor(selectedScenario.label)">
@@ -157,7 +220,7 @@
                   [class.high-rise-row]="f.is_high_rise">
                 <td>
                   {{ f.label }}
-                  <span *ngIf="f.is_high_rise" class="hr-badge">above 11.5m</span>
+                  <span *ngIf="f.is_high_rise" class="hr-badge">above 15m</span>
                 </td>
                 <td class="text-end">{{ f.area_sqft | number:'1.0-0' }}</td>
                 <td class="text-end text-muted">{{ f.area_sqm }}</td>

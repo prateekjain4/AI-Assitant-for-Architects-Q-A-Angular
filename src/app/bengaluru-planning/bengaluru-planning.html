@@ -1,0 +1,623 @@
+<div class="bp-page">
+
+  <!-- Top bar -->
+  <div class="bp-topbar">
+    <div class="bp-topbar-left">
+      <button class="bp-back-btn" (click)="goToCities()">← Cities</button>
+      <div class="bp-city-badge">
+        <span class="bp-city-flag">🏙</span>
+        <div>
+          <span class="bp-city-name">Bengaluru</span>
+          <span class="bp-city-auth">BDA RMP 2031</span>
+        </div>
+      </div>
+    </div>
+    <div class="bp-topbar-right">
+      <button class="bp-topbar-btn" (click)="toggleProjects()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/>
+        </svg>
+        My Projects
+      </button>
+      <button class="bp-topbar-btn bp-topbar-btn-save" *ngIf="result" (click)="openSaveModal()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
+          <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+        </svg>
+        Save
+      </button>
+      <button class="bp-topbar-btn" *ngIf="result" (click)="downloadReport()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download
+      </button>
+      <button class="bp-cost-btn" *ngIf="result" (click)="openCostAnalysis()">
+        ₹ Cost Analysis
+      </button>
+      <span class="bp-user" *ngIf="auth.isLoggedIn">{{ auth.currentUser?.user_name }}</span>
+    </div>
+  </div>
+
+  <!-- ── My Projects panel ────────────────────────────────────── -->
+  <div class="bp-projects-backdrop" *ngIf="projectsOpen" (click)="toggleProjects()"></div>
+  <div class="bp-projects-panel" [class.bp-projects-open]="projectsOpen">
+    <div class="bp-projects-header">
+      <span>My Projects</span>
+      <button class="bp-projects-close" (click)="toggleProjects()">✕</button>
+    </div>
+    <div class="bp-projects-body">
+      <div *ngIf="projectsLoading" class="bp-projects-empty">Loading…</div>
+      <div *ngIf="!projectsLoading && savedProjects.length === 0" class="bp-projects-empty">
+        No saved projects yet.
+      </div>
+      <div
+        *ngFor="let p of savedProjects"
+        class="bp-project-item"
+        (click)="loadProject(p.id)">
+        <div class="bp-project-name">{{ p.name }}</div>
+        <div class="bp-project-meta">{{ p.zone }} · {{ p.locality }}</div>
+        <div class="bp-project-date">{{ p.created_at | date:'d MMM y' }}</div>
+        <button class="bp-project-del" (click)="deleteProject(p.id, $event)" title="Delete">✕</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Save modal ────────────────────────────────────────────── -->
+  <div class="bp-modal-backdrop" *ngIf="saveModalOpen" (click)="closeSaveModal()"></div>
+  <div class="bp-modal" *ngIf="saveModalOpen">
+    <div class="bp-modal-header">
+      <span>Save Project</span>
+      <button class="bp-projects-close" (click)="closeSaveModal()">✕</button>
+    </div>
+    <div class="bp-modal-body">
+      <label class="bp-label">Project Name</label>
+      <input class="bp-input" [(ngModel)]="projectName" placeholder="e.g. Whitefield Plot — RM zone" autofocus>
+      <div class="bp-modal-actions">
+        <button class="bp-modal-cancel" (click)="closeSaveModal()">Cancel</button>
+        <button class="bp-modal-save" [disabled]="projectSaving || !projectName.trim()" (click)="saveProject()">
+          <span *ngIf="!projectSaving">Save Project</span>
+          <span *ngIf="projectSaving" class="bp-spinner"></span>
+        </button>
+      </div>
+      <p class="bp-modal-success" *ngIf="projectSaveMsg === 'saved'">✓ Project saved!</p>
+      <p class="bp-modal-error"   *ngIf="projectSaveMsg === 'error'">Failed to save. Try again.</p>
+    </div>
+  </div>
+
+  <div class="bp-body">
+
+    <!-- Left: Map + Form -->
+    <div class="bp-left">
+
+      <!-- Map -->
+      <div class="bp-map-card">
+        <div class="bp-map-label">
+          Click on map to auto-detect BDA zone
+          <span class="bp-zone-detected" *ngIf="detectedZone">· Zone detected: <strong>{{ detectedZone }}</strong></span>
+        </div>
+
+        <!-- Search box -->
+        <div class="bp-search-wrap">
+          <div class="bp-search-box">
+            <svg class="bp-search-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+            </svg>
+            <input
+              class="bp-search-input"
+              type="text"
+              placeholder="Search locality, road or landmark…"
+              [(ngModel)]="searchQuery"
+              (input)="onSearchInput()"
+              (blur)="onSearchBlur()"
+              autocomplete="off">
+            <button class="bp-search-clear" *ngIf="searchQuery" (click)="clearSearch()" type="button">✕</button>
+          </div>
+          <div class="bp-search-dropdown" *ngIf="showDropdown">
+            <div
+              class="bp-search-item"
+              *ngFor="let r of searchResults"
+              (mousedown)="selectResult(r)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+                <path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/>
+              </svg>
+              {{ r.display_name }}
+            </div>
+          </div>
+        </div>
+
+        <div id="blr-map" class="bp-map"></div>
+      </div>
+
+      <!-- Form -->
+      <div class="bp-form-card">
+        <h3 class="bp-form-title">Plot Details — BDA RMP 2031</h3>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+          <!-- Zone -->
+          <div class="bp-field">
+            <label class="bp-label">Zone <span class="bp-req">*</span></label>
+            <select class="bp-select" formControlName="zone">
+              <option *ngFor="let z of zones" [value]="z.value">{{ z.label }}</option>
+            </select>
+            <span class="bp-hint">Click map to auto-detect zone</span>
+          </div>
+
+          <!-- Plot dimensions -->
+          <div class="bp-row">
+            <div class="bp-field">
+              <label class="bp-label">Plot Length (m) <span class="bp-req">*</span></label>
+              <input class="bp-input" type="number" formControlName="plotLength" placeholder="e.g. 20" min="1">
+              <span class="bp-err" *ngIf="form.get('plotLength')?.invalid && form.get('plotLength')?.touched">Required</span>
+            </div>
+            <div class="bp-field">
+              <label class="bp-label">Plot Width (m) <span class="bp-req">*</span></label>
+              <input class="bp-input" type="number" formControlName="plotWidth" placeholder="e.g. 15" min="1">
+              <span class="bp-err" *ngIf="form.get('plotWidth')?.invalid && form.get('plotWidth')?.touched">Required</span>
+            </div>
+          </div>
+
+          <!-- Road & height -->
+          <div class="bp-row">
+            <div class="bp-field">
+              <label class="bp-label">Road Width (m) <span class="bp-req">*</span></label>
+              <input class="bp-input" type="number" formControlName="roadWidth" placeholder="e.g. 9" min="3">
+              <span class="bp-err" *ngIf="form.get('roadWidth')?.invalid && form.get('roadWidth')?.touched">Required</span>
+            </div>
+            <div class="bp-field">
+              <label class="bp-label">Building Height (m) <span class="bp-req">*</span></label>
+              <input class="bp-input" type="number" formControlName="buildingHeight" placeholder="e.g. 15" min="3">
+              <span class="bp-err" *ngIf="form.get('buildingHeight')?.invalid && form.get('buildingHeight')?.touched">Required</span>
+            </div>
+          </div>
+
+          <!-- Floor height & usage -->
+          <div class="bp-row">
+            <div class="bp-field">
+              <label class="bp-label">Floor Height (m)</label>
+              <input class="bp-input" type="number" formControlName="floorHeight" placeholder="3.2" min="2.8" step="0.1">
+            </div>
+            <div class="bp-field">
+              <label class="bp-label">Usage</label>
+              <select class="bp-select" formControlName="usage">
+                <optgroup label="Residential">
+                  <option value="residential">Residential (Dwelling)</option>
+                </optgroup>
+                <optgroup label="Commercial">
+                  <option value="commercial">Commercial / Retail / Office</option>
+                  <option value="restaurant">Restaurant / Food &amp; Beverage</option>
+                  <option value="hotel">Hotel / Guest House</option>
+                  <option value="mixed">Mixed Use (Residential + Commercial)</option>
+                </optgroup>
+                <optgroup label="Institutional / Healthcare">
+                  <option value="hospital">Hospital / Nursing Home</option>
+                  <option value="educational">Educational (School / College)</option>
+                </optgroup>
+                <optgroup label="Industrial">
+                  <option value="industrial">Industrial (General)</option>
+                  <option value="it_bt">IT / BT / Hi-Tech Office</option>
+                </optgroup>
+              </select>
+            </div>
+          </div>
+
+          <!-- Toggles -->
+          <div class="bp-row">
+            <div class="bp-field">
+              <label class="bp-label">Corner Plot?</label>
+              <select class="bp-select" formControlName="cornerPlot">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+            <div class="bp-field">
+              <label class="bp-label">Basement?</label>
+              <select class="bp-select" formControlName="basement">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="bp-submit" [disabled]="loading">
+            <span *ngIf="!loading">Calculate Regulations</span>
+            <span *ngIf="loading" class="bp-spinner"></span>
+          </button>
+          <p class="bp-error-msg" *ngIf="errorMessage">{{ errorMessage }}</p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right: Results -->
+    <div class="bp-right" *ngIf="result">
+
+      <!-- Header -->
+      <div class="bp-result-header">
+        <div class="bp-result-header-main">
+          <h4 class="bp-result-title">Planning Result — BDA RMP 2031</h4>
+          <div class="bp-badges">
+            <span class="bp-badge bp-badge-zone">{{ result.zone }}</span>
+            <span class="bp-badge bp-badge-ht">{{ result.building_height_m || form.value.buildingHeight }} m</span>
+            <span class="bp-badge bp-badge-far">FAR {{ result.far }}</span>
+            <span class="bp-badge bp-badge-tdr" *ngIf="result.far_tdr > 0">+{{ result.far_tdr }} TDR</span>
+          </div>
+        </div>
+        <button class="bp-cost-header-btn" (click)="openCostAnalysis()">₹ Cost Analysis</button>
+      </div>
+
+      <!-- Watch-out warnings -->
+      <div class="bp-warn-banner" *ngIf="result.warnings?.length > 0">
+        <div *ngFor="let w of result.warnings">⚠ {{ w }}</div>
+      </div>
+
+      <!-- Key Metrics -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('metrics')">
+          <span>📐 Key Metrics</span>
+          <span>{{ openSections['metrics'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['metrics']">
+          <div class="bp-metrics">
+            <div class="bp-metric bp-metric-primary">
+              <span class="bp-metric-label">Plot Area</span>
+              <span class="bp-metric-value">{{ result.plot_area | number:'1.0-0' }}</span>
+              <span class="bp-metric-unit">sq ft · {{ (result.plot_area / 10.764) | number:'1.0-0' }} sqm</span>
+            </div>
+            <div class="bp-metric bp-metric-primary">
+              <span class="bp-metric-label">Max Built-up</span>
+              <span class="bp-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
+              <span class="bp-metric-unit">sq ft · {{ (result.max_built_area / 10.764) | number:'1.0-0' }} sqm</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">FAR</span>
+              <span class="bp-metric-value">{{ result.far }}</span>
+              <span class="bp-metric-unit">base {{ result.far_base }} + TDR {{ result.far_tdr }}</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Ground Coverage</span>
+              <span class="bp-metric-value">{{ result.ground_coverage_pct }}%</span>
+              <span class="bp-metric-unit">max allowed</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Floors Feasible</span>
+              <span class="bp-metric-value">{{ result.staircase?.num_floors }}</span>
+              <span class="bp-metric-unit">G+{{ (result.staircase?.num_floors ?? 1) - 1 }} · by height</span>
+            </div>
+            <div class="bp-metric" *ngIf="result.min_floors_for_max_far">
+              <span class="bp-metric-label">Min for Max FAR</span>
+              <span class="bp-metric-value">{{ result.min_floors_for_max_far }}</span>
+              <span class="bp-metric-unit">floors to use full {{ result.far }} FAR</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Setbacks -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('setbacks')">
+          <span>📏 Setbacks</span>
+          <span>{{ openSections['setbacks'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['setbacks']">
+          <div class="bp-setback-row">
+            <div class="bp-setback-pill">Front <strong>{{ result.setbacks?.front }} m</strong></div>
+            <div class="bp-setback-pill">Side <strong>{{ result.setbacks?.side }} m</strong></div>
+            <div class="bp-setback-pill">Rear <strong>{{ result.setbacks?.rear }} m</strong></div>
+          </div>
+          <div class="bp-note bp-note-green" *ngIf="result.setbacks?.corner_relaxation">
+            ✓ {{ result.setbacks.corner_relaxation }}
+          </div>
+          <div class="bp-note bp-note-amber" *ngIf="result.setbacks?.high_rise_rule">
+            ⚠ Progressive setbacks apply above 15 m (BDA RMP 2031 Table 2) — setbacks increase with each height tier
+          </div>
+          <p class="bp-summary">{{ result.section_summaries?.setbacks }}</p>
+        </div>
+      </div>
+
+      <!-- FAR -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('far')">
+          <span>📊 FAR &amp; Built-up Area</span>
+          <span>{{ openSections['far'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['far']">
+          <div class="bp-metrics">
+            <div class="bp-metric">
+              <span class="bp-metric-label">Base FAR</span>
+              <span class="bp-metric-value">{{ result.far_base }}</span>
+              <span class="bp-metric-unit">BDA RMP 2031</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">TDR FAR</span>
+              <span class="bp-metric-value">{{ result.far_tdr }}</span>
+              <span class="bp-metric-unit">transferable dev rights</span>
+            </div>
+            <div class="bp-metric bp-metric-primary">
+              <span class="bp-metric-label">Total FAR</span>
+              <span class="bp-metric-value">{{ result.far }}</span>
+              <span class="bp-metric-unit">base + TDR</span>
+            </div>
+          </div>
+          <div class="bp-note bp-note-info" *ngIf="result.far_exclusions?.length > 0">
+            <strong>FAR exclusions:</strong>
+            <span *ngFor="let ex of result.far_exclusions; let last = last"> {{ ex }}{{ last ? '' : ' ·' }}</span>
+          </div>
+          <p class="bp-summary">{{ result.section_summaries?.far }}</p>
+        </div>
+      </div>
+
+      <!-- Staircase / Lift -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('staircase')">
+          <span>🏗 Floors, Staircase &amp; Lift</span>
+          <span>{{ openSections['staircase'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['staircase']">
+          <div class="bp-metrics">
+            <div class="bp-metric bp-metric-primary">
+              <span class="bp-metric-label">Floors</span>
+              <span class="bp-metric-value">G+{{ (result.staircase?.num_floors ?? 1) - 1 }}</span>
+              <span class="bp-metric-unit">{{ result.staircase?.num_floors }} total floors</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Stair Width</span>
+              <span class="bp-metric-value">{{ result.staircase?.min_staircase_width_m }}</span>
+              <span class="bp-metric-unit">m minimum</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">No. of Staircases</span>
+              <span class="bp-metric-value">{{ result.staircase?.num_staircases }}</span>
+              <span class="bp-metric-unit">required</span>
+            </div>
+            <div class="bp-metric" [class.bp-metric-red]="result.staircase?.lift_mandatory" [class.bp-metric-green]="!result.staircase?.lift_mandatory">
+              <span class="bp-metric-label">Lift</span>
+              <span class="bp-metric-value">{{ result.staircase?.lift_mandatory ? 'Mandatory' : 'Optional' }}</span>
+              <span class="bp-metric-unit">above G+3 → mandatory</span>
+            </div>
+          </div>
+          <p class="bp-summary">{{ result.section_summaries?.staircase }}</p>
+        </div>
+      </div>
+
+      <!-- Fire Safety -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('fire')">
+          <span>🔥 Fire Safety</span>
+          <span>{{ openSections['fire'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['fire']">
+          <div class="bp-noc-badge"
+            [class.bp-noc-required]="result.fire_data?.noc_required"
+            [class.bp-noc-clear]="!result.fire_data?.noc_required">
+            {{ result.fire_data?.noc_required ? '🔥 Fire NOC Required' : '✓ Fire NOC Not Required' }}
+          </div>
+          <ng-container *ngIf="result.fire_data?.tender_access?.required">
+            <div class="bp-metrics" style="margin-top:10px">
+              <div class="bp-metric">
+                <span class="bp-metric-label">Tender Road Width</span>
+                <span class="bp-metric-value">{{ result.fire_data.tender_access.min_road_width_m }}</span>
+                <span class="bp-metric-unit">m minimum</span>
+              </div>
+              <div class="bp-metric">
+                <span class="bp-metric-label">Height Clearance</span>
+                <span class="bp-metric-value">{{ result.fire_data.tender_access.min_height_clearance_m }}</span>
+                <span class="bp-metric-unit">m minimum</span>
+              </div>
+              <div class="bp-metric">
+                <span class="bp-metric-label">Turning Radius</span>
+                <span class="bp-metric-value">{{ result.fire_data.tender_access.turning_radius_m }}</span>
+                <span class="bp-metric-unit">m minimum</span>
+              </div>
+            </div>
+          </ng-container>
+          <div *ngIf="result.fire_rules?.length > 0" style="margin-top:10px">
+            <div *ngFor="let rule of result.fire_rules" class="bp-fire-item">
+              <span class="bp-fire-dot">●</span> {{ rule }}
+            </div>
+          </div>
+          <div *ngIf="!result.fire_rules?.length" class="bp-note bp-note-green">
+            ✓ No additional fire safety requirements for this height and usage.
+          </div>
+          <div *ngIf="result.fire_data?.refuge_area?.required" class="bp-note bp-note-amber">
+            ⚠ Refuge area required every {{ result.fire_data.refuge_area.frequency }} — min {{ result.fire_data.refuge_area.min_area_sqm }} sqm.
+          </div>
+          <p class="bp-summary">{{ result.section_summaries?.fire }}</p>
+        </div>
+      </div>
+
+      <!-- Parking -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('parking')">
+          <span>🚗 Parking</span>
+          <span>{{ openSections['parking'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['parking']">
+          <div class="bp-setback-row">
+            <div class="bp-setback-pill">Car spaces <strong>{{ result.parking?.required?.cars }}</strong></div>
+            <div class="bp-setback-pill">Two-wheelers <strong>{{ result.parking?.required?.two_wheelers }}</strong></div>
+          </div>
+          <p class="bp-summary" style="margin-top:8px">{{ result.section_summaries?.parking }}</p>
+        </div>
+      </div>
+
+      <!-- Basement -->
+      <div class="bp-section" *ngIf="result.basement?.requested">
+        <div class="bp-section-header" (click)="toggleSection('basement')">
+          <span>🔲 Basement</span>
+          <span>{{ openSections['basement'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['basement']">
+          <div class="bp-metrics">
+            <div class="bp-metric">
+              <span class="bp-metric-label">Max Basements</span>
+              <span class="bp-metric-value">{{ result.basement?.max_basements }}</span>
+              <span class="bp-metric-unit">levels</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Max Depth</span>
+              <span class="bp-metric-value">{{ result.basement?.max_depth_m }}</span>
+              <span class="bp-metric-unit">m</span>
+            </div>
+          </div>
+          <div *ngIf="result.basement?.permitted_uses?.length" style="margin-top:8px">
+            <p class="bp-sub-label">Permitted uses</p>
+            <div *ngFor="let use of result.basement.permitted_uses" class="bp-compliance-item">
+              <span class="bp-compliance-dot">✓</span> {{ use }}
+            </div>
+          </div>
+          <div class="bp-note bp-note-blue" *ngIf="result.basement?.setback_in_basement">{{ result.basement.setback_in_basement }}</div>
+          <div class="bp-note bp-note-amber" *ngIf="result.basement?.ventilation">⚠ {{ result.basement.ventilation }}</div>
+        </div>
+      </div>
+
+      <!-- Compliance -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('compliance')">
+          <span>✅ Compliance &amp; Watch Out</span>
+          <span>{{ openSections['compliance'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['compliance']">
+          <div *ngFor="let item of result.compliance" class="bp-compliance-item">
+            <span class="bp-compliance-dot">✓</span> {{ item }}
+          </div>
+          <div *ngIf="result.watch_out?.length > 0" style="margin-top:10px">
+            <p class="bp-sub-label">Watch out</p>
+            <div *ngFor="let w of result.watch_out" class="bp-note bp-note-amber" style="margin-bottom:4px">⚠ {{ w }}</div>
+          </div>
+          <p class="bp-summary">{{ result.section_summaries?.compliance }}</p>
+        </div>
+      </div>
+
+      <!-- Scenario Comparison -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('scenarios')">
+          <span>🔀 Scenario Comparison</span>
+          <span>{{ openSections['scenarios'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['scenarios']">
+          <app-scenario-comparison
+            #scenarioCompRef
+            [zone]="result.zone"
+            [roadWidth]="form.value.roadWidth"
+            [plotAreaSqft]="result.plot_area"
+            [plotLengthM]="form.value.plotLength"
+            [plotWidthM]="form.value.plotWidth"
+            [usage]="form.value.usage"
+            [cornerPlot]="form.value.cornerPlot === 'true'"
+            [basement]="form.value.basement === 'true'"
+            [floorHeightM]="form.value.floorHeight"
+            [buildingHeightM]="form.value.buildingHeight"
+            [idealFloors]="result.staircase?.num_floors || 0"
+            [carSpaces]="result.parking?.required?.cars || 0">
+          </app-scenario-comparison>
+        </div>
+      </div>
+
+    </div><!-- /bp-right -->
+
+    <!-- Empty state -->
+    <div class="bp-right bp-empty" *ngIf="!result && !loading">
+      <div class="bp-empty-inner">
+        <span class="bp-empty-icon">🏛</span>
+        <h4>Bengaluru Planning Tool</h4>
+        <p>Enter your plot details and click <strong>Calculate Regulations</strong> to get BDA RMP 2031 compliant setbacks, FAR, floor count, fire NOC requirements, and more.</p>
+        <p class="bp-empty-tip">💡 Click on the map to auto-detect your BDA zone.</p>
+        <div class="bp-highlight-row">
+          <div class="bp-highlight">
+            <strong>BDA RMP 2031</strong>
+            <span>Latest bylaws</span>
+          </div>
+          <div class="bp-highlight">
+            <strong>Progressive</strong>
+            <span>Setbacks by height</span>
+          </div>
+          <div class="bp-highlight">
+            <strong>FAR + TDR</strong>
+            <span>Full area calculation</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /bp-body -->
+
+  <!-- ── Chat bubble ───────────────────────────────────────────── -->
+  <button class="chat-fab" (click)="toggleChat()" [class.chat-fab-open]="chatOpen" title="Planning Assistant">
+    <svg *ngIf="!chatOpen" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </svg>
+    <svg *ngIf="chatOpen" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+
+  <!-- ── Chat panel ────────────────────────────────────────────── -->
+  <div class="chat-panel" [class.chat-panel-open]="chatOpen">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <span class="chat-title">Bengaluru Planning Assistant</span>
+        <span class="chat-subtitle" *ngIf="result">· Has your result context</span>
+      </div>
+      <div class="chat-header-actions">
+        <button class="chat-icon-btn" (click)="toggleHistory()" title="History">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </button>
+        <button class="chat-icon-btn" (click)="newChat()" title="New chat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Session history -->
+    <div class="chat-history" *ngIf="historyOpen">
+      <div class="chat-history-label">Recent chats</div>
+      <div *ngFor="let s of chatSessions" class="chat-history-item"
+        [class.chat-history-active]="s.id === activeChatId"
+        (click)="switchSession(s.id)">
+        <span class="chat-history-title">{{ s.title }}</span>
+        <button class="chat-history-del" (click)="deleteSession(s.id, $event)">✕</button>
+      </div>
+      <div *ngIf="chatSessions.length === 0" class="chat-history-empty">No sessions yet.</div>
+    </div>
+
+    <!-- Context badge -->
+    <div class="chat-context-badge" *ngIf="result">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Context: {{ result.zone }} zone · {{ result.plot_area | number:'1.0-0' }} sqft · FAR {{ result.far }}
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-body" #blrChatBody>
+      <div *ngFor="let msg of activeMessages" class="chat-msg" [class.chat-msg-user]="msg.role === 'user'" [class.chat-msg-ai]="msg.role === 'ai'">
+        <div class="chat-bubble">{{ msg.text }}</div>
+      </div>
+      <div class="chat-msg chat-msg-ai" *ngIf="chatLoading">
+        <div class="chat-bubble chat-bubble-typing">
+          <span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-footer">
+      <textarea class="chat-input" [(ngModel)]="chatInput" (keydown)="onChatKey($event)"
+        placeholder="Ask about setbacks, FAR, fire NOC…" rows="1" [disabled]="chatLoading"></textarea>
+      <button class="chat-send" (click)="sendMessage()" [disabled]="!chatInput.trim() || chatLoading">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+
+  </div><!-- /chat-panel -->
+
+</div>

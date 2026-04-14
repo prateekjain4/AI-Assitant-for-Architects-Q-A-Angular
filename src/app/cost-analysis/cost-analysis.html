@@ -1,0 +1,368 @@
+<div class="ca-page">
+
+  <!-- ── Page header ──────────────────────────────────────────── -->
+  <div class="ca-topbar">
+    <button class="ca-back-btn" (click)="goBack()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="15 18 9 12 15 6"/>
+      </svg>
+      Back to Planning
+    </button>
+    <div class="ca-topbar-title">
+      <span class="ca-page-title">Cost Analysis</span>
+      <span class="ca-page-sub" *ngIf="input">
+        {{ input.zone }} zone · {{ input.roadWidth }}m road · FAR {{ input.far }} · {{ input.usage | titlecase }}
+      </span>
+    </div>
+    <div class="ca-tier-bar">
+      <span class="ca-tier-label">Finish:</span>
+      <button class="ca-tier-btn" [class.active]="tier==='low'"  (click)="setTier('low')">Basic</button>
+      <button class="ca-tier-btn" [class.active]="tier==='mid'"  (click)="setTier('mid')">Standard</button>
+      <button class="ca-tier-btn" [class.active]="tier==='high'" (click)="setTier('high')">Premium</button>
+    </div>
+  </div>
+
+  <!-- ── Context strip ─────────────────────────────────────────── -->
+  <div class="ca-context" *ngIf="input">
+    <div class="ca-ctx-item"><span class="ca-ctx-label">Plot area</span><span class="ca-ctx-val">{{ input.plotAreaSqft | number:'1.0-0' }} sqft</span></div>
+    <div class="ca-ctx-item"><span class="ca-ctx-label">Max built-up</span><span class="ca-ctx-val">{{ input.maxBuiltSqft | number:'1.0-0' }} sqft</span></div>
+    <div class="ca-ctx-item"><span class="ca-ctx-label">FAR</span><span class="ca-ctx-val">{{ input.far }} <span class="ca-ctx-sub">(base {{ input.farBase }} + TDR {{ input.farTdr }})</span></span></div>
+    <div class="ca-ctx-item"><span class="ca-ctx-label">Ground coverage</span><span class="ca-ctx-val">{{ input.groundCovPct }}%</span></div>
+    <div class="ca-ctx-item"><span class="ca-ctx-label">Floors</span><span class="ca-ctx-val">{{ input.numFloors }} (G+{{ input.numFloors - 1 }})</span></div>
+    <div class="ca-ctx-item"><span class="ca-ctx-label">Basement</span><span class="ca-ctx-val">{{ input.basement ? 'Yes' : 'No' }}</span></div>
+    <div class="ca-ctx-item"><span class="ca-ctx-label">Fire NOC</span><span class="ca-ctx-val" [style.color]="input.fireNocRequired ? '#dc2626' : '#16a34a'">{{ input.fireNocRequired ? 'Required' : 'Not required' }}</span></div>
+  </div>
+
+  <!-- ── Loading ────────────────────────────────────────────────── -->
+  <div class="ca-loading" *ngIf="loading">
+    <div class="ca-spinner"></div> Calculating cost estimate…
+  </div>
+  <div class="ca-error" *ngIf="error && !loading">⚠ {{ error }}</div>
+
+  <ng-container *ngIf="result && !loading">
+
+    <!-- ── Summary hero ──────────────────────────────────────────── -->
+    <div class="ca-hero">
+      <div class="ca-hero-total">
+        <span class="ca-hero-label">Total Estimate</span>
+        <span class="ca-hero-val">{{ formatCr(result.total_cost) }}</span>
+        <span class="ca-hero-sub">{{ formatK(result.cost_per_sqm) }} · {{ result.built_up_sqm }} sqm built-up</span>
+      </div>
+      <div class="ca-hero-cards">
+        <div class="ca-hcard" *ngFor="let b of bars">
+          <span class="ca-hcard-label">{{ b.label }}</span>
+          <span class="ca-hcard-val" [style.color]="b.color">{{ formatCr(b.value) }}</span>
+          <span class="ca-hcard-pct">{{ pct(b.value) }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Phase bar chart ──────────────────────────────────────── -->
+    <div class="ca-section">
+      <div class="ca-section-title">Cost Breakdown</div>
+      <div class="ca-bar-row" *ngFor="let b of bars">
+        <div class="ca-bar-label">
+          <span>{{ b.label }}</span>
+          <span class="ca-bar-src" [class.kpwd]="b.source.includes('KPWD')">{{ b.source }}</span>
+        </div>
+        <div class="ca-bar-track">
+          <div class="ca-bar-fill" [style.width.%]="(b.value/maxBar)*100" [style.background]="b.color"></div>
+        </div>
+        <div class="ca-bar-right">
+          <span class="ca-bar-val">{{ formatCr(b.value) }}</span>
+          <span class="ca-bar-pct">{{ pct(b.value) }}%</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- ── FORMULA BREAKDOWN (the main new feature) ───────────── -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <div class="ca-section">
+      <div class="ca-section-title">How Each Cost Was Calculated</div>
+      <div class="ca-formula-note">Each line shows: Quantity × Rate = Amount (KPWD SR 2022 or Market estimate)</div>
+
+      <!-- Structure -->
+      <div class="ca-phase-block">
+        <div class="ca-phase-header" (click)="togglePhase('structure')">
+          <span class="ca-phase-dot" style="background:#3b82f6"></span>
+          <span class="ca-phase-name">Structure — {{ formatCr(result.structure_cost) }}</span>
+          <span class="ca-phase-src kpwd">KPWD SR 2022</span>
+          <span class="ca-phase-chevron">{{ expandedPhase === 'structure' ? '▲' : '▼' }}</span>
+        </div>
+        <div class="ca-phase-body" *ngIf="expandedPhase === 'structure'">
+          <div class="ca-formula-intro">
+            M25 concrete @ ₹7,141/m³ · Steel Fe500D @ ₹76,293/tonne · +1%/floor lift factor (KPWD SR 2022)
+          </div>
+          <table class="ca-formula-table">
+            <thead>
+              <tr>
+                <th>Floor</th>
+                <th>Footprint</th>
+                <th>Lift factor</th>
+                <th>Concrete cost</th>
+                <th>Steel cost</th>
+                <th>Floor total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let f of result.floor_breakdown">
+                <td><strong>{{ f.label }}</strong></td>
+                <td>{{ f.footprint_sqm }} m²</td>
+                <td>× {{ f.lift_factor }}</td>
+                <td>{{ formatCr(f.concrete_cost) }}</td>
+                <td>{{ formatCr(f.steel_cost) }}</td>
+                <td class="ca-formula-total">{{ formatCr(f.cost) }}</td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="5"><strong>Total structure</strong></td><td class="ca-formula-total"><strong>{{ formatCr(result.structure_cost) }}</strong></td></tr>
+            </tfoot>
+          </table>
+          <div class="ca-formula-note">Formula per floor: footprint × 0.15 m³/m² × (₹7,141 + ₹1,428 formwork) × lift_factor + steel cost</div>
+        </div>
+      </div>
+
+      <!-- Finishing -->
+      <div class="ca-phase-block">
+        <div class="ca-phase-header" (click)="togglePhase('finishing')">
+          <span class="ca-phase-dot" style="background:#10b981"></span>
+          <span class="ca-phase-name">Finishing — {{ formatCr(result.finishing_cost) }}</span>
+          <span class="ca-phase-src mixed">KPWD + Market</span>
+          <span class="ca-phase-chevron">{{ expandedPhase === 'finishing' ? '▲' : '▼' }}</span>
+        </div>
+        <div class="ca-phase-body" *ngIf="expandedPhase === 'finishing'">
+          <table class="ca-formula-table">
+            <thead>
+              <tr><th>Item</th><th>Qty / Basis</th><th>Rate</th><th>Formula</th><th>Amount</th><th>Source</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let k of finishingKeys" [class.market-row]="result.finishing_breakdown[k]?.source?.includes('Market')">
+                <td><strong>{{ finishLabel(k) }}</strong></td>
+                <td>{{ result.finishing_breakdown[k]?.qty }}</td>
+                <td>₹{{ result.finishing_breakdown[k]?.rate | number }}</td>
+                <td class="ca-formula-str">{{ result.finishing_breakdown[k]?.formula }}</td>
+                <td class="ca-formula-total">{{ formatCr(result.finishing_breakdown[k]?.cost) }}</td>
+                <td><span class="ca-src-badge" [class.kpwd]="result.finishing_breakdown[k]?.source?.includes('KPWD')">{{ result.finishing_breakdown[k]?.source?.includes('KPWD') ? 'KPWD' : 'Est.' }}</span></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="4"><strong>Total finishing</strong></td><td class="ca-formula-total"><strong>{{ formatCr(result.finishing_cost) }}</strong></td><td></td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- MEP -->
+      <div class="ca-phase-block">
+        <div class="ca-phase-header" (click)="togglePhase('mep')">
+          <span class="ca-phase-dot" style="background:#f59e0b"></span>
+          <span class="ca-phase-name">MEP (Mechanical, Electrical, Plumbing) — {{ formatCr(result.mep_cost) }}</span>
+          <span class="ca-phase-src est">Market estimate</span>
+          <span class="ca-phase-chevron">{{ expandedPhase === 'mep' ? '▲' : '▼' }}</span>
+        </div>
+        <div class="ca-phase-body" *ngIf="expandedPhase === 'mep'">
+          <div class="ca-formula-single">
+            <span class="ca-formula-str">{{ result.mep_breakdown?.formula }}</span>
+            <span class="ca-formula-total">= {{ formatCr(result.mep_cost) }}</span>
+          </div>
+          <div class="ca-formula-note">{{ result.mep_breakdown?.source }}</div>
+        </div>
+      </div>
+
+      <!-- Site Development -->
+      <div class="ca-phase-block">
+        <div class="ca-phase-header" (click)="togglePhase('site_dev')">
+          <span class="ca-phase-dot" style="background:#0ea5e9"></span>
+          <span class="ca-phase-name">Site Development — {{ formatCr(result.site_dev_cost) }}</span>
+          <span class="ca-phase-src kpwd">KPWD SR 2022</span>
+          <span class="ca-phase-chevron">{{ expandedPhase === 'site_dev' ? '▲' : '▼' }}</span>
+        </div>
+        <div class="ca-phase-body" *ngIf="expandedPhase === 'site_dev'">
+          <table class="ca-formula-table">
+            <thead>
+              <tr><th>Item</th><th>Qty</th><th>Rate (₹)</th><th>Amount</th><th>Source</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let k of siteDevKeys" [class.market-row]="result.site_dev_breakdown[k]?.source?.includes('Market')">
+                <td><strong>{{ siteLabel(k) }}</strong></td>
+                <td>{{ result.site_dev_breakdown[k]?.qty }}</td>
+                <td>₹{{ result.site_dev_breakdown[k]?.cost / (result.site_dev_breakdown[k]?.qty?.split(' ')[0] || 1) | number:'1.0-0' }}</td>
+                <td class="ca-formula-total">{{ formatCr(result.site_dev_breakdown[k]?.cost) }}</td>
+                <td><span class="ca-src-badge" [class.kpwd]="result.site_dev_breakdown[k]?.source?.includes('KPWD')">{{ result.site_dev_breakdown[k]?.source?.includes('KPWD') ? 'KPWD' : 'Est.' }}</span></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="3"><strong>Total site development</strong></td><td class="ca-formula-total"><strong>{{ formatCr(result.site_dev_cost) }}</strong></td><td></td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Basement (conditional) -->
+      <div class="ca-phase-block" *ngIf="result.basement_cost > 0">
+        <div class="ca-phase-header" (click)="togglePhase('basement')">
+          <span class="ca-phase-dot" style="background:#6366f1"></span>
+          <span class="ca-phase-name">Basement — {{ formatCr(result.basement_cost) }}</span>
+          <span class="ca-phase-src kpwd">KPWD SR 2022</span>
+          <span class="ca-phase-chevron">{{ expandedPhase === 'basement' ? '▲' : '▼' }}</span>
+        </div>
+        <div class="ca-phase-body" *ngIf="expandedPhase === 'basement'">
+          <table class="ca-formula-table">
+            <thead>
+              <tr><th>Item</th><th>Qty</th><th>Rate (₹)</th><th>Formula</th><th>Amount</th><th>Source</th></tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let k of basementKeys" [class.market-row]="result.basement_breakdown[k]?.source?.includes('Market')">
+                <td><strong>{{ basementLabel(k) }}</strong></td>
+                <td>{{ result.basement_breakdown[k]?.qty }}</td>
+                <td>₹{{ result.basement_breakdown[k]?.rate | number }}</td>
+                <td class="ca-formula-str">{{ result.basement_breakdown[k]?.formula }}</td>
+                <td class="ca-formula-total">{{ formatCr(result.basement_breakdown[k]?.cost) }}</td>
+                <td><span class="ca-src-badge" [class.kpwd]="result.basement_breakdown[k]?.source?.includes('KPWD')">{{ result.basement_breakdown[k]?.source?.includes('KPWD') ? 'KPWD' : 'Est.' }}</span></td>
+              </tr>
+            </tbody>
+            <tfoot>
+              <tr><td colspan="4"><strong>Total basement</strong></td><td class="ca-formula-total"><strong>{{ formatCr(result.basement_cost) }}</strong></td><td></td></tr>
+            </tfoot>
+          </table>
+        </div>
+      </div>
+
+      <!-- Parking -->
+      <div class="ca-phase-block" *ngIf="result.parking_cost > 0">
+        <div class="ca-phase-header" (click)="togglePhase('parking')">
+          <span class="ca-phase-dot" style="background:#8b5cf6"></span>
+          <span class="ca-phase-name">Parking — {{ formatCr(result.parking_cost) }}</span>
+          <span class="ca-phase-src est">Market estimate</span>
+          <span class="ca-phase-chevron">{{ expandedPhase === 'parking' ? '▲' : '▼' }}</span>
+        </div>
+        <div class="ca-phase-body" *ngIf="expandedPhase === 'parking'">
+          <div class="ca-formula-single">
+            <span class="ca-formula-str">{{ result.parking_breakdown?.formula }}</span>
+            <span class="ca-formula-total">= {{ formatCr(result.parking_cost) }}</span>
+          </div>
+          <div class="ca-formula-note">Type: {{ result.parking_breakdown?.type }} · ₹{{ result.parking_breakdown?.cost_per_bay | number }} per bay</div>
+        </div>
+      </div>
+
+      <!-- Contingency -->
+      <div class="ca-contingency-row">
+        <span>Contingency (8% of subtotal)</span>
+        <span>{{ formatCr(result.contingency) }}</span>
+      </div>
+      <div class="ca-grand-total">
+        <span>Grand Total</span>
+        <span>{{ formatCr(result.total_cost) }}</span>
+      </div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- ── 3-TIER COMPARISON ─────────────────────────────────── -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <div class="ca-section">
+      <div class="ca-section-title">3-Tier Cost Comparison</div>
+      <div class="ca-tier-loading" *ngIf="tierLoading">Calculating all tiers…</div>
+      <table class="ca-tier-table" *ngIf="!tierLoading && tierResults.low">
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th class="ca-tier-low">Basic (Low)</th>
+            <th class="ca-tier-mid">Standard (Mid)</th>
+            <th class="ca-tier-high">Premium (High)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let ph of tierPhases" [class.ca-total-row]="ph.key === 'total_cost'">
+            <td>
+              <span class="ca-phase-dot-sm" [style.background]="ph.color"></span>
+              {{ ph.label }}
+            </td>
+            <td class="ca-tier-low" [class.ca-active-tier]="tier === 'low'">
+              {{ formatCr(tierResults.low?.[ph.key]) }}
+              <span class="ca-tier-pct" *ngIf="ph.key !== 'total_cost'">{{ pctScenario(tierResults.low?.[ph.key], tierResults.low?.total_cost) }}%</span>
+            </td>
+            <td class="ca-tier-mid" [class.ca-active-tier]="tier === 'mid'">
+              {{ formatCr(tierResults.mid?.[ph.key]) }}
+              <span class="ca-tier-pct" *ngIf="ph.key !== 'total_cost'">{{ pctScenario(tierResults.mid?.[ph.key], tierResults.mid?.total_cost) }}%</span>
+            </td>
+            <td class="ca-tier-high" [class.ca-active-tier]="tier === 'high'">
+              {{ formatCr(tierResults.high?.[ph.key]) }}
+              <span class="ca-tier-pct" *ngIf="ph.key !== 'total_cost'">{{ pctScenario(tierResults.high?.[ph.key], tierResults.high?.total_cost) }}%</span>
+            </td>
+          </tr>
+          <tr class="ca-perqsm-row">
+            <td>Cost / sqm</td>
+            <td class="ca-tier-low" [class.ca-active-tier]="tier === 'low'">{{ formatK(tierResults.low?.cost_per_sqm) }}</td>
+            <td class="ca-tier-mid" [class.ca-active-tier]="tier === 'mid'">{{ formatK(tierResults.mid?.cost_per_sqm) }}</td>
+            <td class="ca-tier-high" [class.ca-active-tier]="tier === 'high'">{{ formatK(tierResults.high?.cost_per_sqm) }}</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="ca-tier-note">Active tier highlighted. Difference between Basic and Premium is dominated by finishing rates (flooring, doors/windows, MEP).</div>
+    </div>
+
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <!-- ── SCENARIO COST COMPARISON ─────────────────────────── -->
+    <!-- ══════════════════════════════════════════════════════════ -->
+    <div class="ca-section" *ngIf="input?.scenarios?.length">
+      <div class="ca-section-title">Cost by Building Scenario</div>
+      <div class="ca-scenario-note">Each scenario uses its own built-up area, floor count and setbacks. Finish tier: <strong>{{ tier }}</strong>.</div>
+
+      <div class="ca-scenario-grid">
+        <div class="ca-scenario-card"
+             *ngFor="let s of input!.scenarios"
+             [class.loading-card]="scenarioCostLoading[s.label]">
+
+          <div class="ca-sc-header">
+            <span class="ca-sc-label">{{ s.label }}</span>
+            <span class="ca-sc-floors">{{ s.floors_label }} · {{ s.building_height_m }}m</span>
+            <span class="ca-sc-noc" *ngIf="s.fire_noc_required">🔥 NOC req.</span>
+          </div>
+
+          <div class="ca-sc-loading" *ngIf="scenarioCostLoading[s.label]">
+            <div class="ca-spinner-sm"></div>
+          </div>
+
+          <ng-container *ngIf="scenarioCosts[s.label] && !scenarioCostLoading[s.label]">
+            <div class="ca-sc-total">{{ formatCr(scenarioCosts[s.label].total_cost) }}</div>
+            <div class="ca-sc-perqsm">{{ formatK(scenarioCosts[s.label].cost_per_sqm) }}</div>
+            <div class="ca-sc-builtup">{{ scenarioCosts[s.label].built_up_sqm }} sqm built-up</div>
+
+            <div class="ca-sc-bars">
+              <div class="ca-sc-bar-row" *ngFor="let b of [
+                {label:'Structure', val: scenarioCosts[s.label].structure_cost,  color:'#3b82f6'},
+                {label:'Finishing', val: scenarioCosts[s.label].finishing_cost,  color:'#10b981'},
+                {label:'MEP',       val: scenarioCosts[s.label].mep_cost,        color:'#f59e0b'},
+                {label:'Site Dev',  val: scenarioCosts[s.label].site_dev_cost,   color:'#0ea5e9'}
+              ]">
+                <span class="ca-sc-bar-label">{{ b.label }}</span>
+                <div class="ca-sc-bar-track">
+                  <div class="ca-sc-bar-fill"
+                    [style.width.%]="pctScenario(b.val, scenarioCosts[s.label].total_cost)"
+                    [style.background]="b.color">
+                  </div>
+                </div>
+                <span class="ca-sc-bar-val">{{ pctScenario(b.val, scenarioCosts[s.label].total_cost) }}%</span>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── AI Narrative ──────────────────────────────────────────── -->
+    <div class="ca-narrative" *ngIf="result.narrative">
+      <span class="ca-narrative-icon">✦</span>
+      <span>{{ result.narrative }}</span>
+    </div>
+
+    <!-- ── Estimate flags ────────────────────────────────────────── -->
+    <div class="ca-flags">
+      <div class="ca-flag" *ngFor="let f of result.estimate_flags">
+        <span class="ca-flag-dot">●</span> {{ f }}
+      </div>
+    </div>
+
+  </ng-container>
+</div>
