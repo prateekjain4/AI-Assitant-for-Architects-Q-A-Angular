@@ -59,16 +59,18 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
   readonly STORAGE_KEY = 'blr_planning_state';
 
   openSections: Record<string, boolean> = {
-    metrics:    true,
-    setbacks:   true,
-    far:        true,
-    staircase:  true,
-    fire:       true,
-    compliance: true,
-    parking:    true,
-    basement:   false,
-    watchOut:   true,
-    scenarios:  true,
+    metrics:       true,
+    setbacks:      true,
+    far:           true,
+    staircase:     true,
+    fire:          true,
+    compliance:    true,
+    parking:       true,
+    basement:      false,
+    accessibility: true,
+    compoundWall:  true,
+    watchOut:      true,
+    scenarios:     true,
   };
 
   detectedZone = '';
@@ -88,6 +90,67 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
     { value: 'PSP', label: 'PSP — Public Semi-Public' },
     { value: 'T',   label: 'T   — Transportation' },
   ];
+
+  // ── Regulatory source references ─────────────────────────────
+  showSourceModal   = false;
+  sourceSection     = '';
+
+  readonly SOURCES: Record<string, Array<{ doc: string; clause: string; desc: string; pdf?: string }>> = {
+    metrics: [
+      { doc: 'BDA RMP 2031', clause: 'Tables 6 & 7 (Residential), Tables 12 & 13 (Commercial), Table 17 (Industrial)', desc: 'Plot area, maximum built-up area, and permissible ground coverage derived from FAR tables keyed by zone, plot size bracket, and road width bracket.', pdf: 'BDA_Zoning_Regulations.pdf' },
+    ],
+    setbacks: [
+      { doc: 'BDA RMP 2031', clause: 'Section 4.5, Table 2', desc: 'Progressive setback requirements by building height tier — front, side, and rear margins increase with height. Applies to all zones.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'Bangalore Building Bye-Laws', clause: 'Rule 8', desc: 'Marginal open space (setback) regulations and relaxation provisions for corner plots.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+    ],
+    far: [
+      { doc: 'BDA RMP 2031', clause: 'Tables 6 & 7', desc: 'Base FAR and TDR FAR for Residential zones (R/RM) by plot size × road width, split by Planning Zone A (within ORR) and Zone B (outside ORR).', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'BDA RMP 2031', clause: 'Tables 12 & 13', desc: 'FAR and ground coverage for Commercial zones C1–C5 by road width, for Planning Zone A and Zone B.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'BDA RMP 2031', clause: 'Table 17', desc: 'FAR and coverage for Industrial zones I1–I5.', pdf: 'BDA_Zoning_Regulations.pdf' },
+    ],
+    staircase: [
+      { doc: 'BDA RMP 2031', clause: 'Section 4.9.6', desc: 'Lift mandatory above G+3. High-rise buildings must provide at least one dedicated service lift. Buildings with fewer than 24 units or < 2,400 sqm BUA may use a combined passenger + service lift.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'Bangalore Building Bye-Laws', clause: 'Rule 14', desc: 'Staircase width and count requirements by floor count and occupancy type.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+    ],
+    fire: [
+      { doc: 'NBC 2016 Part IV', clause: 'Fire & Life Safety — Chapter 4', desc: 'Fire NOC trigger heights and built-up area thresholds by occupancy. Tender access road width (7m min), height clearance, turning radius. Refuge area every 15th floor.', pdf: 'NBC2016_Fire_Safety.pdf' },
+      { doc: 'BDA RMP 2031', clause: 'Section 4.11', desc: 'Non-residential buildings with BUA above 5,000 sqm require firefighting arrangements per Authority directions, irrespective of height.', pdf: 'BDA_Zoning_Regulations.pdf' },
+    ],
+    parking: [
+      { doc: 'BDA RMP 2031', clause: 'Section 4.13, Table 4', desc: 'Parking requirements by use: Residential — 1 car/DU (50–120 sqm) to 1 car + extra per 120 sqm. Office — 1 car/50 sqm. Retail — 1 car/50 sqm. Hospital — 1 car/75 sqm.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'Bangalore Building Bye-Laws', clause: 'Table 23 (BBMP)', desc: 'Detailed parking space standards, drive aisle widths, and EV charging mandate (5% of spaces).', pdf: 'Bangalore-Building-Byelaws.pdf' },
+    ],
+    basement: [
+      { doc: 'BDA RMP 2031', clause: 'Section 4.9.2', desc: 'Basement regulations: max height above avg GL = 1.2m, max overall depth = 4.5m, up to 5 levels permitted. Setback from boundary minimum 2m. Not counted in FAR.', pdf: 'BDA_Zoning_Regulations.pdf' },
+    ],
+    compliance: [
+      { doc: 'BDA RMP 2031', clause: 'Multiple Sections (4.5, 4.9, 4.11, 4.13)', desc: 'Compliance checklist derived from BDA RMP 2031 zoning regulations covering setbacks, height, basement, lifts, parking, and fire safety.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'Bangalore Building Bye-Laws', clause: 'All applicable rules', desc: 'BBMP Building Bye-Laws (amended) for structural, occupancy, and marginal open space compliance.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+    ],
+    accessibility: [
+      { doc: 'Bangalore Building Bye-Laws 2003', clause: 'Schedule XI · Bye-law 31.0', desc: 'Mandatory for public/semi-public buildings ≥ 300 sqm covered area. Covers accessible ramps (1.80m wide, 1:10 slope), corridors (1.80m), lift cage (1100×2000mm), wheelchair toilet (1.50×1.75m), handrails at 800mm, Braille signage, and guiding floor material.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+    ],
+    compoundWall: [
+      { doc: 'Bangalore Building Bye-Laws 2003', clause: 'Section 20.8', desc: 'Front and side boundary walls max 1.5m above ground level. Rear walls max 2.0m. Corner plot walls restricted to 0.75m for 5m from intersection on each side, with rounded/chamfered corners. Barbed wire and prickly hedge prohibited on all boundaries.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+    ],
+    scenarios: [
+      { doc: 'BDA RMP 2031', clause: 'Tables 6, 7, 12, 13, 17', desc: 'Scenario comparison runs alternative height and floor configurations against the same FAR and setback tables from BDA RMP 2031.', pdf: 'BDA_Zoning_Regulations.pdf' },
+    ],
+  };
+
+  openSource(section: string, event: Event): void {
+    event.stopPropagation();
+    this.sourceSection   = section;
+    this.showSourceModal = true;
+  }
+
+  closeSourceModal(): void { this.showSourceModal = false; }
+
+  get currentSources() { return this.SOURCES[this.sourceSection] ?? []; }
+
+  docUrl(pdf: string): string {
+    return `http://localhost:8000/docs/${pdf}`;
+  }
 
   // ── My Projects ───────────────────────────────────────────────
   projectsOpen    = false;
@@ -469,16 +532,18 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
         next: (res) => this.ngZone.run(() => {
           this.result = res;
           this.openSections = {
-            metrics:    true,
-            setbacks:   true,
-            far:        true,
-            staircase:  true,
-            fire:       true,
-            compliance: true,
-            parking:    true,
-            basement:   res.basement?.requested ?? false,
-            watchOut:   true,
-            scenarios:  true,
+            metrics:       true,
+            setbacks:      true,
+            far:           true,
+            staircase:     true,
+            fire:          true,
+            compliance:    true,
+            parking:       true,
+            basement:      res.basement?.requested ?? false,
+            accessibility: true,
+            compoundWall:  true,
+            watchOut:      true,
+            scenarios:     true,
           };
           try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
@@ -506,7 +571,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
     this.costData.set({
       plotLengthM:     +(v.plotLength  || 20),
       plotWidthM:      +(v.plotWidth   || 15),
-      builtUpSqm:      +(this.result.max_built_area / 10.764),
+      builtUpSqm:      +(this.result.max_built_area),
       numFloors:        this.result.staircase?.num_floors || 3,
       floorHeightM:    +(v.floorHeight || 3.2),
       setbackFront:     this.result.setbacks?.front  || 3,
@@ -517,11 +582,11 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
       fireNocRequired: !!this.result.fire_data?.noc_required,
       basement:         v.basement === 'true',
       carSpaces:        this.result.parking?.required?.cars || 0,
-      plotAreaSqft:     this.result.plot_area,
+      plotAreaSqft:     +(this.result.plot_area * 10.764),
       far:              this.result.far,
       farBase:          this.result.far_base,
       farTdr:           this.result.far_tdr,
-      maxBuiltSqft:     this.result.max_built_area,
+      maxBuiltSqft:     +(this.result.max_built_area * 10.764),
       planningZone:     this.result.planning_zone || 'zone_A',
       roadWidth:        +(v.roadWidth || 9),
       groundCovPct:     this.result.ground_coverage_pct,

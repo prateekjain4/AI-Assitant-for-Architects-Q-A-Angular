@@ -255,19 +255,22 @@
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('metrics')">
           <span>📐 Key Metrics</span>
-          <span>{{ openSections['metrics'] ? '▲' : '▼' }}</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('metrics', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['metrics'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['metrics']">
           <div class="bp-metrics">
             <div class="bp-metric bp-metric-primary">
               <span class="bp-metric-label">Plot Area</span>
               <span class="bp-metric-value">{{ result.plot_area | number:'1.0-0' }}</span>
-              <span class="bp-metric-unit">sq ft · {{ (result.plot_area / 10.764) | number:'1.0-0' }} sqm</span>
+              <span class="bp-metric-unit">sqm · {{ (result.plot_area * 10.764) | number:'1.0-0' }} sqft</span>
             </div>
             <div class="bp-metric bp-metric-primary">
               <span class="bp-metric-label">Max Built-up</span>
               <span class="bp-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
-              <span class="bp-metric-unit">sq ft · {{ (result.max_built_area / 10.764) | number:'1.0-0' }} sqm</span>
+              <span class="bp-metric-unit">sqm · {{ (result.max_built_area * 10.764) | number:'1.0-0' }} sqft</span>
             </div>
             <div class="bp-metric">
               <span class="bp-metric-label">FAR</span>
@@ -284,10 +287,10 @@
               <span class="bp-metric-value">{{ result.staircase?.num_floors }}</span>
               <span class="bp-metric-unit">G+{{ (result.staircase?.num_floors ?? 1) - 1 }} · by height</span>
             </div>
-            <div class="bp-metric" *ngIf="result.min_floors_for_max_far">
-              <span class="bp-metric-label">Min for Max FAR</span>
+            <div class="bp-metric" *ngIf="result.min_floors_for_max_far" title="Advisory only — not a regulatory requirement. Shows how many floors at this footprint are needed to exhaust the full FAR budget.">
+              <span class="bp-metric-label">FAR Budget Floors ⓘ</span>
               <span class="bp-metric-value">{{ result.min_floors_for_max_far }}</span>
-              <span class="bp-metric-unit">floors to use full {{ result.far }} FAR</span>
+              <span class="bp-metric-unit">to exhaust {{ result.far }} FAR · advisory</span>
             </div>
           </div>
         </div>
@@ -297,7 +300,10 @@
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('setbacks')">
           <span>📏 Setbacks</span>
-          <span>{{ openSections['setbacks'] ? '▲' : '▼' }}</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('setbacks', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['setbacks'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['setbacks']">
           <div class="bp-setback-row">
@@ -319,7 +325,10 @@
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('far')">
           <span>📊 FAR &amp; Built-up Area</span>
-          <span>{{ openSections['far'] ? '▲' : '▼' }}</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('far', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['far'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['far']">
           <div class="bp-metrics">
@@ -351,7 +360,10 @@
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('staircase')">
           <span>🏗 Floors, Staircase &amp; Lift</span>
-          <span>{{ openSections['staircase'] ? '▲' : '▼' }}</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('staircase', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['staircase'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['staircase']">
           <div class="bp-metrics">
@@ -384,7 +396,10 @@
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('fire')">
           <span>🔥 Fire Safety</span>
-          <span>{{ openSections['fire'] ? '▲' : '▼' }}</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('fire', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['fire'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['fire']">
           <div class="bp-noc-badge"
@@ -430,7 +445,10 @@
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('parking')">
           <span>🚗 Parking</span>
-          <span>{{ openSections['parking'] ? '▲' : '▼' }}</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('parking', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['parking'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['parking']">
           <div class="bp-setback-row">
@@ -445,7 +463,10 @@
       <div class="bp-section" *ngIf="result.basement?.requested">
         <div class="bp-section-header" (click)="toggleSection('basement')">
           <span>🔲 Basement</span>
-          <span>{{ openSections['basement'] ? '▲' : '▼' }}</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('basement', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['basement'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['basement']">
           <div class="bp-metrics">
@@ -471,11 +492,117 @@
         </div>
       </div>
 
+      <!-- Accessibility -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('accessibility')">
+          <span>♿ Accessibility</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('accessibility', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['accessibility'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['accessibility']">
+          <div class="bp-noc-badge"
+            [class.bp-noc-required]="result.accessibility?.required"
+            [class.bp-noc-clear]="!result.accessibility?.required">
+            {{ result.accessibility?.required ? '♿ Accessibility Provisions Mandatory' : '♿ Accessibility Recommended (not mandated)' }}
+          </div>
+          <p class="bp-note bp-note-info" style="margin-top:8px; font-size:11px">{{ result.accessibility?.trigger }}</p>
+          <div class="bp-metrics" style="margin-top:10px">
+            <div class="bp-metric">
+              <span class="bp-metric-label">Ramp Width</span>
+              <span class="bp-metric-value">{{ result.accessibility?.ramp?.min_width_m }}</span>
+              <span class="bp-metric-unit">m min · slope ≤ 1:10</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Corridor Width</span>
+              <span class="bp-metric-value">{{ result.accessibility?.corridor_min_width_m }}</span>
+              <span class="bp-metric-unit">m minimum</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Staircase Width</span>
+              <span class="bp-metric-value">{{ result.accessibility?.staircase?.min_width_m }}</span>
+              <span class="bp-metric-unit">m · tread ≥ 300mm · riser ≤ 150mm</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Wheelchair Door</span>
+              <span class="bp-metric-value">{{ result.accessibility?.wheelchair?.min_door_width_mm }}</span>
+              <span class="bp-metric-unit">mm minimum clear</span>
+            </div>
+          </div>
+          <div class="bp-metrics" style="margin-top:6px">
+            <div class="bp-metric">
+              <span class="bp-metric-label">Lift Cage (D × W)</span>
+              <span class="bp-metric-value">{{ result.accessibility?.lift?.cage_clear_depth_mm }} × {{ result.accessibility?.lift?.cage_clear_width_mm }}</span>
+              <span class="bp-metric-unit">mm · door {{ result.accessibility?.lift?.entrance_door_width_mm }}mm</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Lift Lobby</span>
+              <span class="bp-metric-value">{{ result.accessibility?.lift?.lobby_min_size }}</span>
+              <span class="bp-metric-unit">minimum</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Accessible Toilet</span>
+              <span class="bp-metric-value">{{ result.accessibility?.toilet?.min_size }}</span>
+              <span class="bp-metric-unit">WC height ≤ {{ result.accessibility?.toilet?.max_wc_seat_height_m }}m</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Handrail Height</span>
+              <span class="bp-metric-value">{{ result.accessibility?.handrails?.height_above_floor_mm }}</span>
+              <span class="bp-metric-unit">mm above floor</span>
+            </div>
+          </div>
+          <div class="bp-note bp-note-blue" style="margin-top:8px">
+            🗺 Guiding floor material required at ramps, level changes, lift lobbies, and building entrance/exit.
+          </div>
+          <div class="bp-note bp-note-info" style="margin-top:4px">
+            🪧 Signage: Braille boards on walls, visual signs with letters ≥ 20mm in contrasting colour.
+          </div>
+        </div>
+      </div>
+
+      <!-- Compound / Boundary Wall -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('compoundWall')">
+          <span>🧱 Compound &amp; Boundary Wall</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('compoundWall', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['compoundWall'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['compoundWall']">
+          <div class="bp-metrics">
+            <div class="bp-metric">
+              <span class="bp-metric-label">Front &amp; Side Wall</span>
+              <span class="bp-metric-value">{{ result.boundary_wall?.front_and_side_max_m }}</span>
+              <span class="bp-metric-unit">m max height</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Rear Wall</span>
+              <span class="bp-metric-value">{{ result.boundary_wall?.rear_max_m }}</span>
+              <span class="bp-metric-unit">m max height</span>
+            </div>
+          </div>
+          <div *ngIf="result.boundary_wall?.corner_plot_restriction" class="bp-note bp-note-amber" style="margin-top:8px">
+            ⚠ Corner plot: wall height restricted to <strong>{{ result.boundary_wall.corner_plot_restriction.height_m }}m</strong>
+            for <strong>{{ result.boundary_wall.corner_plot_restriction.length_from_intersection_m }}m</strong> from intersection on each side.
+            {{ result.boundary_wall.corner_plot_restriction.note }}
+          </div>
+          <div class="bp-note bp-note-red" style="margin-top:6px">
+            ✕ Barbed wire fence — <strong>Prohibited</strong> on all boundaries<br>
+            ✕ Prickly hedge — <strong>Prohibited</strong> on all boundaries
+          </div>
+        </div>
+      </div>
+
       <!-- Compliance -->
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('compliance')">
           <span>✅ Compliance &amp; Watch Out</span>
-          <span>{{ openSections['compliance'] ? '▲' : '▼' }}</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('compliance', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['compliance'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['compliance']">
           <div *ngFor="let item of result.compliance" class="bp-compliance-item">
@@ -493,7 +620,10 @@
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('scenarios')">
           <span>🔀 Scenario Comparison</span>
-          <span>{{ openSections['scenarios'] ? '▲' : '▼' }}</span>
+          <div class="bp-section-header-right">
+            <button class="bp-source-chip" (click)="openSource('scenarios', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['scenarios'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['scenarios']">
           <app-scenario-comparison
@@ -541,6 +671,41 @@
     </div>
 
   </div><!-- /bp-body -->
+
+  <!-- ── Source Reference Modal ───────────────────────────────── -->
+  <div class="bp-modal-backdrop" *ngIf="showSourceModal" (click)="closeSourceModal()"></div>
+  <div class="bp-source-modal" *ngIf="showSourceModal">
+    <div class="bp-modal-header">
+      <div class="bp-source-modal-title">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+          <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/>
+        </svg>
+        Regulatory Source
+      </div>
+      <button class="bp-projects-close" (click)="closeSourceModal()">✕</button>
+    </div>
+    <div class="bp-source-body">
+      <div *ngFor="let src of currentSources; let last = last" class="bp-source-item" [class.bp-source-item-last]="last">
+        <div class="bp-source-doc-row">
+          <span class="bp-source-doc-name">{{ src.doc }}</span>
+          <span class="bp-source-clause">{{ src.clause }}</span>
+        </div>
+        <p class="bp-source-desc">{{ src.desc }}</p>
+        <a *ngIf="src.pdf" class="bp-source-link" [href]="docUrl(src.pdf)" target="_blank" rel="noopener">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          Open {{ src.doc }} (PDF)
+        </a>
+      </div>
+      <p class="bp-source-disclaimer">
+        ⚠ Always verify calculations against the official published gazette before submission to the authority.
+      </p>
+    </div>
+  </div>
 
   <!-- ── Chat bubble ───────────────────────────────────────────── -->
   <button class="chat-fab" (click)="toggleChat()" [class.chat-fab-open]="chatOpen" title="Planning Assistant">

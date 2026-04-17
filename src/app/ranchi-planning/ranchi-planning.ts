@@ -206,6 +206,48 @@ export class RanchiPlanningTool implements OnInit, AfterViewInit {
     this.router.navigate(['/planning']);
   }
 
+  // ── Regulatory source references ─────────────────────────────
+  showSourceModal = false;
+  sourceSection   = '';
+
+  readonly SOURCES: Record<string, Array<{ doc: string; clause: string; desc: string; pdf?: string }>> = {
+    metrics: [
+      { doc: 'RMC Bye-Laws 2009', clause: 'Section 20.1.5 · Section 21.1, Table 4', desc: 'Plot area and maximum built-up area derived from zone-based FAR (Section 21.1, Table 4, p.35). Ground coverage: 60% for plots ≤ 1,000 sqm and height ≤ 16 m; 50% for larger/taller buildings (Section 20.1.5, p.32).', pdf: 'https://ranchimunicipal.com/docs/buildingbylaws.pdf' },
+    ],
+    setbacks: [
+      { doc: 'RMC Bye-Laws 2009', clause: 'Section 20.1.1, Tables 2A-I & 2A-II (Residential) · Section 20.2.1, Tables 2B-I & 2B-II (Commercial)', desc: 'Setbacks determined by a 2D lookup: plot depth bracket (front/rear) × plot width bracket (sides), tiered by height (≤ 12 m / 12–16 m / > 16 m). Residential tables on pp. 28–29; Commercial tables on pp. 32–33.', pdf: 'https://ranchimunicipal.com/docs/buildingbylaws.pdf' },
+    ],
+    far: [
+      { doc: 'RMC Bye-Laws 2009', clause: 'Section 21.1, Table 4 (p.35)', desc: 'Zone-based FAR — no road-width multiplier. District & Commercial Centre: FAR 3.0 · Core / Inner Zone: FAR 2.5 · General Zone: FAR 2.0. Maximum permissible built-up area = FAR × plot area.', pdf: 'https://ranchimunicipal.com/docs/buildingbylaws.pdf' },
+    ],
+    staircase: [
+      { doc: 'RMC Bye-Laws 2009', clause: 'Section 25 (p.45) · Section 26.5(iii) (p.47)', desc: 'Staircase minimum width and count by floor number and occupancy (Section 25). Lift is mandatory for buildings above G+3 (i.e., more than 4 total floors including ground) per Section 26.5(iii).', pdf: 'https://ranchimunicipal.com/docs/buildingbylaws.pdf' },
+    ],
+    fire: [
+      { doc: 'RMC Bye-Laws 2009', clause: 'Section 5.3.2 (p.16) · Section 27 (p.48)', desc: 'Special Building threshold: height above 16 m OR ground coverage exceeding 500 sqm (Section 5.3.2). Special Buildings require a Fire NOC from the RMC Fire Officer before plan sanction (Section 27).', pdf: 'https://ranchimunicipal.com/docs/buildingbylaws.pdf' },
+      { doc: 'NBC 2016 Part IV', clause: 'Fire & Life Safety — Chapter 4', desc: 'National Building Code fire and life safety standards applicable to all Special Buildings. Governs firefighting shaft, hose reel, refuge area, and detection system requirements.' },
+    ],
+    parking: [
+      { doc: 'RMC Bye-Laws 2009', clause: 'Section 23, Table 7 (pp.38–39)', desc: 'Parking requirements per Table 7: Residential — 1 car + 1 two-wheeler per dwelling unit. Commercial — 2 cars per 100 sqm + 4 two-wheelers per 100 sqm. Parking area is excluded from FAR calculation.', pdf: 'https://ranchimunicipal.com/docs/buildingbylaws.pdf' },
+    ],
+    basement: [
+      { doc: 'RMC Bye-Laws 2009', clause: 'Section 24.1.10 (pp.41–42)', desc: 'Basement is NOT counted towards FAR but IS counted for fee calculation. Setback from boundary must be maintained within the basement footprint. Only one basement level is permitted without special approval.', pdf: 'https://ranchimunicipal.com/docs/buildingbylaws.pdf' },
+    ],
+    compliance: [
+      { doc: 'RMC Bye-Laws 2009', clause: 'Full Bye-Laws 2009 (76 pp.)', desc: 'Compliance checklist based on Ranchi Municipal Corporation Planning Standards and Building Bye-Laws 2009 (amended), covering setbacks, height restrictions, ground coverage, FAR, parking, staircase, lift, fire safety, and basement provisions.', pdf: 'https://ranchimunicipal.com/docs/buildingbylaws.pdf' },
+    ],
+  };
+
+  openSource(section: string, event: Event): void {
+    event.stopPropagation();
+    this.sourceSection   = section;
+    this.showSourceModal = true;
+  }
+
+  closeSourceModal(): void { this.showSourceModal = false; }
+
+  get currentSources() { return this.SOURCES[this.sourceSection] ?? []; }
+
   // ── Chat methods ──────────────────────────────────────────────
   toggleChat(): void {
     this.chatOpen = !this.chatOpen;

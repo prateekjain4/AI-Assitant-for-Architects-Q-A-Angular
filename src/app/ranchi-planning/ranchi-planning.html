@@ -138,7 +138,10 @@
       <div class="rp-section">
         <div class="rp-section-header" (click)="toggleSection('metrics')">
           <span>📐 Key Metrics</span>
-          <span>{{ openSections['metrics'] ? '▲' : '▼' }}</span>
+          <div class="rp-section-header-right">
+            <button class="rp-source-chip" (click)="openSource('metrics', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['metrics'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="rp-section-body" *ngIf="openSections['metrics']">
           <div class="rp-metrics">
@@ -172,10 +175,10 @@
               <span class="rp-metric-value">{{ result.staircase?.num_floors }}</span>
               <span class="rp-metric-unit">floors (by height)</span>
             </div>
-            <div class="rp-metric" *ngIf="result.min_floors_for_max_far">
-              <span class="rp-metric-label">Min Floors for Max FAR</span>
+            <div class="rp-metric" *ngIf="result.min_floors_for_max_far" title="Advisory only — not a regulatory requirement. Shows how many floors at this footprint are needed to exhaust the full FAR budget.">
+              <span class="rp-metric-label">FAR Budget Floors ⓘ</span>
               <span class="rp-metric-value">{{ result.min_floors_for_max_far }}</span>
-              <span class="rp-metric-unit">floors needed</span>
+              <span class="rp-metric-unit">to exhaust FAR · advisory</span>
             </div>
           </div>
         </div>
@@ -185,7 +188,10 @@
       <div class="rp-section">
         <div class="rp-section-header" (click)="toggleSection('setbacks')">
           <span>📏 Setbacks</span>
-          <span>{{ openSections['setbacks'] ? '▲' : '▼' }}</span>
+          <div class="rp-section-header-right">
+            <button class="rp-source-chip" (click)="openSource('setbacks', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['setbacks'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="rp-section-body" *ngIf="openSections['setbacks']">
           <div class="rp-setback-row">
@@ -208,7 +214,10 @@
       <div class="rp-section">
         <div class="rp-section-header" (click)="toggleSection('far')">
           <span>📊 FAR &amp; Built-up Area</span>
-          <span>{{ openSections['far'] ? '▲' : '▼' }}</span>
+          <div class="rp-section-header-right">
+            <button class="rp-source-chip" (click)="openSource('far', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['far'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="rp-section-body" *ngIf="openSections['far']">
           <div class="rp-metrics">
@@ -238,7 +247,10 @@
       <div class="rp-section">
         <div class="rp-section-header" (click)="toggleSection('staircase')">
           <span>🏗 Floors &amp; Lift</span>
-          <span>{{ openSections['staircase'] ? '▲' : '▼' }}</span>
+          <div class="rp-section-header-right">
+            <button class="rp-source-chip" (click)="openSource('staircase', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['staircase'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="rp-section-body" *ngIf="openSections['staircase']">
           <div class="rp-metrics">
@@ -269,7 +281,10 @@
       <div class="rp-section" *ngIf="result.fire_rules?.length > 0">
         <div class="rp-section-header" (click)="toggleSection('fire')">
           <span>🔥 Fire Safety</span>
-          <span>{{ openSections['fire'] ? '▲' : '▼' }}</span>
+          <div class="rp-section-header-right">
+            <button class="rp-source-chip" (click)="openSource('fire', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['fire'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="rp-section-body" *ngIf="openSections['fire']">
           <div class="rp-metric rp-metric-fire" style="margin-bottom:10px">
@@ -290,7 +305,10 @@
       <div class="rp-section">
         <div class="rp-section-header" (click)="toggleSection('parking')">
           <span>🚗 Parking</span>
-          <span>{{ openSections['parking'] ? '▲' : '▼' }}</span>
+          <div class="rp-section-header-right">
+            <button class="rp-source-chip" (click)="openSource('parking', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['parking'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="rp-section-body" *ngIf="openSections['parking']">
           <div class="rp-setback-row">
@@ -307,7 +325,10 @@
       <div class="rp-section" *ngIf="result.basement?.requested">
         <div class="rp-section-header" (click)="toggleSection('basement')">
           <span>🔲 Basement</span>
-          <span>{{ openSections['basement'] ? '▲' : '▼' }}</span>
+          <div class="rp-section-header-right">
+            <button class="rp-source-chip" (click)="openSource('basement', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['basement'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="rp-section-body" *ngIf="openSections['basement']">
           <p class="rp-note rp-note-amber">{{ result.basement?.note }}</p>
@@ -321,7 +342,10 @@
       <div class="rp-section">
         <div class="rp-section-header" (click)="toggleSection('compliance')">
           <span>✅ Compliance Checklist</span>
-          <span>{{ openSections['compliance'] ? '▲' : '▼' }}</span>
+          <div class="rp-section-header-right">
+            <button class="rp-source-chip" (click)="openSource('compliance', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['compliance'] ? '▲' : '▼' }}</span>
+          </div>
         </div>
         <div class="rp-section-body" *ngIf="openSections['compliance']">
           <div *ngFor="let item of result.compliance" class="rp-compliance-item">
@@ -368,6 +392,26 @@
     </div>
 
   </div><!-- /rp-body -->
+
+  <!-- ── Source reference modal ──────────────────────────────────── -->
+  <div class="rp-source-overlay" *ngIf="showSourceModal" (click)="closeSourceModal()"></div>
+  <div class="rp-source-modal" *ngIf="showSourceModal">
+    <div class="rp-modal-header">
+      <span class="rp-modal-title">📄 Regulatory Source</span>
+      <button class="rp-modal-close" (click)="closeSourceModal()">✕</button>
+    </div>
+    <div class="rp-source-body">
+      <div *ngFor="let src of currentSources" class="rp-source-item">
+        <div class="rp-source-doc-row">
+          <span class="rp-source-doc-name">{{ src.doc }}</span>
+          <span class="rp-source-clause">{{ src.clause }}</span>
+        </div>
+        <p class="rp-source-desc">{{ src.desc }}</p>
+        <a *ngIf="src.pdf" class="rp-source-link" [href]="src.pdf" target="_blank" rel="noopener">Open {{ src.doc }} (PDF) ↗</a>
+      </div>
+      <p class="rp-source-disclaimer">⚠ Always verify calculations against the official published RMC Bye-Laws gazette. This tool is an aid — not a substitute for professional sign-off.</p>
+    </div>
+  </div>
 
   <!-- ── Chat bubble ───────────────────────────────────────────── -->
   <button class="chat-fab" (click)="toggleChat()" [class.chat-fab-open]="chatOpen" title="Planning Assistant">
