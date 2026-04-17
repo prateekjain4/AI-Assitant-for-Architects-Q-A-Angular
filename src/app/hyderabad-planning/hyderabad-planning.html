@@ -1,0 +1,496 @@
+<div class="hyd-page">
+
+  <!-- Top bar -->
+  <div class="hyd-topbar">
+    <div class="hyd-topbar-left">
+      <button class="hyd-back-btn" (click)="goToCities()">← Cities</button>
+      <div class="hyd-city-badge">
+        <span class="hyd-city-flag">🏙️</span>
+        <div>
+          <span class="hyd-city-name">Hyderabad</span>
+          <span class="hyd-city-auth">GHMC Rules 2012</span>
+        </div>
+      </div>
+    </div>
+    <div class="hyd-topbar-right" *ngIf="auth.isLoggedIn">
+      <span class="hyd-user">{{ auth.currentUser?.user_name }}</span>
+    </div>
+  </div>
+
+  <div class="hyd-body">
+
+    <!-- Left: Form + Map -->
+    <div class="hyd-left">
+
+      <!-- Map -->
+      <div class="hyd-map-card">
+        <div class="hyd-map-label">Click on map to mark plot location</div>
+        <div id="hyderabad-map" class="hyd-map"></div>
+      </div>
+
+      <!-- Form -->
+      <div class="hyd-form-card">
+        <h3 class="hyd-form-title">Plot Details — Hyderabad GHMC</h3>
+        <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+          <!-- Zone -->
+          <div class="hyd-field">
+            <label class="hyd-label">Zone <span class="hyd-req">*</span></label>
+            <select class="hyd-select" formControlName="zone">
+              <option *ngFor="let z of zones" [value]="z.value">{{ z.label }}</option>
+            </select>
+          </div>
+
+          <!-- Plot dimensions -->
+          <div class="hyd-row">
+            <div class="hyd-field">
+              <label class="hyd-label">Plot Length (m) <span class="hyd-req">*</span></label>
+              <input class="hyd-input" type="number" formControlName="plotLength" placeholder="e.g. 20" min="1">
+              <span class="hyd-err" *ngIf="form.get('plotLength')?.invalid && form.get('plotLength')?.touched">Required</span>
+            </div>
+            <div class="hyd-field">
+              <label class="hyd-label">Plot Width (m) <span class="hyd-req">*</span></label>
+              <input class="hyd-input" type="number" formControlName="plotWidth" placeholder="e.g. 15" min="1">
+              <span class="hyd-err" *ngIf="form.get('plotWidth')?.invalid && form.get('plotWidth')?.touched">Required</span>
+            </div>
+          </div>
+
+          <!-- Road & height -->
+          <div class="hyd-row">
+            <div class="hyd-field">
+              <label class="hyd-label">Road Width (m) <span class="hyd-req">*</span></label>
+              <input class="hyd-input" type="number" formControlName="roadWidth" placeholder="e.g. 9" min="3">
+              <span class="hyd-err" *ngIf="form.get('roadWidth')?.invalid && form.get('roadWidth')?.touched">Required</span>
+            </div>
+            <div class="hyd-field">
+              <label class="hyd-label">Building Height (m) <span class="hyd-req">*</span></label>
+              <input class="hyd-input" type="number" formControlName="buildingHeight" placeholder="e.g. 12" min="3">
+              <span class="hyd-err" *ngIf="form.get('buildingHeight')?.invalid && form.get('buildingHeight')?.touched">Required</span>
+            </div>
+          </div>
+
+          <!-- Floor height & usage -->
+          <div class="hyd-row">
+            <div class="hyd-field">
+              <label class="hyd-label">Floor Height (m)</label>
+              <input class="hyd-input" type="number" formControlName="floorHeight" placeholder="3.0" min="2.8" step="0.1">
+            </div>
+            <div class="hyd-field">
+              <label class="hyd-label">Usage</label>
+              <select class="hyd-select" formControlName="usage">
+                <option value="residential">Residential (Dwelling)</option>
+                <option value="commercial">Commercial (Shops / Offices / Markets)</option>
+                <option value="mixed">Mixed Use (Residential + Commercial)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Toggles -->
+          <div class="hyd-row">
+            <div class="hyd-field">
+              <label class="hyd-label">Corner Plot?</label>
+              <select class="hyd-select" formControlName="cornerPlot">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+            <div class="hyd-field">
+              <label class="hyd-label">Basement?</label>
+              <select class="hyd-select" formControlName="basement">
+                <option value="false">No</option>
+                <option value="true">Yes</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="hyd-submit" [disabled]="loading">
+            <span *ngIf="!loading">Calculate Regulations</span>
+            <span *ngIf="loading" class="hyd-spinner"></span>
+          </button>
+
+          <p class="hyd-error" *ngIf="errorMessage">{{ errorMessage }}</p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Right: Results -->
+    <div class="hyd-right" *ngIf="result && !result.error">
+
+      <!-- Result header -->
+      <div class="hyd-result-header">
+        <div>
+          <h4 class="hyd-result-title">Planning Result — Hyderabad GHMC</h4>
+          <div class="hyd-badges">
+            <span class="hyd-badge hyd-badge-zone">{{ result.zone_display }}</span>
+            <span class="hyd-badge hyd-badge-ht">{{ result.building_height_m }} m</span>
+            <span class="hyd-badge hyd-badge-far">FAR {{ result.far }}</span>
+            <span class="hyd-badge hyd-badge-warn" *ngIf="result.height_capped">Height capped</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Warning banner -->
+      <div class="hyd-warn-banner" *ngIf="result.warnings?.length > 0">
+        <div *ngFor="let w of result.warnings">⚠ {{ w }}</div>
+      </div>
+
+      <!-- Key Metrics -->
+      <div class="hyd-section">
+        <div class="hyd-section-header" (click)="toggleSection('metrics')">
+          <span>📐 Key Metrics</span>
+          <div class="hyd-section-header-right">
+            <button class="hyd-source-chip" (click)="openSource('metrics', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['metrics'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['metrics']">
+          <div class="hyd-metrics">
+            <div class="hyd-metric hyd-metric-primary">
+              <span class="hyd-metric-label">Plot Area</span>
+              <span class="hyd-metric-value">{{ result.plot_area | number:'1.0-0' }}</span>
+              <span class="hyd-metric-unit">sq ft ({{ result.plot_area_sqm }} sqm)</span>
+            </div>
+            <div class="hyd-metric hyd-metric-primary">
+              <span class="hyd-metric-label">Max Built-up</span>
+              <span class="hyd-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
+              <span class="hyd-metric-unit">sq ft ({{ result.max_built_sqm }} sqm)</span>
+            </div>
+            <div class="hyd-metric">
+              <span class="hyd-metric-label">FAR</span>
+              <span class="hyd-metric-value">{{ result.far }}</span>
+              <span class="hyd-metric-unit">{{ result.zone_display }}</span>
+            </div>
+            <div class="hyd-metric">
+              <span class="hyd-metric-label">Ground Coverage</span>
+              <span class="hyd-metric-value">{{ result.ground_coverage_pct }}%</span>
+              <span class="hyd-metric-unit">max ({{ result.footprint_sqm }} sqm footprint)</span>
+            </div>
+            <div class="hyd-metric">
+              <span class="hyd-metric-label">Building Height</span>
+              <span class="hyd-metric-value">{{ result.building_height_m }}</span>
+              <span class="hyd-metric-unit">m (effective)</span>
+            </div>
+            <div class="hyd-metric">
+              <span class="hyd-metric-label">Floors Feasible</span>
+              <span class="hyd-metric-value">{{ result.staircase?.num_floors }}</span>
+              <span class="hyd-metric-unit">floors (by height)</span>
+            </div>
+            <div class="hyd-metric" *ngIf="result.min_floors_for_max_far" title="Advisory only — not a regulatory requirement. Shows how many floors at this footprint are needed to exhaust the full FAR budget.">
+              <span class="hyd-metric-label">FAR Budget Floors ⓘ</span>
+              <span class="hyd-metric-value">{{ result.min_floors_for_max_far }}</span>
+              <span class="hyd-metric-unit">to exhaust FAR · advisory</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Setbacks -->
+      <div class="hyd-section">
+        <div class="hyd-section-header" (click)="toggleSection('setbacks')">
+          <span>📏 Setbacks</span>
+          <div class="hyd-section-header-right">
+            <button class="hyd-source-chip" (click)="openSource('setbacks', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['setbacks'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['setbacks']">
+          <div class="hyd-setback-row">
+            <div class="hyd-setback-pill">Front <strong>{{ result.setbacks?.front }} m</strong></div>
+            <div class="hyd-setback-pill">Side <strong>{{ result.setbacks?.side }} m</strong></div>
+            <div class="hyd-setback-pill">Rear <strong>{{ result.setbacks?.rear }} m</strong></div>
+          </div>
+          <p class="hyd-note hyd-note-amber" *ngIf="result.setbacks?.high_rise_rule">
+            ⚠ Progressive additional setbacks apply above 18 m (GHMC Rule 7 Note)
+          </p>
+          <p class="hyd-note hyd-note-info">
+            Setbacks based on plot depth {{ result.plot_length_m }}m × width {{ result.plot_width_m }}m
+            at {{ result.building_height_m }}m height — GHMC Rule 7, Table IV
+          </p>
+          <p class="hyd-summary">{{ result.section_summaries?.setbacks }}</p>
+        </div>
+      </div>
+
+      <!-- FAR -->
+      <div class="hyd-section">
+        <div class="hyd-section-header" (click)="toggleSection('far')">
+          <span>📊 FAR &amp; Built-up Area</span>
+          <div class="hyd-section-header-right">
+            <button class="hyd-source-chip" (click)="openSource('far', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['far'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['far']">
+          <div class="hyd-metrics">
+            <div class="hyd-metric">
+              <span class="hyd-metric-label">Zone FAR</span>
+              <span class="hyd-metric-value">{{ result.far }}</span>
+              <span class="hyd-metric-unit">GHMC Rules 2012 Table II</span>
+            </div>
+            <div class="hyd-metric hyd-metric-primary">
+              <span class="hyd-metric-label">Max Built-up</span>
+              <span class="hyd-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
+              <span class="hyd-metric-unit">sq ft</span>
+            </div>
+            <div class="hyd-metric">
+              <span class="hyd-metric-label">Ground Coverage</span>
+              <span class="hyd-metric-value">{{ result.ground_coverage_pct }}%</span>
+              <span class="hyd-metric-unit">max allowed</span>
+            </div>
+          </div>
+          <p class="hyd-note hyd-note-info">
+            FAR = Total built-up ÷ Plot area. Zone-based FAR per GHMC Building Permissions Rules 2012 and GO Ms.No.168.
+          </p>
+        </div>
+      </div>
+
+      <!-- Staircase / Lift -->
+      <div class="hyd-section">
+        <div class="hyd-section-header" (click)="toggleSection('staircase')">
+          <span>🏗 Floors, Staircase &amp; Lift</span>
+          <div class="hyd-section-header-right">
+            <button class="hyd-source-chip" (click)="openSource('staircase', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['staircase'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['staircase']">
+          <div class="hyd-metrics">
+            <div class="hyd-metric hyd-metric-primary">
+              <span class="hyd-metric-label">Floors</span>
+              <span class="hyd-metric-value">{{ result.staircase?.label }}</span>
+              <span class="hyd-metric-unit">{{ result.staircase?.num_floors }} floors</span>
+            </div>
+            <div class="hyd-metric">
+              <span class="hyd-metric-label">Lift</span>
+              <span class="hyd-metric-value"
+                [style.color]="result.staircase?.lift_mandatory ? '#dc2626' : '#16a34a'">
+                {{ result.staircase?.lift_mandatory ? 'Mandatory' : 'Optional' }}
+              </span>
+              <span class="hyd-metric-unit">above G+4 → mandatory</span>
+            </div>
+            <div class="hyd-metric">
+              <span class="hyd-metric-label">Stair Width</span>
+              <span class="hyd-metric-value">{{ result.staircase?.stair_width_m }}</span>
+              <span class="hyd-metric-unit">m minimum</span>
+            </div>
+          </div>
+          <p class="hyd-summary">{{ result.section_summaries?.staircase }}</p>
+        </div>
+      </div>
+
+      <!-- Fire Safety -->
+      <div class="hyd-section" *ngIf="result.fire_rules?.length > 0">
+        <div class="hyd-section-header" (click)="toggleSection('fire')">
+          <span>🔥 Fire Safety</span>
+          <div class="hyd-section-header-right">
+            <button class="hyd-source-chip" (click)="openSource('fire', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['fire'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['fire']">
+          <div class="hyd-metric hyd-metric-fire" style="margin-bottom:10px">
+            <span class="hyd-metric-label">Fire NOC</span>
+            <span class="hyd-metric-value"
+              [style.color]="result.fire_data?.noc_required ? '#dc2626' : '#16a34a'">
+              {{ result.fire_data?.noc_required ? 'Required' : 'Not required' }}
+            </span>
+            <span class="hyd-metric-unit">GHMC threshold: above 18m or BUA &gt; 500 sqm commercial</span>
+          </div>
+          <div *ngFor="let rule of result.fire_rules" class="hyd-fire-item">
+            <span class="hyd-fire-dot">●</span> {{ rule }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Parking -->
+      <div class="hyd-section">
+        <div class="hyd-section-header" (click)="toggleSection('parking')">
+          <span>🚗 Parking</span>
+          <div class="hyd-section-header-right">
+            <button class="hyd-source-chip" (click)="openSource('parking', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['parking'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['parking']">
+          <div class="hyd-setback-row">
+            <div class="hyd-setback-pill">Car spaces <strong>{{ result.parking?.required?.cars }}</strong></div>
+            <div class="hyd-setback-pill">Two-wheelers <strong>{{ result.parking?.required?.two_wheelers }}</strong></div>
+          </div>
+          <p class="hyd-note hyd-note-info" style="margin-top:8px">
+            Parking per GHMC Rule 9, Table VI norms. Verify from official GHMC Building Permissions Rules 2012.
+          </p>
+        </div>
+      </div>
+
+      <!-- Basement -->
+      <div class="hyd-section" *ngIf="result.basement?.requested">
+        <div class="hyd-section-header" (click)="toggleSection('basement')">
+          <span>🔲 Basement</span>
+          <div class="hyd-section-header-right">
+            <button class="hyd-source-chip" (click)="openSource('basement', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['basement'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['basement']">
+          <p class="hyd-note hyd-note-amber">{{ result.basement?.note }}</p>
+          <p class="hyd-note hyd-note-info">
+            Basement is NOT counted towards FAR if used for parking only. Max 2 levels. Setback 3m from boundary.
+          </p>
+        </div>
+      </div>
+
+      <!-- Compliance -->
+      <div class="hyd-section">
+        <div class="hyd-section-header" (click)="toggleSection('compliance')">
+          <span>✅ Compliance Checklist</span>
+          <div class="hyd-section-header-right">
+            <button class="hyd-source-chip" (click)="openSource('compliance', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['compliance'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['compliance']">
+          <div *ngFor="let item of result.compliance" class="hyd-compliance-item">
+            <span class="hyd-compliance-dot">✓</span> {{ item }}
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /hyd-right -->
+
+    <!-- Error state -->
+    <div class="hyd-right hyd-error-state" *ngIf="result?.error">
+      <div class="hyd-error-card">
+        <span class="hyd-error-icon">⚠</span>
+        <h4>Height Not Permitted</h4>
+        <p>{{ result.error_message }}</p>
+        <p class="hyd-error-sub">
+          Zone: {{ result.zone_display }} · Plot: {{ result.plot_area | number:'1.0-0' }} sq ft
+        </p>
+      </div>
+    </div>
+
+    <!-- Empty state -->
+    <div class="hyd-right hyd-empty" *ngIf="!result && !loading">
+      <div class="hyd-empty-inner">
+        <span class="hyd-empty-icon">🏗</span>
+        <h4>Hyderabad Planning Tool</h4>
+        <p>Enter plot details to get GHMC Rules 2012 compliant setbacks, FAR, floor count, fire NOC requirements, and more.</p>
+        <div class="hyd-highlight-row">
+          <div class="hyd-highlight">
+            <strong>7 Zones</strong>
+            <span>R1/R2/R3/C1/C2/MU/I</span>
+          </div>
+          <div class="hyd-highlight">
+            <strong>Height-based</strong>
+            <span>Progressive setbacks</span>
+          </div>
+          <div class="hyd-highlight">
+            <strong>Fire NOC</strong>
+            <span>Auto-check above 18 m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /hyd-body -->
+
+  <!-- ── Source reference modal ──────────────────────────────────── -->
+  <div class="hyd-source-overlay" *ngIf="showSourceModal" (click)="closeSourceModal()"></div>
+  <div class="hyd-source-modal" *ngIf="showSourceModal">
+    <div class="hyd-modal-header">
+      <span class="hyd-modal-title">📄 Regulatory Source</span>
+      <button class="hyd-modal-close" (click)="closeSourceModal()">✕</button>
+    </div>
+    <div class="hyd-source-body">
+      <div *ngFor="let src of currentSources" class="hyd-source-item">
+        <div class="hyd-source-doc-row">
+          <span class="hyd-source-doc-name">{{ src.doc }}</span>
+          <span class="hyd-source-clause">{{ src.clause }}</span>
+        </div>
+        <p class="hyd-source-desc">{{ src.desc }}</p>
+        <a *ngIf="src.pdf" class="hyd-source-link" [href]="src.pdf" target="_blank" rel="noopener">Open {{ src.doc }} (PDF) ↗</a>
+      </div>
+      <p class="hyd-source-disclaimer">⚠ Always verify calculations against the official published GHMC Building Permissions Rules 2012 gazette. This tool is an aid — not a substitute for professional sign-off.</p>
+    </div>
+  </div>
+
+  <!-- ── Chat bubble ───────────────────────────────────────────── -->
+  <button class="chat-fab" (click)="toggleChat()" [class.chat-fab-open]="chatOpen" title="Planning Assistant">
+    <svg *ngIf="!chatOpen" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+    </svg>
+    <svg *ngIf="chatOpen" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+      <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+    </svg>
+  </button>
+
+  <!-- ── Chat panel ────────────────────────────────────────────── -->
+  <div class="chat-panel" [class.chat-panel-open]="chatOpen">
+
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="chat-header-left">
+        <span class="chat-title">Hyderabad Planning Assistant</span>
+        <span class="chat-subtitle" *ngIf="result">· Has your result context</span>
+      </div>
+      <div class="chat-header-actions">
+        <button class="chat-icon-btn" (click)="toggleHistory()" title="History">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </button>
+        <button class="chat-icon-btn" (click)="newChat()" title="New chat">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Session history -->
+    <div class="chat-history" *ngIf="historyOpen">
+      <div class="chat-history-label">Recent chats</div>
+      <div *ngFor="let s of chatSessions" class="chat-history-item"
+        [class.chat-history-active]="s.id === activeChatId"
+        (click)="switchSession(s.id)">
+        <span class="chat-history-title">{{ s.title }}</span>
+        <button class="chat-history-del" (click)="deleteSession(s.id, $event)">✕</button>
+      </div>
+      <div *ngIf="chatSessions.length === 0" class="chat-history-empty">No sessions yet.</div>
+    </div>
+
+    <!-- Context badge -->
+    <div class="chat-context-badge" *ngIf="result && !result.error">
+      <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <polyline points="20 6 9 17 4 12"/>
+      </svg>
+      Context: {{ result.zone_display }} · {{ result.plot_area | number:'1.0-0' }} sqft · FAR {{ result.far }}
+    </div>
+
+    <!-- Messages -->
+    <div class="chat-body" #hydChatBody>
+      <div *ngFor="let msg of activeMessages" class="chat-msg"
+        [class.chat-msg-user]="msg.role === 'user'"
+        [class.chat-msg-ai]="msg.role === 'ai'">
+        <div class="chat-bubble">{{ msg.text }}</div>
+      </div>
+      <div class="chat-msg chat-msg-ai" *ngIf="chatLoading">
+        <div class="chat-bubble chat-bubble-typing">
+          <span class="chat-dot"></span><span class="chat-dot"></span><span class="chat-dot"></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input -->
+    <div class="chat-footer">
+      <textarea class="chat-input" [(ngModel)]="chatInput" (keydown)="onChatKey($event)"
+        placeholder="Ask about setbacks, FAR, fire NOC…" rows="1" [disabled]="chatLoading"></textarea>
+      <button class="chat-send" (click)="sendMessage()" [disabled]="!chatInput.trim() || chatLoading">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/>
+        </svg>
+      </button>
+    </div>
+
+  </div><!-- /chat-panel -->
+
+</div>

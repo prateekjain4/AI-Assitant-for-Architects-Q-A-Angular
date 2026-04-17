@@ -149,6 +149,8 @@ export class PlanningTool implements OnInit, AfterViewInit {
       this.router.navigate(['/bengaluru']);
     } else if (city.name === 'Ranchi') {
       this.router.navigate(['/ranchi']);
+    } else if (city.name === 'Hyderabad') {
+      this.router.navigate(['/hyderabad']);
     }
   }
 
@@ -158,7 +160,7 @@ export class PlanningTool implements OnInit, AfterViewInit {
     { name: 'Mumbai',          state: 'Maharashtra',     active: false },
     { name: 'Delhi',           state: 'Delhi',           active: false },
     { name: 'Chennai',         state: 'Tamil Nadu',      active: false },
-    { name: 'Hyderabad',       state: 'Telangana',       active: false },
+    { name: 'Hyderabad',       state: 'Telangana',       active: true  },
     { name: 'Pune',            state: 'Maharashtra',     active: false },
     { name: 'Kolkata',         state: 'West Bengal',     active: false },
     { name: 'Ahmedabad',       state: 'Gujarat',         active: false },

@@ -19,6 +19,7 @@ import { CostEstimator } from './cost-estimator/cost-estimator';
 import { CostAnalysisPage } from './cost-analysis/cost-analysis';
 import { RanchiPlanningTool } from './ranchi-planning/ranchi-planning';
 import { BengaluruPlanningTool } from './bengaluru-planning/bengaluru-planning';
+import { HyderabadPlanningTool } from './hyderabad-planning/hyderabad-planning';
 import { Login } from './auth/login/login';
 import { Signup } from './auth/signup/signup';
 import { AuthInterceptor } from './interceptors/auth.interceptor';
@@ -39,6 +40,7 @@ import { ToastComponent } from './toast/toast.component';
     CostAnalysisPage,
     RanchiPlanningTool,
     BengaluruPlanningTool,
+    HyderabadPlanningTool,
     Login,
     Signup,
     ToastComponent,

@@ -11,6 +11,7 @@ import { AuthGuard } from './guards/auth.guard';
 import { CostAnalysisPage } from './cost-analysis/cost-analysis';
 import { RanchiPlanningTool } from './ranchi-planning/ranchi-planning';
 import { BengaluruPlanningTool } from './bengaluru-planning/bengaluru-planning';
+import { HyderabadPlanningTool } from './hyderabad-planning/hyderabad-planning';
 
 const routes: Routes = [
   { path: '',             component: Home },
@@ -22,6 +23,7 @@ const routes: Routes = [
   { path: 'cost-analysis',component: CostAnalysisPage,canActivate: [AuthGuard] },
   { path: 'ranchi',      component: RanchiPlanningTool,    canActivate: [AuthGuard] },
   { path: 'bengaluru',   component: BengaluruPlanningTool, canActivate: [AuthGuard] },
+  { path: 'hyderabad',   component: HyderabadPlanningTool, canActivate: [AuthGuard] },
   { path: 'about',       component: About },
   { path: '**',           redirectTo: '' },
 ];
