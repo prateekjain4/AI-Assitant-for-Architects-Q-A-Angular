@@ -46,24 +46,44 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
   readonly STORAGE_KEY = 'hyd_planning_state';
 
   openSections: Record<string, boolean> = {
-    metrics:    true,
-    setbacks:   true,
-    far:        true,
-    staircase:  true,
-    fire:       true,
-    compliance: true,
-    parking:    true,
-    basement:   false,
+    metrics:       true,
+    setbacks:      true,
+    far:           true,
+    staircase:     true,
+    fire:          true,
+    compliance:    true,
+    parking:       true,
+    basement:      false,
+    accessibility: false,
+    solar:         false,
+    openSpace:     false,
+    sanctions:     false,
   };
 
   readonly zones = [
-    { value: 'R1', label: 'R1 — Residential (Low Density, FAR 1.5)' },
-    { value: 'R2', label: 'R2 — Residential (Medium Density, FAR 2.0)' },
-    { value: 'R3', label: 'R3 — Residential (High Density, FAR 2.5)' },
-    { value: 'C1', label: 'C1 — Commercial Local (FAR 2.0)' },
-    { value: 'C2', label: 'C2 — Commercial Intermediate (FAR 2.5)' },
-    { value: 'MU', label: 'MU — Mixed Use (FAR 2.5)' },
-    { value: 'I',  label: 'I  — Industrial (FAR 1.5)' },
+    // Residential
+    { value: 'R1',  label: 'R1  — Residential — Very Low Density (Individual Houses)' },
+    { value: 'R2',  label: 'R2  — Residential — Low Density' },
+    { value: 'R3',  label: 'R3  — Residential — Medium Density' },
+    { value: 'R4',  label: 'R4  — Residential — High Density' },
+    { value: 'R5',  label: 'R5  — Residential — Very High Density (Transit Corridors)' },
+    // Commercial
+    { value: 'C1',  label: 'C1  — Commercial — Neighbourhood / Local' },
+    { value: 'C2',  label: 'C2  — Commercial — District / Community' },
+    { value: 'C3',  label: 'C3  — Commercial — City / Regional (CBD)' },
+    // Mixed Use
+    { value: 'MU1', label: 'MU1 — Mixed Use — Low Intensity' },
+    { value: 'MU2', label: 'MU2 — Mixed Use — High Intensity (Near Metro / ORR)' },
+    // Industrial
+    { value: 'I1',  label: 'I1  — Industrial — Cottage / Household / Service' },
+    { value: 'I2',  label: 'I2  — Industrial — Light / IT Park / Hi-Tech' },
+    { value: 'I3',  label: 'I3  — Industrial — General / Medium' },
+    { value: 'I4',  label: 'I4  — Industrial — Heavy / Hazardous' },
+    // Other
+    { value: 'PSP', label: 'PSP — Public & Semi-Public / Institutional' },
+    { value: 'T',   label: 'T   — Transportation Corridor / Hub' },
+    { value: 'OS',  label: 'OS  — Open Space / Recreational / Green' },
+    { value: 'AG',  label: 'AG  — Agriculture / Green Buffer' },
   ];
 
   constructor(
@@ -176,14 +196,18 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
         next: (res) => this.ngZone.run(() => {
           this.result = res;
           this.openSections = {
-            metrics:    true,
-            setbacks:   true,
-            far:        true,
-            staircase:  true,
-            fire:       true,
-            compliance: true,
-            parking:    true,
-            basement:   res.basement?.requested ?? false,
+            metrics:       true,
+            setbacks:      true,
+            far:           true,
+            staircase:     true,
+            fire:          true,
+            compliance:    true,
+            parking:       true,
+            basement:      res.basement?.requested ?? false,
+            accessibility: false,
+            solar:         false,
+            openSpace:     false,
+            sanctions:     false,
           };
           try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
@@ -221,7 +245,7 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
       { doc: 'GHMC Building Permissions Rules 2012', clause: 'Rule 7, Table IV', desc: 'Setbacks by plot area and building height. Front: road-width dependent. Side and rear: height-progressive.' },
     ],
     far: [
-      { doc: 'GHMC Building Permissions Rules 2012', clause: 'Rule 5, Table II (GO Ms.No.168)', desc: 'Zone-based FAR. R1: 1.5, R2: 2.0, R3: 2.5, C1: 2.0, C2/MU: 2.5, Industrial: 1.5.' },
+      { doc: 'AP Building Rules 2012 / GHMC Master Plan 2031', clause: 'Rule 5, Table II (GO Ms.No.168)', desc: 'Zone-based FAR per GHMC/HMDA Master Plan 2031 Zoning Regulations. Residential: R1–R5 (1.5–3.5), Commercial: C1–C3 (2.0–3.5), Mixed Use: MU1/MU2 (2.5/3.5), Industrial: I1–I4 (1.0–2.0), PSP: 1.5.' },
     ],
     staircase: [
       { doc: 'GHMC Building Permissions Rules 2012', clause: 'Rule 11', desc: 'Staircase minimum width 1.5m. Lift mandatory for buildings above 15m (G+4 and above).' },
@@ -237,6 +261,18 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
     ],
     compliance: [
       { doc: 'GHMC Building Permissions Rules 2012', clause: 'Full Rules 2012', desc: 'Compliance checklist based on GHMC Building Permissions Rules 2012 and GO Ms.No.168 covering setbacks, FAR, coverage, parking, fire, and staircase.' },
+    ],
+    accessibility: [
+      { doc: 'AP Building Rules 2012 — Annexure-V (Rule 15.a.v)', clause: 'NBC 2005, Part-III, Clause 12.21 — pages 312–321', desc: 'Special requirements for public buildings for physically challenged. Access path min 1200mm, max gradient 1:20. Ramp max slope 1:12 (up to 9000mm). Door min clear width 900mm. Stair tread 300mm, riser max 150mm. WC min 900×1500mm, seat height 500mm. Handrail 900mm high, 40mm dia.' },
+    ],
+    solar: [
+      { doc: 'AP Building Rules 2012', clause: 'Rule 15.a.xi (page 21) and Rule 22 (page 26)', desc: 'Solar Water Heating and Lighting mandatory for Group Housing ≥ 100 units, Hospitals, Nursing Homes, Hotels. Bank guarantee required. 10% property tax rebate for solar adoption. Rainwater harvesting mandatory for ALL buildings (G.O.Ms.No.350 MA, Dt.09.06.2000). 10% property tax rebate when BOTH water recycling and rainwater harvesting are provided.' },
+    ],
+    openSpace: [
+      { doc: 'AP Building Rules 2012', clause: 'Rules 5.f.v, 7.a.vii, 8.g, 15.a.x', desc: 'Non-high-rise plots >750 sqm: 5% of site as organised open space (tot lot). High Rise and Group Development ≥ 4000 sqm: 10% of site open to sky + 2m green strip on all sides. Chowk/inner courtyard: min 25 sqm, 3m side. Group Housing ≥ 100 units: 3% of BUA for common amenities (shop, club, crèche, gym) per NBC 2005.' },
+    ],
+    sanctions: [
+      { doc: 'AP Building Rules 2012', clause: 'Rules 19, 24, 25, 26 (pages 24–29)', desc: 'Building permit fee: 2% of licence fee (max Rs.10,000); no fee for parking floors. Non-high-rise valid 3 years; High Rise/GDS 5 years. Construction must commence within 18 months. OC mandatory for all buildings (except individual plots ≤100 sqm, height ≤7m). Penalties without OC: 3× utility tariff + 2× property tax annually.' },
     ],
   };
 

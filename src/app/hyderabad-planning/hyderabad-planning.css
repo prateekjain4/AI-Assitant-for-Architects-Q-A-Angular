@@ -422,3 +422,20 @@
   .chat-panel { width: calc(100vw - 20px); right: 10px; bottom: 84px; }
   .chat-fab   { bottom: 18px; right: 16px; }
 }
+
+/* ── Enriched-section helpers ────────────────────────────────────── */
+.hyd-badge-green  { background: rgba(22,163,74,0.15);  color: #15803d; border: 1px solid rgba(21,128,61,0.25); }
+.hyd-badge-yellow { background: rgba(234,179,8,0.15);  color: #854d0e; border: 1px solid rgba(133,77,14,0.25); }
+.hyd-subsection-title {
+  font-size: 12px; font-weight: 700; color: #1e293b;
+  text-transform: uppercase; letter-spacing: 0.4px;
+  padding: 6px 0 4px; border-bottom: 1px solid #e2e8f0; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.hyd-clause-tag {
+  font-size: 10px; font-weight: 600;
+  background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
+  border-radius: 999px; padding: 2px 7px; text-transform: none; letter-spacing: 0;
+}
+.hyd-green { color: #15803d; }
+.hyd-warn  { color: #b45309; }
