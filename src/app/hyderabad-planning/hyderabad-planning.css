@@ -424,18 +424,95 @@
 }
 
 /* ── Enriched-section helpers ────────────────────────────────────── */
-.hyd-badge-green  { background: rgba(22,163,74,0.15);  color: #15803d; border: 1px solid rgba(21,128,61,0.25); }
-.hyd-badge-yellow { background: rgba(234,179,8,0.15);  color: #854d0e; border: 1px solid rgba(133,77,14,0.25); }
-.hyd-subsection-title {
-  font-size: 12px; font-weight: 700; color: #1e293b;
-  text-transform: uppercase; letter-spacing: 0.4px;
-  padding: 6px 0 4px; border-bottom: 1px solid #e2e8f0; margin-bottom: 8px;
-  display: flex; align-items: center; gap: 8px;
+
+/* Status badge (replaces plain hyd-badge for new sections) */
+.hyd-status-badge {
+  display: inline-flex; align-items: center;
+  font-size: 11px; font-weight: 600; border-radius: 999px;
+  padding: 3px 10px; white-space: nowrap;
 }
+.hyd-status-green { background: rgba(22,163,74,0.12); color: #15803d; border: 1px solid rgba(22,163,74,0.28); }
+.hyd-status-amber { background: rgba(234,179,8,0.12);  color: #92400e; border: 1px solid rgba(180,83,9,0.28); }
+.hyd-status-red   { background: rgba(220,38,38,0.10); color: #b91c1c; border: 1px solid rgba(220,38,38,0.25); }
+
+/* Clause tag pill */
 .hyd-clause-tag {
   font-size: 10px; font-weight: 600;
   background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8;
-  border-radius: 999px; padding: 2px 7px; text-transform: none; letter-spacing: 0;
+  border-radius: 999px; padding: 2px 8px; white-space: nowrap;
+  text-transform: none; letter-spacing: 0;
 }
+
+/* ── Enrich block — card container within a section body ──────────── */
+.hyd-enrich-block {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  margin-bottom: 10px;
+}
+.hyd-enrich-block:last-child { margin-bottom: 0; }
+
+.hyd-enrich-block-title {
+  font-size: 11px; font-weight: 700; color: #334155;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px;
+  margin-bottom: 10px;
+}
+.hyd-enrich-block-sub {
+  font-size: 10px; font-weight: 700; color: #64748b;
+  text-transform: uppercase; letter-spacing: 0.4px;
+  margin: 8px 0 5px;
+}
+
+/* ── 2-column grid (for pairs) ────────────────────────────────────── */
+.hyd-grid-2 {
+  display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+}
+
+/* ── Metric card colour variants ──────────────────────────────────── */
+.hyd-metric-green  { background: #f0fdf4; border-color: #bbf7d0; }
+.hyd-metric-green .hyd-metric-value { color: #15803d; }
+.hyd-metric-amber  { background: #fffbeb; border-color: #fde68a; }
+.hyd-metric-amber .hyd-metric-value { color: #b45309; }
+.hyd-metric-red    { background: #fef2f2; border-color: #fca5a5; }
+.hyd-metric-red .hyd-metric-value   { color: #b91c1c; }
+
+/* Small metric value (for long text) */
+.hyd-metric-value-sm {
+  font-size: 11px !important; font-weight: 600 !important;
+  color: #374151 !important; line-height: 1.4 !important;
+}
+
+/* ── Check list (✓ items) ─────────────────────────────────────────── */
+.hyd-check-list { display: flex; flex-direction: column; gap: 4px; }
+.hyd-check-item {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-size: 12px; color: #374151; line-height: 1.5;
+}
+.hyd-check-dot { color: #16a34a; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Warn list (⚠ items) ──────────────────────────────────────────── */
+.hyd-warn-list { display: flex; flex-direction: column; gap: 4px; }
+.hyd-warn-item {
+  display: flex; align-items: flex-start; gap: 7px;
+  font-size: 12px; color: #374151; line-height: 1.5;
+}
+.hyd-warn-dot { color: #d97706; font-size: 11px; flex-shrink: 0; margin-top: 1px; }
+
+/* ── Note colour variants ─────────────────────────────────────────── */
+.hyd-note-amber { background: #fffbeb; border: 1px solid #fde68a; color: #92400e; }
+.hyd-note-green { background: #f0fdf4; border: 1px solid #bbf7d0; color: #15803d; }
+.hyd-note-blue  { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af; }
+.hyd-note-red   { background: #fef2f2; border: 1px solid #fca5a5; color: #b91c1c; }
+.hyd-note-info  { background: #f0f9ff; border: 1px solid #bae6fd; color: #0c4a6e; }
+
+/* Utility colour helpers */
 .hyd-green { color: #15803d; }
+.hyd-grey  { color: #94a3b8; }
 .hyd-warn  { color: #b45309; }
+
+/* ── Responsive: stack 2-col grid on narrow screens ──────────────── */
+@media (max-width: 540px) {
+  .hyd-grid-2 { grid-template-columns: 1fr; }
+}

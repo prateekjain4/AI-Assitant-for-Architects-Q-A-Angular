@@ -354,12 +354,12 @@
         </div>
       </div>
 
-      <!-- Accessibility -->
+      <!-- ── Accessibility ─────────────────────────────────────────── -->
       <div class="hyd-section">
         <div class="hyd-section-header" (click)="toggleSection('accessibility')">
           <span>♿ Accessibility Requirements</span>
           <div class="hyd-section-header-right">
-            <span class="hyd-badge" [class.hyd-badge-green]="result.accessibility?.required" [class.hyd-badge-yellow]="!result.accessibility?.required">
+            <span class="hyd-status-badge" [class.hyd-status-green]="result.accessibility?.required" [class.hyd-status-amber]="!result.accessibility?.required">
               {{ result.accessibility?.required ? 'Mandatory' : 'Recommended' }}
             </span>
             <button class="hyd-source-chip" (click)="openSource('accessibility', $event)" title="View source regulation">📄 Source</button>
@@ -367,58 +367,82 @@
           </div>
         </div>
         <div class="hyd-section-body" *ngIf="openSections['accessibility']">
-          <p class="hyd-note">{{ result.accessibility?.trigger }}</p>
-          <div class="hyd-grid-2">
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Access Path Min Width</span>
-              <span class="hyd-metric-value">{{ result.accessibility?.access_path?.min_width_mm }} mm</span>
-              <span class="hyd-metric-sub">Max gradient 1:20 · {{ result.accessibility?.access_path?.clause }}</span>
+          <div class="hyd-note hyd-note-info">{{ result.accessibility?.trigger }}</div>
+
+          <!-- Circulation -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">Circulation &amp; Approach</div>
+            <div class="hyd-metrics">
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Access Path Width</span>
+                <span class="hyd-metric-value">{{ result.accessibility?.access_path?.min_width_mm }}</span>
+                <span class="hyd-metric-unit">mm min · gradient ≤ 1:20 · {{ result.accessibility?.access_path?.clause }}</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Ramp Max Slope</span>
+                <span class="hyd-metric-value">1 : 12</span>
+                <span class="hyd-metric-unit">Short runs ≤ 9000 mm · {{ result.accessibility?.ramp?.clause }}</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Handrail Height</span>
+                <span class="hyd-metric-value">{{ result.accessibility?.handrails?.height_above_floor_mm }}</span>
+                <span class="hyd-metric-unit">mm · ⌀{{ result.accessibility?.handrails?.diameter_mm }} mm · {{ result.accessibility?.handrails?.clause }}</span>
+              </div>
             </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Ramp Max Slope</span>
-              <span class="hyd-metric-value">1 : 12</span>
-              <span class="hyd-metric-sub">Short distance (up to 9000 mm) · {{ result.accessibility?.ramp?.clause }}</span>
+          </div>
+
+          <!-- Doorways & Stairs -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">Doorways &amp; Stairs</div>
+            <div class="hyd-metrics">
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Door Clear Width</span>
+                <span class="hyd-metric-value">{{ result.accessibility?.door?.min_clear_width_mm }}</span>
+                <span class="hyd-metric-unit">mm min · threshold ≤ 25 mm · {{ result.accessibility?.door?.clause }}</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Stair Tread</span>
+                <span class="hyd-metric-value">≥ {{ result.accessibility?.staircase?.tread_depth_mm }}</span>
+                <span class="hyd-metric-unit">mm · riser ≤ {{ result.accessibility?.staircase?.max_riser_height_mm }} mm · {{ result.accessibility?.staircase?.clause }}</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Controls Zone</span>
+                <span class="hyd-metric-value">{{ result.accessibility?.controls?.zone_min_height_mm }}–{{ result.accessibility?.controls?.zone_max_height_mm }}</span>
+                <span class="hyd-metric-unit">mm AFF · switches, intercoms · {{ result.accessibility?.controls?.clause }}</span>
+              </div>
             </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Door Min Clear Width</span>
-              <span class="hyd-metric-value">{{ result.accessibility?.door?.min_clear_width_mm }} mm</span>
-              <span class="hyd-metric-sub">Threshold ≤ 25 mm · {{ result.accessibility?.door?.clause }}</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Stair Tread / Riser</span>
-              <span class="hyd-metric-value">≥ {{ result.accessibility?.staircase?.tread_depth_mm }} mm / ≤ {{ result.accessibility?.staircase?.max_riser_height_mm }} mm</span>
-              <span class="hyd-metric-sub">{{ result.accessibility?.staircase?.clause }}</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">WC Min Size</span>
-              <span class="hyd-metric-value">{{ result.accessibility?.toilet?.ambulant_disabled_min_width_mm }} × {{ result.accessibility?.toilet?.ambulant_disabled_min_depth_mm }} mm</span>
-              <span class="hyd-metric-sub">Seat ht {{ result.accessibility?.toilet?.wc_seat_height_mm }} mm · door {{ result.accessibility?.toilet?.door_width_mm }} mm · {{ result.accessibility?.toilet?.clause }}</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Handrail</span>
-              <span class="hyd-metric-value">{{ result.accessibility?.handrails?.height_above_floor_mm }} mm high · ⌀{{ result.accessibility?.handrails?.diameter_mm }} mm</span>
-              <span class="hyd-metric-sub">Colour contrast with wall · 50 mm curb at ramp edges · {{ result.accessibility?.handrails?.clause }}</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Controls Zone</span>
-              <span class="hyd-metric-value">{{ result.accessibility?.controls?.zone_min_height_mm }}–{{ result.accessibility?.controls?.zone_max_height_mm }} mm</span>
-              <span class="hyd-metric-sub">All switches, intercoms within this zone · {{ result.accessibility?.controls?.clause }}</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Parking — Wheelchair</span>
-              <span class="hyd-metric-value">Min {{ result.accessibility?.parking?.wheelchair_min_width_mm }} mm wide</span>
-              <span class="hyd-metric-sub">Ambulant disabled min {{ result.accessibility?.parking?.ambulant_disabled_min_width_mm }} mm · {{ result.accessibility?.parking?.clause }}</span>
+          </div>
+
+          <!-- Facilities -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">Accessible Facilities</div>
+            <div class="hyd-metrics">
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">WC Min Size</span>
+                <span class="hyd-metric-value">{{ result.accessibility?.toilet?.ambulant_disabled_min_width_mm }} × {{ result.accessibility?.toilet?.ambulant_disabled_min_depth_mm }}</span>
+                <span class="hyd-metric-unit">mm · seat ht {{ result.accessibility?.toilet?.wc_seat_height_mm }} mm · {{ result.accessibility?.toilet?.clause }}</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">WC Door</span>
+                <span class="hyd-metric-value">{{ result.accessibility?.toilet?.door_width_mm }}</span>
+                <span class="hyd-metric-unit">mm min · swings outward</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Parking — Wheelchair</span>
+                <span class="hyd-metric-value">{{ result.accessibility?.parking?.wheelchair_min_width_mm }}</span>
+                <span class="hyd-metric-unit">mm min width · ambulant {{ result.accessibility?.parking?.ambulant_disabled_min_width_mm }} mm · {{ result.accessibility?.parking?.clause }}</span>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Solar, Water Recycling & Rainwater Harvesting -->
+      <!-- ── Solar, Water Recycling & Rainwater ──────────────────── -->
       <div class="hyd-section">
         <div class="hyd-section-header" (click)="toggleSection('solar')">
           <span>☀️ Solar, Water Recycling &amp; Rainwater</span>
           <div class="hyd-section-header-right">
-            <span class="hyd-badge" [class.hyd-badge-green]="result.solar?.mandatory" [class.hyd-badge-yellow]="!result.solar?.mandatory">
+            <span class="hyd-status-badge" [class.hyd-status-green]="result.solar?.mandatory" [class.hyd-status-amber]="!result.solar?.mandatory">
               Solar {{ result.solar?.mandatory ? 'Mandatory' : 'Not Required' }}
             </span>
             <button class="hyd-source-chip" (click)="openSource('solar', $event)" title="View source regulation">📄 Source</button>
@@ -427,62 +451,72 @@
         </div>
         <div class="hyd-section-body" *ngIf="openSections['solar']">
 
-          <!-- Solar sub-section -->
-          <div class="hyd-subsection-title">Solar Requirements <span class="hyd-clause-tag">Rule 15.a.xi &amp; Rule 22</span></div>
-          <div class="hyd-grid-2">
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Mandatory For</span>
-              <span class="hyd-metric-value" style="font-size:0.82rem">Group Housing ≥ 100 units, Hospitals, Nursing Homes, Hotels</span>
+          <!-- Solar card -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">Solar Requirements <span class="hyd-clause-tag">Rule 15.a.xi &amp; Rule 22</span></div>
+            <div class="hyd-grid-2">
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Applies To</span>
+                <span class="hyd-metric-value hyd-metric-value-sm">Group Housing ≥ 100 units, Hospitals, Nursing Homes, Hotels</span>
+              </div>
+              <div class="hyd-metric hyd-metric-green">
+                <span class="hyd-metric-label">Property Tax Rebate</span>
+                <span class="hyd-metric-value">{{ result.solar?.incentive_property_tax_rebate_pct }}%</span>
+                <span class="hyd-metric-unit">{{ result.solar?.incentive_clause }}</span>
+              </div>
             </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Property Tax Rebate</span>
-              <span class="hyd-metric-value hyd-green">{{ result.solar?.incentive_property_tax_rebate_pct }}%</span>
-              <span class="hyd-metric-sub">{{ result.solar?.incentive_clause }}</span>
+            <div class="hyd-check-list" style="margin-top:8px">
+              <div class="hyd-check-item" *ngFor="let req of result.solar?.requirements">
+                <span class="hyd-check-dot">✓</span> {{ req }}
+              </div>
+            </div>
+            <div class="hyd-note hyd-note-amber" style="margin-top:8px" *ngIf="result.solar?.bank_guarantee_required">
+              ⚠ Bank guarantee required — applicant must give bank guarantee to sanctioning authority for compliance (Rule 15.a.xi).
             </div>
           </div>
-          <div class="hyd-compliance-item" *ngFor="let req of result.solar?.requirements">
-            <span class="hyd-compliance-dot">✓</span> {{ req }}
-          </div>
-          <p class="hyd-note" *ngIf="result.solar?.bank_guarantee_required">
-            ⚠ Bank guarantee required — applicant must give bank guarantee to sanctioning authority for compliance.
-          </p>
 
-          <!-- Water Recycling sub-section -->
-          <div class="hyd-subsection-title" style="margin-top:1rem">Water Recycling <span class="hyd-clause-tag">Rule 15.a.xii &amp; Rule 22</span></div>
-          <p class="hyd-note">{{ result.water_recycling?.requirement }}</p>
-          <p class="hyd-note hyd-green">
-            10% property tax rebate when BOTH water recycling and rainwater harvesting are undertaken ({{ result.water_recycling?.incentive_clause }})
-          </p>
-
-          <!-- Rainwater Harvesting sub-section -->
-          <div class="hyd-subsection-title" style="margin-top:1rem">Rainwater Harvesting <span class="hyd-clause-tag">Rule 15.a.vii &amp; Annexure-VI</span></div>
-          <div class="hyd-badge hyd-badge-green" style="display:inline-block;margin-bottom:0.5rem">Mandatory — ALL Buildings</div>
-          <div class="hyd-grid-2">
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Percolation Volume</span>
-              <span class="hyd-metric-value">{{ result.rainwater_harvesting?.percolation_volume_per_100sqm_roof_cum }} cum</span>
-              <span class="hyd-metric-sub">Per 100 sqm of roof area</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Pit Dimensions</span>
-              <span class="hyd-metric-value">{{ result.rainwater_harvesting?.pit_dimensions?.width_m }} × {{ result.rainwater_harvesting?.pit_dimensions?.length_m }} m</span>
-              <span class="hyd-metric-sub">Depth: {{ result.rainwater_harvesting?.pit_dimensions?.depth_m }} m</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Trench</span>
-              <span class="hyd-metric-value">{{ result.rainwater_harvesting?.trench_dimensions?.width_m }} m wide</span>
-              <span class="hyd-metric-sub">Depth {{ result.rainwater_harvesting?.trench_dimensions?.depth_m }} m · Length 2–6 m</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Plots ≥ 300 sqm</span>
-              <span class="hyd-metric-value">Part-A Compulsory</span>
-              <span class="hyd-metric-sub">Parts B, C, or D optional</span>
+          <!-- Water Recycling card -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">Water Recycling <span class="hyd-clause-tag">Rule 15.a.xii &amp; Rule 22</span></div>
+            <div class="hyd-note hyd-note-info">{{ result.water_recycling?.requirement }}</div>
+            <div class="hyd-note hyd-note-green" style="margin-top:6px">
+              🏷 10% property tax rebate when BOTH water recycling and rainwater harvesting are undertaken — {{ result.water_recycling?.incentive_clause }}
             </div>
           </div>
+
+          <!-- Rainwater Harvesting card -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">
+              Rainwater Harvesting
+              <span class="hyd-clause-tag">Rule 15.a.vii &amp; Annexure-VI</span>
+              <span class="hyd-status-badge hyd-status-green" style="margin-left:6px">Mandatory — ALL Buildings</span>
+            </div>
+            <div class="hyd-metrics">
+              <div class="hyd-metric hyd-metric-primary">
+                <span class="hyd-metric-label">Percolation Volume</span>
+                <span class="hyd-metric-value">{{ result.rainwater_harvesting?.percolation_volume_per_100sqm_roof_cum }}</span>
+                <span class="hyd-metric-unit">cum per 100 sqm roof area</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Pit Dimensions</span>
+                <span class="hyd-metric-value">{{ result.rainwater_harvesting?.pit_dimensions?.width_m }} × {{ result.rainwater_harvesting?.pit_dimensions?.length_m }} m</span>
+                <span class="hyd-metric-unit">Depth {{ result.rainwater_harvesting?.pit_dimensions?.depth_m }} m</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Trench</span>
+                <span class="hyd-metric-value">{{ result.rainwater_harvesting?.trench_dimensions?.width_m }} m wide</span>
+                <span class="hyd-metric-unit">Depth {{ result.rainwater_harvesting?.trench_dimensions?.depth_m }} m · Length 2–6 m</span>
+              </div>
+            </div>
+            <div class="hyd-note hyd-note-blue" style="margin-top:8px">
+              📐 Plots ≥ 300 sqm: Part-A compulsory · Parts B, C, or D optional · Filter layers: road metal → coarse sand
+            </div>
+          </div>
+
         </div>
       </div>
 
-      <!-- Organised Open Space -->
+      <!-- ── Organised Open Space ────────────────────────────────── -->
       <div class="hyd-section">
         <div class="hyd-section-header" (click)="toggleSection('openSpace')">
           <span>🌳 Organised Open Space</span>
@@ -492,46 +526,67 @@
           </div>
         </div>
         <div class="hyd-section-body" *ngIf="openSections['openSpace']">
-          <div class="hyd-grid-2">
-            <!-- High Rise -->
-            <div class="hyd-metric" *ngIf="result.is_high_rise">
-              <span class="hyd-metric-label">High-Rise Requirement</span>
-              <span class="hyd-metric-value">{{ result.open_space?.requirement?.min_pct_of_site }}% of site</span>
-              <span class="hyd-metric-sub">Open to sky · Min pocket {{ result.open_space?.requirement?.min_pocket_width_m }} m wide · {{ result.open_space?.requirement?.clause }}</span>
-            </div>
-            <div class="hyd-metric" *ngIf="result.is_high_rise">
-              <span class="hyd-metric-label">Green Strip</span>
-              <span class="hyd-metric-value">{{ result.open_space?.requirement?.green_strip_all_sides_m }} m wide</span>
-              <span class="hyd-metric-sub">All sides within setbacks · Rule 7.a.viii</span>
-            </div>
-            <!-- Non High Rise -->
-            <div class="hyd-metric" *ngIf="!result.is_high_rise && result.plot_area_sqm > 750">
-              <span class="hyd-metric-label">Open Space (Tot Lot)</span>
-              <span class="hyd-metric-value">{{ result.open_space?.requirement?.min_pct_of_site }}% of site</span>
-              <span class="hyd-metric-sub">Greenery / soft landscaping · {{ result.open_space?.requirement?.clause }}</span>
-            </div>
-            <div class="hyd-metric" *ngIf="!result.is_high_rise && result.plot_area_sqm <= 750">
-              <span class="hyd-metric-label">Open Space</span>
-              <span class="hyd-metric-value">Not Required</span>
-              <span class="hyd-metric-sub">Plots ≤ 750 sqm — no mandatory organised open space</span>
-            </div>
-            <!-- Chowk -->
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Chowk / Inner Courtyard</span>
-              <span class="hyd-metric-value">Min {{ result.open_space?.chowk?.min_area_sqm }} sqm · {{ result.open_space?.chowk?.min_side_m }} m side</span>
-              <span class="hyd-metric-sub">Open to sky · Above stilt floor · {{ result.open_space?.chowk?.clause }}</span>
-            </div>
-            <!-- Group Housing -->
-            <div class="hyd-metric" *ngIf="result.open_space?.group_housing_amenities">
-              <span class="hyd-metric-label">Group Housing Amenities</span>
-              <span class="hyd-metric-value">{{ result.open_space?.group_housing_amenities?.common_amenities_min_pct_of_bua }}% of BUA</span>
-              <span class="hyd-metric-sub">Shop, club house, crèche, gym · NBC 2005 · {{ result.open_space?.group_housing_amenities?.clause }}</span>
+
+          <!-- Site open space card -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">Site Open Space Requirement</div>
+            <div class="hyd-metrics">
+              <!-- High Rise -->
+              <div class="hyd-metric hyd-metric-primary" *ngIf="result.is_high_rise">
+                <span class="hyd-metric-label">High-Rise Requirement</span>
+                <span class="hyd-metric-value">{{ result.open_space?.requirement?.min_pct_of_site }}%</span>
+                <span class="hyd-metric-unit">of site · open to sky · pocket ≥ {{ result.open_space?.requirement?.min_pocket_width_m }} m wide · {{ result.open_space?.requirement?.clause }}</span>
+              </div>
+              <div class="hyd-metric hyd-metric-green" *ngIf="result.is_high_rise">
+                <span class="hyd-metric-label">Green Strip</span>
+                <span class="hyd-metric-value">{{ result.open_space?.requirement?.green_strip_all_sides_m }} m</span>
+                <span class="hyd-metric-unit">wide on all sides within setbacks · Rule 7.a.viii</span>
+              </div>
+              <!-- Non High Rise -->
+              <div class="hyd-metric hyd-metric-primary" *ngIf="!result.is_high_rise && result.plot_area_sqm > 750">
+                <span class="hyd-metric-label">Open Space (Tot Lot)</span>
+                <span class="hyd-metric-value">{{ result.open_space?.requirement?.min_pct_of_site }}%</span>
+                <span class="hyd-metric-unit">of site · greenery / soft landscaping · {{ result.open_space?.requirement?.clause }}</span>
+              </div>
+              <div class="hyd-metric" *ngIf="!result.is_high_rise && result.plot_area_sqm <= 750">
+                <span class="hyd-metric-label">Open Space</span>
+                <span class="hyd-metric-value hyd-grey">Not Required</span>
+                <span class="hyd-metric-unit">Plots ≤ 750 sqm — no mandatory organised open space</span>
+              </div>
+              <!-- Chowk -->
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Chowk / Inner Courtyard</span>
+                <span class="hyd-metric-value">{{ result.open_space?.chowk?.min_area_sqm }} sqm</span>
+                <span class="hyd-metric-unit">min · side ≥ {{ result.open_space?.chowk?.min_side_m }} m · open to sky · above stilt · {{ result.open_space?.chowk?.clause }}</span>
+              </div>
             </div>
           </div>
+
+          <!-- Group Housing amenities card — shown only if applicable -->
+          <div class="hyd-enrich-block" *ngIf="result.open_space?.group_housing_amenities">
+            <div class="hyd-enrich-block-title">Group Housing Amenities <span class="hyd-clause-tag">Rule 15.a.x · NBC 2005</span></div>
+            <div class="hyd-grid-2">
+              <div class="hyd-metric hyd-metric-primary">
+                <span class="hyd-metric-label">Min Area for Amenities</span>
+                <span class="hyd-metric-value">{{ result.open_space?.group_housing_amenities?.common_amenities_min_pct_of_bua }}%</span>
+                <span class="hyd-metric-unit">of total BUA · {{ result.open_space?.group_housing_amenities?.clause }}</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Required Facilities</span>
+                <span class="hyd-metric-value hyd-metric-value-sm">Convenience shop, Club house, Crèche, Gymnasium</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Inter-block note -->
+          <div class="hyd-note hyd-note-info">
+            ℹ Inter-block spacing (≥ all-round setback of tallest block) is NOT counted as organised open space — {{ result.open_space?.inter_block?.clause }}
+          </div>
+
         </div>
       </div>
 
-      <!-- Building Sanction & Occupancy Certificate -->
+      <!-- ── Building Sanction & Occupancy Certificate ───────────── -->
       <div class="hyd-section">
         <div class="hyd-section-header" (click)="toggleSection('sanctions')">
           <span>📋 Building Sanction &amp; Occupancy Certificate</span>
@@ -542,69 +597,80 @@
         </div>
         <div class="hyd-section-body" *ngIf="openSections['sanctions']">
 
-          <!-- Fees -->
-          <div class="hyd-subsection-title">Building Permit Fee <span class="hyd-clause-tag">Rules 19, 24, 25</span></div>
-          <div class="hyd-grid-2">
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Initial Application Fee</span>
-              <span class="hyd-metric-value">2% of licence fee</span>
-              <span class="hyd-metric-sub">Max Rs. {{ result.sanction_clearance?.initial_fee_max_inr | number }} · Forfeited if rejected</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Parking Floors</span>
-              <span class="hyd-metric-value hyd-green">No Fee</span>
-              <span class="hyd-metric-sub">Parking floor area exempt from permit fee calculation</span>
-            </div>
-          </div>
-
-          <!-- Validity -->
-          <div class="hyd-subsection-title" style="margin-top:1rem">Permission Validity <span class="hyd-clause-tag">Rule 25</span></div>
-          <div class="hyd-grid-2">
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">{{ result.is_high_rise ? 'High-Rise / GDS' : 'Non-High-Rise' }}</span>
-              <span class="hyd-metric-value">{{ result.is_high_rise ? result.sanction_clearance?.permission_validity?.high_rise_and_group_development_schemes_yrs : result.sanction_clearance?.permission_validity?.non_high_rise_yrs }} years</span>
-              <span class="hyd-metric-sub">From date of sanction</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Construction Must Commence</span>
-              <span class="hyd-metric-value">Within {{ result.sanction_clearance?.permission_validity?.construction_must_commence_within_months }} months</span>
-              <span class="hyd-metric-sub">Revalidation available for {{ result.sanction_clearance?.permission_validity?.revalidation_yrs }} years</span>
+          <!-- Permit fee card -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">Building Permit Fee <span class="hyd-clause-tag">Rules 19, 24, 25</span></div>
+            <div class="hyd-grid-2">
+              <div class="hyd-metric hyd-metric-primary">
+                <span class="hyd-metric-label">Initial Application Fee</span>
+                <span class="hyd-metric-value">2%</span>
+                <span class="hyd-metric-unit">of licence fee · max Rs. {{ result.sanction_clearance?.initial_fee_max_inr | number }} · forfeited if rejected</span>
+              </div>
+              <div class="hyd-metric hyd-metric-green">
+                <span class="hyd-metric-label">Parking Floors</span>
+                <span class="hyd-metric-value">No Fee</span>
+                <span class="hyd-metric-unit">Parking floor area exempt from permit fee calculation</span>
+              </div>
             </div>
           </div>
 
-          <!-- Mandatory docs for > 10m -->
-          <div class="hyd-subsection-title" style="margin-top:1rem" *ngIf="result.building_height_m > 10">
-            Mandatory Documents (height &gt; 10 m) <span class="hyd-clause-tag">Rule 5.f.xviii</span>
-          </div>
-          <div *ngIf="result.building_height_m > 10">
-            <div class="hyd-compliance-item" *ngFor="let doc of result.sanction_clearance?.mandatory_documents_above_10m">
-              <span class="hyd-compliance-dot">✓</span> {{ doc }}
+          <!-- Validity card -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">Permission Validity <span class="hyd-clause-tag">Rule 25</span></div>
+            <div class="hyd-metrics">
+              <div class="hyd-metric hyd-metric-primary">
+                <span class="hyd-metric-label">{{ result.is_high_rise ? 'High-Rise / GDS' : 'Non-High-Rise' }}</span>
+                <span class="hyd-metric-value">{{ result.is_high_rise ? result.sanction_clearance?.permission_validity?.high_rise_and_group_development_schemes_yrs : result.sanction_clearance?.permission_validity?.non_high_rise_yrs }} yrs</span>
+                <span class="hyd-metric-unit">From date of sanction</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Commence Construction</span>
+                <span class="hyd-metric-value">{{ result.sanction_clearance?.permission_validity?.construction_must_commence_within_months }} months</span>
+                <span class="hyd-metric-unit">Within — else permission lapses</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Revalidation</span>
+                <span class="hyd-metric-value">{{ result.sanction_clearance?.permission_validity?.revalidation_yrs }} yrs</span>
+                <span class="hyd-metric-unit">Available on application after lapse</span>
+              </div>
             </div>
           </div>
 
-          <!-- OC section -->
-          <div class="hyd-subsection-title" style="margin-top:1rem">Occupancy Certificate <span class="hyd-clause-tag">Rule 26</span></div>
-          <div class="hyd-grid-2">
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">OC Status</span>
-              <span class="hyd-metric-value" [class.hyd-green]="result.occupancy_certificate?.mandatory">
-                {{ result.occupancy_certificate?.mandatory ? 'Mandatory' : 'Optional' }}
-              </span>
-              <span class="hyd-metric-sub">{{ result.occupancy_certificate?.exception }}</span>
-            </div>
-            <div class="hyd-metric">
-              <span class="hyd-metric-label">Authority Response Time</span>
-              <span class="hyd-metric-value">{{ result.occupancy_certificate?.authority_must_respond_within_days }} days</span>
-              <span class="hyd-metric-sub">Height tolerance: ± {{ result.occupancy_certificate?.height_tolerance_m }} m (no change in floors)</span>
+          <!-- Mandatory docs card — only for height > 10m -->
+          <div class="hyd-enrich-block" *ngIf="result.building_height_m > 10">
+            <div class="hyd-enrich-block-title">Mandatory Documents (height &gt; 10 m) <span class="hyd-clause-tag">Rule 5.f.xviii</span></div>
+            <div class="hyd-check-list">
+              <div class="hyd-check-item" *ngFor="let doc of result.sanction_clearance?.mandatory_documents_above_10m">
+                <span class="hyd-check-dot">✓</span> {{ doc }}
+              </div>
             </div>
           </div>
-          <div class="hyd-subsection-title" style="margin-top:0.75rem">Penalties Without OC</div>
-          <div class="hyd-compliance-item" *ngFor="let p of result.occupancy_certificate?.penalties_without_oc">
-            <span class="hyd-compliance-dot hyd-warn">⚠</span> {{ p }}
+
+          <!-- OC card -->
+          <div class="hyd-enrich-block">
+            <div class="hyd-enrich-block-title">Occupancy Certificate <span class="hyd-clause-tag">Rule 26</span></div>
+            <div class="hyd-grid-2" style="margin-bottom:10px">
+              <div class="hyd-metric hyd-metric-primary">
+                <span class="hyd-metric-label">OC Status</span>
+                <span class="hyd-metric-value">{{ result.occupancy_certificate?.mandatory ? 'Mandatory' : 'Optional' }}</span>
+                <span class="hyd-metric-unit">{{ result.occupancy_certificate?.exception }}</span>
+              </div>
+              <div class="hyd-metric">
+                <span class="hyd-metric-label">Authority Response</span>
+                <span class="hyd-metric-value">{{ result.occupancy_certificate?.authority_must_respond_within_days }} days</span>
+                <span class="hyd-metric-unit">Height tolerance ± {{ result.occupancy_certificate?.height_tolerance_m }} m (no change in floors)</span>
+              </div>
+            </div>
+            <div class="hyd-enrich-block-sub">Penalties Without OC</div>
+            <div class="hyd-warn-list">
+              <div class="hyd-warn-item" *ngFor="let p of result.occupancy_certificate?.penalties_without_oc">
+                <span class="hyd-warn-dot">⚠</span> {{ p }}
+              </div>
+            </div>
+            <div class="hyd-note hyd-note-red" style="margin-top:8px" *ngIf="result.is_high_rise">
+              🔴 High-Rise: OC issued ONLY after fire safety clearance from AP State Disasters Response &amp; Fire Services Dept.
+            </div>
           </div>
-          <p class="hyd-note hyd-warn" *ngIf="result.is_high_rise">
-            ⚠ High-Rise: OC issued ONLY after fire safety clearance from AP State Disasters Response &amp; Fire Services Dept.
-          </p>
 
         </div>
       </div>
