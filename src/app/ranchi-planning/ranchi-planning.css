@@ -152,6 +152,7 @@
 .rp-metric-value   { font-size: 18px; font-weight: 700; color: #1e293b; line-height: 1.2; }
 .rp-metric-primary .rp-metric-value { color: #1d4ed8; font-size: 20px; }
 .rp-metric-unit    { font-size: 11px; color: #94a3b8; }
+.rp-sub-unit       { font-size: 10px; color: #94a3b8; font-weight: 400; }
 
 /* ── Setback pills ──────────────────────────────────────────────── */
 .rp-setback-row { display: flex; gap: 8px; flex-wrap: wrap; }

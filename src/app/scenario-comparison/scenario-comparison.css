@@ -92,6 +92,7 @@
 .sc-metric-label { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; }
 .sc-metric-value { font-size: 18px; font-weight: 600; color: #1e293b; line-height: 1.2; }
 .sc-metric-unit  { font-size: 11px; color: #94a3b8; }
+.sc-sub-unit     { font-size: 10px; color: #94a3b8; font-weight: 400; }
 .sc-metric-primary { background: #eff6ff; border-color: #bfdbfe; }
 .sc-metric-primary .sc-metric-value { color: #1d4ed8; font-size: 22px; }
 

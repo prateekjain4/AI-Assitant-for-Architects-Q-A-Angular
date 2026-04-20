@@ -152,6 +152,7 @@
 .hyd-metric-value   { font-size: 18px; font-weight: 700; color: #1e293b; line-height: 1.2; }
 .hyd-metric-primary .hyd-metric-value { color: #1d4ed8; font-size: 20px; }
 .hyd-metric-unit    { font-size: 11px; color: #94a3b8; }
+.hyd-sub-unit       { font-size: 10px; color: #94a3b8; font-weight: 400; }
 .hyd-metric-red .hyd-metric-value  { color: #dc2626; }
 .hyd-metric-green .hyd-metric-value { color: #16a34a; }
 

@@ -11,6 +11,7 @@ import { CostDataService } from '../services/cost-data.service';
 })
 export class ScenarioComparison {
 
+  @Input() city:             string  = 'bengaluru';   // 'bengaluru' | 'hyderabad'
   @Input() zone:             string  = '';
   @Input() roadWidth:        number  = 9;
   @Input() plotAreaSqft:     number  = 0;
@@ -42,19 +43,25 @@ export class ScenarioComparison {
   ) {}
 
   ngOnChanges() {
-    if (this.zone && this.plotAreaSqft > 0) {
+    const hasPlot = this.plotAreaSqft > 0 || (this.plotLengthM > 0 && this.plotWidthM > 0);
+    if (this.zone && hasPlot) {
       this.loadScenarios();
     }
   }
 
   loadScenarios() {
     this.loading = true;
-    const payload = {
+    const isHyderabad = (this.city || '').toLowerCase() === 'hyderabad';
+    const fallbackSide = this.plotAreaSqft > 0 ? Math.sqrt(this.plotAreaSqft / 10.7639) : 0;
+    const plotLen = this.plotLengthM || fallbackSide;
+    const plotWd  = this.plotWidthM  || fallbackSide;
+
+    const bengaluruPayload = {
       zone:               this.zone,
       road_width:         this.roadWidth,
       plot_area_sqft:     this.plotAreaSqft,
-      plot_length_m:      this.plotLengthM || Math.sqrt(this.plotAreaSqft / 10.7639),
-      plot_width_m:       this.plotWidthM  || Math.sqrt(this.plotAreaSqft / 10.7639),
+      plot_length_m:      plotLen,
+      plot_width_m:       plotWd,
       usage:              this.usage,
       corner_plot:        this.cornerPlot,
       basement:           this.basement,
@@ -63,7 +70,24 @@ export class ScenarioComparison {
       building_height_m:  this.buildingHeightM || 0,
     };
 
-    this.http.post<any>('http://localhost:8000/scenarios', payload)
+    // /scenarios-hyderabad uses plot_length / plot_width / building_height keys
+    const hyderabadPayload = {
+      zone:             this.zone,
+      road_width:       this.roadWidth,
+      plot_length:      plotLen,
+      plot_width:       plotWd,
+      usage:            this.usage,
+      corner_plot:      this.cornerPlot,
+      basement:         this.basement,
+      floor_height:     this.floorHeightM    || 3.0,
+      building_height:  this.buildingHeightM || 0,
+      locality:         'Hyderabad',
+    };
+
+    const url     = isHyderabad ? 'http://localhost:8000/scenarios-hyderabad' : 'http://localhost:8000/scenarios';
+    const payload = isHyderabad ? hyderabadPayload : bengaluruPayload;
+
+    this.http.post<any>(url, payload)
       .subscribe({
         next: (res) => {
           this.ngZone.run(() => {

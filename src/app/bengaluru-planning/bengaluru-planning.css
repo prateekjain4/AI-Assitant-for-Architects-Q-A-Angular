@@ -511,6 +511,7 @@
 .bp-metric-label   { font-size: 10px; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; }
 .bp-metric-value   { font-size: 18px; font-weight: 700; color: #1e293b; line-height: 1.2; }
 .bp-metric-unit    { font-size: 11px; color: #94a3b8; }
+.bp-sub-unit       { font-size: 10px; color: #94a3b8; font-weight: 400; }
 
 /* ── Setback pills ──────────────────────────────────────────────── */
 .bp-setback-row { display: flex; gap: 8px; flex-wrap: wrap; }

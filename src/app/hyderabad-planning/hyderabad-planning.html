@@ -147,13 +147,13 @@
           <div class="hyd-metrics">
             <div class="hyd-metric hyd-metric-primary">
               <span class="hyd-metric-label">Plot Area</span>
-              <span class="hyd-metric-value">{{ result.plot_area | number:'1.0-0' }}</span>
-              <span class="hyd-metric-unit">sq ft ({{ result.plot_area_sqm }} sqm)</span>
+              <span class="hyd-metric-value">{{ result.plot_area_sqm | number:'1.0-0' }}</span>
+              <span class="hyd-metric-unit">sqm <span class="hyd-sub-unit">({{ result.plot_area | number:'1.0-0' }} sqft)</span></span>
             </div>
             <div class="hyd-metric hyd-metric-primary">
               <span class="hyd-metric-label">Max Built-up</span>
-              <span class="hyd-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
-              <span class="hyd-metric-unit">sq ft ({{ result.max_built_sqm }} sqm)</span>
+              <span class="hyd-metric-value">{{ result.max_built_sqm | number:'1.0-0' }}</span>
+              <span class="hyd-metric-unit">sqm <span class="hyd-sub-unit">({{ result.max_built_area | number:'1.0-0' }} sqft)</span></span>
             </div>
             <div class="hyd-metric">
               <span class="hyd-metric-label">FAR</span>
@@ -228,8 +228,8 @@
             </div>
             <div class="hyd-metric hyd-metric-primary">
               <span class="hyd-metric-label">Max Built-up</span>
-              <span class="hyd-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
-              <span class="hyd-metric-unit">sq ft</span>
+              <span class="hyd-metric-value">{{ result.max_built_sqm | number:'1.0-0' }}</span>
+              <span class="hyd-metric-unit">sqm <span class="hyd-sub-unit">({{ result.max_built_area | number:'1.0-0' }} sqft)</span></span>
             </div>
             <div class="hyd-metric">
               <span class="hyd-metric-label">Ground Coverage</span>
@@ -351,6 +351,34 @@
           <div *ngFor="let item of result.compliance" class="hyd-compliance-item">
             <span class="hyd-compliance-dot">✓</span> {{ item }}
           </div>
+        </div>
+      </div>
+
+      <!-- Scenario Comparison -->
+      <div class="hyd-section">
+        <div class="hyd-section-header" (click)="toggleSection('scenarios')">
+          <span>🔀 Scenario Comparison</span>
+          <div class="hyd-section-header-right">
+            <button class="hyd-source-chip" (click)="openSource('scenarios', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['scenarios'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['scenarios']">
+          <app-scenario-comparison
+            city="hyderabad"
+            [zone]="result.zone || form.value.zone"
+            [roadWidth]="form.value.roadWidth"
+            [plotAreaSqft]="(form.value.plotLength * form.value.plotWidth) * 10.7639"
+            [plotLengthM]="form.value.plotLength"
+            [plotWidthM]="form.value.plotWidth"
+            [usage]="form.value.usage"
+            [cornerPlot]="form.value.cornerPlot === 'true'"
+            [basement]="form.value.basement === 'true'"
+            [floorHeightM]="form.value.floorHeight"
+            [buildingHeightM]="form.value.buildingHeight"
+            [idealFloors]="result.num_floors || 0"
+            [carSpaces]="result.parking?.cars || 0">
+          </app-scenario-comparison>
         </div>
       </div>
 
@@ -684,7 +712,7 @@
         <h4>Height Not Permitted</h4>
         <p>{{ result.error_message }}</p>
         <p class="hyd-error-sub">
-          Zone: {{ result.zone_display }} · Plot: {{ result.plot_area | number:'1.0-0' }} sq ft
+          Zone: {{ result.zone_display }} · Plot: {{ result.plot_area_sqm | number:'1.0-0' }} sqm
         </p>
       </div>
     </div>
@@ -784,7 +812,7 @@
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      Context: {{ result.zone_display }} · {{ result.plot_area | number:'1.0-0' }} sqft · FAR {{ result.far }}
+      Context: {{ result.zone_display }} · {{ result.plot_area_sqm | number:'1.0-0' }} sqm · FAR {{ result.far }}
     </div>
 
     <!-- Messages -->

@@ -53,6 +53,7 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
     fire:          true,
     compliance:    true,
     parking:       true,
+    scenarios:     true,
     basement:      false,
     accessibility: false,
     solar:         false,
@@ -203,6 +204,7 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
             fire:          true,
             compliance:    true,
             parking:       true,
+            scenarios:     true,
             basement:      res.basement?.requested ?? false,
             accessibility: false,
             solar:         false,
@@ -261,6 +263,9 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
     ],
     compliance: [
       { doc: 'GHMC Building Permissions Rules 2012', clause: 'Full Rules 2012', desc: 'Compliance checklist based on GHMC Building Permissions Rules 2012 and GO Ms.No.168 covering setbacks, FAR, coverage, parking, fire, and staircase.' },
+    ],
+    scenarios: [
+      { doc: 'AP Building Rules 2012 — G.O.Ms.No.168', clause: 'Rules 5 & 7 — Tables II / III / IV', desc: 'Scenario heights anchored to AP Building Rules thresholds: 15 m (lift mandatory + commercial fire NOC), 18 m (high-rise setback table + residential fire NOC), plus a Max-FAR scenario derived from zone FAR and road-width height cap.' },
     ],
     accessibility: [
       { doc: 'AP Building Rules 2012 — Annexure-V (Rule 15.a.v)', clause: 'NBC 2005, Part-III, Clause 12.21 — pages 312–321', desc: 'Special requirements for public buildings for physically challenged. Access path min 1200mm, max gradient 1:20. Ramp max slope 1:12 (up to 9000mm). Door min clear width 900mm. Stair tread 300mm, riser max 150mm. WC min 900×1500mm, seat height 500mm. Handrail 900mm high, 40mm dia.' },

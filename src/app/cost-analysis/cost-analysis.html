@@ -24,8 +24,8 @@
 
   <!-- ── Context strip ─────────────────────────────────────────── -->
   <div class="ca-context" *ngIf="input">
-    <div class="ca-ctx-item"><span class="ca-ctx-label">Plot area</span><span class="ca-ctx-val">{{ input.plotAreaSqft | number:'1.0-0' }} sqft</span></div>
-    <div class="ca-ctx-item"><span class="ca-ctx-label">Max built-up</span><span class="ca-ctx-val">{{ input.maxBuiltSqft | number:'1.0-0' }} sqft</span></div>
+    <div class="ca-ctx-item"><span class="ca-ctx-label">Plot area</span><span class="ca-ctx-val">{{ (input.plotAreaSqft / 10.7639) | number:'1.0-0' }} sqm <span class="ca-ctx-sub">({{ input.plotAreaSqft | number:'1.0-0' }} sqft)</span></span></div>
+    <div class="ca-ctx-item"><span class="ca-ctx-label">Max built-up</span><span class="ca-ctx-val">{{ (input.maxBuiltSqft / 10.7639) | number:'1.0-0' }} sqm <span class="ca-ctx-sub">({{ input.maxBuiltSqft | number:'1.0-0' }} sqft)</span></span></div>
     <div class="ca-ctx-item"><span class="ca-ctx-label">FAR</span><span class="ca-ctx-val">{{ input.far }} <span class="ca-ctx-sub">(base {{ input.farBase }} + TDR {{ input.farTdr }})</span></span></div>
     <div class="ca-ctx-item"><span class="ca-ctx-label">Ground coverage</span><span class="ca-ctx-val">{{ input.groundCovPct }}%</span></div>
     <div class="ca-ctx-item"><span class="ca-ctx-label">Floors</span><span class="ca-ctx-val">{{ input.numFloors }} (G+{{ input.numFloors - 1 }})</span></div>

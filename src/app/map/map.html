@@ -74,7 +74,7 @@
 
 <!-- Plot area -->
 <div class="mt-2" *ngIf="plotArea !== 0">
-  <b>Plot Area:</b> {{ plotArea }} sq ft
+  <b>Plot Area:</b> {{ (plotArea / 10.7639) | number:'1.0-0' }} sqm <small style="font-size:10px;color:#94a3b8;">({{ plotArea | number:'1.0-0' }} sqft)</small>
 </div>
 
 <!-- Map legend -->

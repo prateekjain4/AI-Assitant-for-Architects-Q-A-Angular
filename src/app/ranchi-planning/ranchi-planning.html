@@ -147,13 +147,13 @@
           <div class="rp-metrics">
             <div class="rp-metric rp-metric-primary">
               <span class="rp-metric-label">Plot Area</span>
-              <span class="rp-metric-value">{{ result.plot_area | number:'1.0-0' }}</span>
-              <span class="rp-metric-unit">sq ft ({{ result.plot_area_sqm }} sqm)</span>
+              <span class="rp-metric-value">{{ result.plot_area_sqm | number:'1.0-0' }}</span>
+              <span class="rp-metric-unit">sqm <span class="rp-sub-unit">({{ result.plot_area | number:'1.0-0' }} sqft)</span></span>
             </div>
             <div class="rp-metric rp-metric-primary">
               <span class="rp-metric-label">Max Built-up</span>
-              <span class="rp-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
-              <span class="rp-metric-unit">sq ft ({{ result.max_built_sqm }} sqm)</span>
+              <span class="rp-metric-value">{{ result.max_built_sqm | number:'1.0-0' }}</span>
+              <span class="rp-metric-unit">sqm <span class="rp-sub-unit">({{ result.max_built_area | number:'1.0-0' }} sqft)</span></span>
             </div>
             <div class="rp-metric">
               <span class="rp-metric-label">FAR</span>
@@ -228,8 +228,8 @@
             </div>
             <div class="rp-metric rp-metric-primary">
               <span class="rp-metric-label">Max Built-up</span>
-              <span class="rp-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
-              <span class="rp-metric-unit">sq ft</span>
+              <span class="rp-metric-value">{{ result.max_built_sqm | number:'1.0-0' }}</span>
+              <span class="rp-metric-unit">sqm <span class="rp-sub-unit">({{ result.max_built_area | number:'1.0-0' }} sqft)</span></span>
             </div>
             <div class="rp-metric">
               <span class="rp-metric-label">Ground Coverage</span>
@@ -363,7 +363,7 @@
         <h4>Height Not Permitted</h4>
         <p>{{ result.error_message }}</p>
         <p class="rp-error-sub">
-          Zone: {{ result.zone_display }} · Plot: {{ result.plot_area | number:'1.0-0' }} sq ft
+          Zone: {{ result.zone_display }} · Plot: {{ result.plot_area_sqm | number:'1.0-0' }} sqm
         </p>
       </div>
     </div>
@@ -463,7 +463,7 @@
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      Context: {{ result.zone_display }} · {{ result.plot_area | number:'1.0-0' }} sqft · FAR {{ result.far }}
+      Context: {{ result.zone_display }} · {{ result.plot_area_sqm | number:'1.0-0' }} sqm · FAR {{ result.far }}
     </div>
 
     <!-- Messages -->

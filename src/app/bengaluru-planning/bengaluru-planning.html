@@ -243,7 +243,6 @@
             <span class="bp-badge bp-badge-tdr" *ngIf="result.far_tdr > 0">+{{ result.far_tdr }} TDR</span>
           </div>
         </div>
-        <button class="bp-cost-header-btn" (click)="openCostAnalysis()">₹ Cost Analysis</button>
       </div>
 
       <!-- Watch-out warnings -->
@@ -265,12 +264,12 @@
             <div class="bp-metric bp-metric-primary">
               <span class="bp-metric-label">Plot Area</span>
               <span class="bp-metric-value">{{ result.plot_area | number:'1.0-0' }}</span>
-              <span class="bp-metric-unit">sqm · {{ (result.plot_area * 10.764) | number:'1.0-0' }} sqft</span>
+              <span class="bp-metric-unit">sqm <span class="bp-sub-unit">({{ (result.plot_area * 10.764) | number:'1.0-0' }} sqft)</span></span>
             </div>
             <div class="bp-metric bp-metric-primary">
               <span class="bp-metric-label">Max Built-up</span>
               <span class="bp-metric-value">{{ result.max_built_area | number:'1.0-0' }}</span>
-              <span class="bp-metric-unit">sqm · {{ (result.max_built_area * 10.764) | number:'1.0-0' }} sqft</span>
+              <span class="bp-metric-unit">sqm <span class="bp-sub-unit">({{ (result.max_built_area * 10.764) | number:'1.0-0' }} sqft)</span></span>
             </div>
             <div class="bp-metric">
               <span class="bp-metric-label">FAR</span>
@@ -630,7 +629,7 @@
             #scenarioCompRef
             [zone]="result.zone"
             [roadWidth]="form.value.roadWidth"
-            [plotAreaSqft]="result.plot_area"
+            [plotAreaSqft]="result.plot_area * 10.7639"
             [plotLengthM]="form.value.plotLength"
             [plotWidthM]="form.value.plotWidth"
             [usage]="form.value.usage"
@@ -757,7 +756,7 @@
       <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
         <polyline points="20 6 9 17 4 12"/>
       </svg>
-      Context: {{ result.zone }} zone · {{ result.plot_area | number:'1.0-0' }} sqft · FAR {{ result.far }}
+      Context: {{ result.zone }} zone · {{ result.plot_area | number:'1.0-0' }} sqm · FAR {{ result.far }}
     </div>
 
     <!-- Messages -->

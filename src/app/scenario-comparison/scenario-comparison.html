@@ -13,7 +13,7 @@
         <span class="sc-title">Building Scenarios — Bylaw Thresholds</span>
         <span class="sc-sub">
           {{ scenarioData.zone }} zone · {{ scenarioData.road_width }}m road ·
-          FAR {{ scenarioData.far }} · Max built-up {{ scenarioData.max_built_sqft | number:'1.0-0' }} sq ft
+          FAR {{ scenarioData.far }} · Max built-up {{ (scenarioData.max_built_sqft / 10.7639) | number:'1.0-0' }} sqm <span class="sc-sub-unit">({{ scenarioData.max_built_sqft | number:'1.0-0' }} sqft)</span>
         </span>
       </div>
       <div class="sc-rec-badge">
@@ -50,17 +50,17 @@
             <!-- FAR target marker -->
             <div class="sc-bar-target"
               [style.left.%]="barWidth(s.far_target_sqft, scenarioData.max_built_sqft)"
-              title="FAR target: {{ s.far_target_sqft | number:'1.0-0' }} sq ft">
+              title="FAR target: {{ (s.far_target_sqft / 10.7639) | number:'1.0-0' }} sqm">
             </div>
           </div>
           <div class="sc-bar-right">
-            <span class="sc-bar-value">{{ s.total_built_sqft | number:'1.0-0' }} sqft</span>
+            <span class="sc-bar-value">{{ s.total_built_sqm | number:'1.0-0' }} sqm <span class="sc-sub-unit">({{ s.total_built_sqft | number:'1.0-0' }} sqft)</span></span>
             <span class="sc-bar-height">{{ s.building_height_m }}m · {{ s.floors_label }}</span>
           </div>
           <span class="sc-bar-noc" *ngIf="s.fire_noc_required" title="Fire NOC required">🔥</span>
         </div>
       </div>
-      <p class="sc-chart-note">🔥 = Fire NOC required · Tick mark = 100% FAR ceiling ({{ scenarioData.max_built_sqft | number:'1.0-0' }} sq ft)</p>
+      <p class="sc-chart-note">🔥 = Fire NOC required · Tick mark = 100% FAR ceiling ({{ (scenarioData.max_built_sqft / 10.7639) | number:'1.0-0' }} sqm)</p>
     </div>
 
     <!-- Selected scenario detail -->
@@ -82,23 +82,23 @@
         </div>
         <div class="sc-metric">
           <span class="sc-metric-label">Total built-up</span>
-          <span class="sc-metric-value">{{ selectedScenario.total_built_sqft | number:'1.0-0' }}</span>
-          <span class="sc-metric-unit">sq ft ({{ selectedScenario.total_built_sqm }} sqm)</span>
+          <span class="sc-metric-value">{{ selectedScenario.total_built_sqm | number:'1.0-0' }}</span>
+          <span class="sc-metric-unit">sqm <span class="sc-sub-unit">({{ selectedScenario.total_built_sqft | number:'1.0-0' }} sqft)</span></span>
         </div>
         <div class="sc-metric">
           <span class="sc-metric-label">FAR target</span>
-          <span class="sc-metric-value">{{ selectedScenario.far_target_sqft | number:'1.0-0' }}</span>
-          <span class="sc-metric-unit">sq ft</span>
+          <span class="sc-metric-value">{{ (selectedScenario.far_target_sqft / 10.7639) | number:'1.0-0' }}</span>
+          <span class="sc-metric-unit">sqm <span class="sc-sub-unit">({{ selectedScenario.far_target_sqft | number:'1.0-0' }} sqft)</span></span>
         </div>
         <div class="sc-metric">
           <span class="sc-metric-label">Avg floor area</span>
-          <span class="sc-metric-value">{{ selectedScenario.avg_floor_area_sqft | number:'1.0-0' }}</span>
-          <span class="sc-metric-unit">sq ft / floor</span>
+          <span class="sc-metric-value">{{ (selectedScenario.avg_floor_area_sqft / 10.7639) | number:'1.0-0' }}</span>
+          <span class="sc-metric-unit">sqm / floor <span class="sc-sub-unit">({{ selectedScenario.avg_floor_area_sqft | number:'1.0-0' }} sqft)</span></span>
         </div>
         <div class="sc-metric">
           <span class="sc-metric-label">Ground footprint</span>
-          <span class="sc-metric-value">{{ selectedScenario.footprint_sqft | number:'1.0-0' }}</span>
-          <span class="sc-metric-unit">sq ft (physical)</span>
+          <span class="sc-metric-value">{{ (selectedScenario.footprint_sqft / 10.7639) | number:'1.0-0' }}</span>
+          <span class="sc-metric-unit">sqm (physical) <span class="sc-sub-unit">({{ selectedScenario.footprint_sqft | number:'1.0-0' }} sqft)</span></span>
         </div>
         <div class="sc-metric">
           <span class="sc-metric-label">Fire NOC</span>
@@ -210,8 +210,8 @@
             <thead>
               <tr>
                 <th>Floor</th>
-                <th class="text-end">Area (sq ft)</th>
-                <th class="text-end">Area (sq m)</th>
+                <th class="text-end">Area (sqm)</th>
+                <th class="text-end sc-sub-unit">Area (sqft)</th>
                 <th>Setback rule</th>
               </tr>
             </thead>
@@ -222,16 +222,16 @@
                   {{ f.label }}
                   <span *ngIf="f.is_high_rise" class="hr-badge">above 15m</span>
                 </td>
-                <td class="text-end">{{ f.area_sqft | number:'1.0-0' }}</td>
-                <td class="text-end text-muted">{{ f.area_sqm }}</td>
+                <td class="text-end">{{ f.area_sqm | number:'1.0-0' }}</td>
+                <td class="text-end text-muted sc-sub-unit">{{ f.area_sqft | number:'1.0-0' }}</td>
                 <td class="text-muted small">{{ f.setback_rule }}</td>
               </tr>
             </tbody>
             <tfoot>
               <tr class="total-row">
                 <td><strong>Total</strong></td>
-                <td class="text-end"><strong>{{ selectedScenario.total_built_sqft | number:'1.0-0' }}</strong></td>
-                <td class="text-end">{{ selectedScenario.total_built_sqm }}</td>
+                <td class="text-end"><strong>{{ selectedScenario.total_built_sqm | number:'1.0-0' }}</strong></td>
+                <td class="text-end sc-sub-unit">{{ selectedScenario.total_built_sqft | number:'1.0-0' }}</td>
                 <td>FAR used: {{ selectedScenario.far_used }}</td>
               </tr>
             </tfoot>
