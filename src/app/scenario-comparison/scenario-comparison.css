@@ -30,6 +30,20 @@
 }
 .sc-rec-badge strong { color: #fff; }
 
+/* AI Reasoning block */
+.sc-ai-reasoning {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 18px; background: #eff6ff;
+  border-bottom: 1px solid #bfdbfe;
+}
+.sc-ai-icon { font-size: 14px; color: #1d4ed8; margin-top: 1px; flex-shrink: 0; }
+.sc-ai-label {
+  font-size: 10px; font-weight: 700; color: #1d4ed8;
+  text-transform: uppercase; letter-spacing: 0.5px;
+  white-space: nowrap; margin-top: 2px; flex-shrink: 0;
+}
+.sc-ai-text { font-size: 12px; color: #1e3a5f; margin: 0; line-height: 1.5; }
+
 /* Tabs */
 .sc-tabs {
   display: flex; border-bottom: 1px solid #e2e8f0; background: #f8fafc;
@@ -43,6 +57,7 @@
 }
 .sc-tab-pct  { font-size: 12px; font-weight: 600; white-space: nowrap; }
 .sc-tab-sub  { font-size: 10px; color: #94a3b8; white-space: nowrap; }
+.sc-tab-note { font-size: 9px; color: #64748b; white-space: normal; text-align: center; line-height: 1.3; padding: 0 4px; }
 .sc-tab:hover { background: #f1f5f9; color: #1e293b; }
 .sc-tab:hover .sc-tab-sub { color: #64748b; }
 .sc-tab.active {

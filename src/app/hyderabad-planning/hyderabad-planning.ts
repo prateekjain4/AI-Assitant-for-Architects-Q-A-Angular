@@ -48,12 +48,12 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
   openSections: Record<string, boolean> = {
     metrics:       true,
     setbacks:      true,
-    far:           true,
-    staircase:     true,
-    fire:          true,
-    compliance:    true,
-    parking:       true,
-    scenarios:     true,
+    far:           false,
+    staircase:     false,
+    fire:          false,
+    compliance:    false,
+    parking:       false,
+    scenarios:     false,
     basement:      false,
     accessibility: false,
     solar:         false,
@@ -143,6 +143,27 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
           maxZoom: 19,
         }).addTo(this.map);
 
+        // ── HMDA Zone GeoJSON overlay ──────────────────────────────
+        const canvasRenderer = L.canvas({ padding: 0.5 });
+        this.http.get<any>('assets/hyderabad_zones_display.geojson').subscribe({
+          next: (geojson) => {
+            const options: any = {
+              renderer: canvasRenderer,
+              style: (feature: any) => this.getZoneStyle(feature?.properties?.zone_code),
+              onEachFeature: (feature: any, layer: any) => {
+                const p = feature.properties;
+                layer.bindTooltip(
+                  `<b>${p.zone_code}</b> — ${p.zone_name}` +
+                  (p.locality ? `<br><span style="font-size:11px">${p.locality}</span>` : ''),
+                  { sticky: true }
+                );
+              }
+            };
+            L.geoJSON(geojson, options).addTo(this.map);
+          },
+          error: (err) => console.error('Zone overlay failed:', err)
+        });
+
         this.map.on('click', (e: any) => {
           this.ngZone.run(() => {
             const { lat, lng } = e.latlng;
@@ -153,6 +174,31 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
         console.warn('Leaflet map init failed:', err);
       }
     }, 100);
+  }
+
+  private getZoneStyle(zoneCode: string) {
+    const colours: Record<string, string> = {
+      'R1':  '#3b82f6',  // blue        — Residential R1
+      'R2':  '#60a5fa',  // light blue  — Residential R2
+      'C1':  '#ef4444',  // red         — Commercial C1
+      'C2':  '#dc2626',  // dark red    — Commercial C2
+      'MX':  '#8b5cf6',  // violet      — Mixed Use
+      'IT':  '#06b6d4',  // cyan        — IT / ITES
+      'I1':  '#a16207',  // amber       — Industrial I1
+      'I2':  '#92400e',  // dark amber  — Industrial I2
+      'PSP': '#22c55e',  // green       — Public Semi-Public
+      'T':   '#64748b',  // slate       — Transportation
+      'P':   '#16a34a',  // dark green  — Parks & Open Space
+      'GB':  '#166534',  // forest      — Green Belt
+      'AG':  '#ca8a04',  // yellow      — Agricultural
+    };
+    return {
+      color:       colours[zoneCode] ?? '#6b7280',
+      fillColor:   colours[zoneCode] ?? '#6b7280',
+      weight:      1,
+      opacity:     0.7,
+      fillOpacity: 0.15,
+    };
   }
 
   private setMapMarker(lat: number, lng: number, L: any): void {
@@ -199,13 +245,13 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
           this.openSections = {
             metrics:       true,
             setbacks:      true,
-            far:           true,
-            staircase:     true,
-            fire:          true,
-            compliance:    true,
-            parking:       true,
-            scenarios:     true,
-            basement:      res.basement?.requested ?? false,
+            far:           false,
+            staircase:     false,
+            fire:          false,
+            compliance:    false,
+            parking:       false,
+            scenarios:     false,
+            basement:      false,
             accessibility: false,
             solar:         false,
             openSpace:     false,
@@ -239,45 +285,60 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
   showSourceModal = false;
   sourceSection   = '';
 
-  readonly SOURCES: Record<string, Array<{ doc: string; clause: string; desc: string; pdf?: string }>> = {
+  // PDF viewer state
+  showPdfViewer  = false;
+  pdfViewerUrl   = '';
+  pdfCurrentPage = 1;
+  pdfPrintedPage = 1;
+  pdfSearchText  = '';
+  pdfDocLabel    = '';
+
+  // Hyderabad_Bylaws.pdf: physical page 1 = printed page 1 (no front matter offset)
+  private readonly PDF_PAGE_OFFSETS: Record<string, number> = {
+    'Hyderabad_Bylaws.pdf': 0,
+  };
+
+  readonly SOURCES: Record<string, Array<{
+    doc: string; clause: string; desc: string; pdf?: string; page?: number; searchText?: string;
+  }>> = {
     metrics: [
-      { doc: 'GHMC Building Permissions Rules 2012', clause: 'Rule 5 & GO Ms.No.168', desc: 'Plot area and maximum built-up area derived from zone-based FAR. Ground coverage limits: 60% for plots ≤ 750 sqm; 55% above 750 sqm.' },
+      { doc: 'AP Building Rules 2012 (GHMC)', clause: 'Rule 5, Table II — GO Ms.No.168', desc: 'Plot area and maximum built-up area derived from zone-based FAR. Ground coverage: 60% for plots ≤ 750 sqm; 55% above 750 sqm.', pdf: 'Hyderabad_Bylaws.pdf', page: 7, searchText: 'Floor Area Ratio' },
     ],
     setbacks: [
-      { doc: 'GHMC Building Permissions Rules 2012', clause: 'Rule 7, Table IV', desc: 'Setbacks by plot area and building height. Front: road-width dependent. Side and rear: height-progressive.' },
+      { doc: 'AP Building Rules 2012 (GHMC)', clause: 'Rule 5 — Table IV, Section 5', desc: 'Setbacks by plot area and building height. Front: road-width dependent (Table III). Side and rear: height-progressive. High-rise additional setbacks above 18m.', pdf: 'Hyderabad_Bylaws.pdf', page: 9, searchText: 'PERMISSIBLE SETBACKS' },
     ],
     far: [
-      { doc: 'AP Building Rules 2012 / GHMC Master Plan 2031', clause: 'Rule 5, Table II (GO Ms.No.168)', desc: 'Zone-based FAR per GHMC/HMDA Master Plan 2031 Zoning Regulations. Residential: R1–R5 (1.5–3.5), Commercial: C1–C3 (2.0–3.5), Mixed Use: MU1/MU2 (2.5/3.5), Industrial: I1–I4 (1.0–2.0), PSP: 1.5.' },
+      { doc: 'AP Building Rules 2012 (GHMC)', clause: 'Rule 5, Table II — GO Ms.No.168', desc: 'Zone-based FAR: R1–R5 (1.5–3.5), C1–C3 (2.0–3.5), MU1/MU2 (2.5/3.5), I1–I4 (1.0–2.0), PSP: 1.5. Road-width and plot-area constraints apply.', pdf: 'Hyderabad_Bylaws.pdf', page: 7, searchText: 'Floor Area Ratio' },
     ],
     staircase: [
-      { doc: 'GHMC Building Permissions Rules 2012', clause: 'Rule 11', desc: 'Staircase minimum width 1.5m. Lift mandatory for buildings above 15m (G+4 and above).' },
+      { doc: 'AP Building Rules 2012 (GHMC)', clause: 'Rule 11 — Staircase & Lift', desc: 'Staircase minimum width 1.5 m. Lift mandatory for buildings above 15 m height (G+4 and above). Service lift for high-rise above 24 m.', pdf: 'Hyderabad_Bylaws.pdf', page: 20, searchText: 'staircase' },
     ],
     fire: [
-      { doc: 'GHMC Building Permissions Rules 2012', clause: 'Rule 13 & NBC 2016 Part IV', desc: 'Fire NOC from GHMC mandatory for buildings above 18m height or BUA > 500 sqm for commercial.' },
+      { doc: 'AP Building Rules 2012 (GHMC)', clause: 'Rule 13 — High Rise Buildings', desc: 'Fire NOC from GHMC mandatory for buildings above 18 m height. Commercial BUA > 500 sqm also requires Fire NOC. Firefighting lift and sprinklers mandatory above 24 m.', pdf: 'Hyderabad_Bylaws.pdf', page: 13, searchText: 'High Rise building' },
     ],
     parking: [
-      { doc: 'GHMC Building Permissions Rules 2012', clause: 'Rule 9, Table VI', desc: 'Parking: Residential — 1 car per unit (> 75 sqm). Commercial — 1 car per 50 sqm.' },
+      { doc: 'AP Building Rules 2012 (GHMC)', clause: 'Rule 9, Table VI (Parking Rates)', desc: 'Parking: Residential — 1 car per unit > 75 sqm. Commercial — 1 car per 50 sqm. Shopping Malls — as per Table VI. EV charging provision mandatory for new buildings.', pdf: 'Hyderabad_Bylaws.pdf', page: 18, searchText: 'Shopping Malls' },
     ],
     basement: [
-      { doc: 'GHMC Building Permissions Rules 2012', clause: 'Rule 10', desc: 'Basement not counted in FAR if used for parking only. Max 2 levels. Setback 3m from boundary.' },
+      { doc: 'AP Building Rules 2012 (GHMC)', clause: 'Rule 10 — Cellar / Basement Parking', desc: 'Basement not counted in FAR if used for parking only. Common and continuous cellar parking allowed between adjoining buildings subject to structural safety. Setback 3 m from boundary.', pdf: 'Hyderabad_Bylaws.pdf', page: 19, searchText: 'cellar parking' },
     ],
     compliance: [
-      { doc: 'GHMC Building Permissions Rules 2012', clause: 'Full Rules 2012', desc: 'Compliance checklist based on GHMC Building Permissions Rules 2012 and GO Ms.No.168 covering setbacks, FAR, coverage, parking, fire, and staircase.' },
+      { doc: 'AP Building Rules 2012 (GHMC)', clause: 'Rules 5, 7, 9, 11, 13 — Full Rules', desc: 'Compliance checklist based on GHMC Building Permissions Rules 2012 (GO Ms.No.168) covering setbacks, FAR, ground coverage, parking, fire NOC, and staircase requirements.', pdf: 'Hyderabad_Bylaws.pdf', page: 1, searchText: 'building permission' },
     ],
     scenarios: [
-      { doc: 'AP Building Rules 2012 — G.O.Ms.No.168', clause: 'Rules 5 & 7 — Tables II / III / IV', desc: 'Scenario heights anchored to AP Building Rules thresholds: 15 m (lift mandatory + commercial fire NOC), 18 m (high-rise setback table + residential fire NOC), plus a Max-FAR scenario derived from zone FAR and road-width height cap.' },
+      { doc: 'AP Building Rules 2012 — GO Ms.No.168', clause: 'Rules 5 & 7 — Tables II / III / IV', desc: 'Scenario heights anchored to AP Building Rules thresholds: 15 m (lift mandatory + commercial fire NOC), 18 m (high-rise setbacks + residential fire NOC), plus Max-FAR scenario derived from zone FAR and road-width height cap.', pdf: 'Hyderabad_Bylaws.pdf', page: 7, searchText: 'Floor Area Ratio' },
     ],
     accessibility: [
-      { doc: 'AP Building Rules 2012 — Annexure-V (Rule 15.a.v)', clause: 'NBC 2005, Part-III, Clause 12.21 — pages 312–321', desc: 'Special requirements for public buildings for physically challenged. Access path min 1200mm, max gradient 1:20. Ramp max slope 1:12 (up to 9000mm). Door min clear width 900mm. Stair tread 300mm, riser max 150mm. WC min 900×1500mm, seat height 500mm. Handrail 900mm high, 40mm dia.' },
+      { doc: 'AP Building Rules 2012 — Annexure-V (Rule 15.a.v)', clause: 'NBC 2005, Part-III, Clause 12.21', desc: 'Special requirements for public buildings. Access path min 1200 mm, gradient ≤ 1:20. Ramp slope 1:12 (runs ≤ 9000 mm). Door clear width 900 mm. Stair tread 300 mm, riser ≤ 150 mm. WC 900 × 1500 mm, seat height 500 mm. Handrail 900 mm high, 40 mm dia.', pdf: 'Hyderabad_Bylaws.pdf', page: 312, searchText: 'physically challenged' },
     ],
     solar: [
-      { doc: 'AP Building Rules 2012', clause: 'Rule 15.a.xi (page 21) and Rule 22 (page 26)', desc: 'Solar Water Heating and Lighting mandatory for Group Housing ≥ 100 units, Hospitals, Nursing Homes, Hotels. Bank guarantee required. 10% property tax rebate for solar adoption. Rainwater harvesting mandatory for ALL buildings (G.O.Ms.No.350 MA, Dt.09.06.2000). 10% property tax rebate when BOTH water recycling and rainwater harvesting are provided.' },
+      { doc: 'AP Building Rules 2012', clause: 'Rule 15.a.xi & Rule 22', desc: 'Solar Water Heating mandatory for Group Housing ≥ 100 units, Hospitals, Nursing Homes, Hotels. Bank guarantee required. 10% property tax rebate for solar adoption. Rainwater harvesting mandatory for ALL buildings — GO Ms.No.350 MA.', pdf: 'Hyderabad_Bylaws.pdf', page: 21, searchText: 'Group Housing' },
     ],
     openSpace: [
-      { doc: 'AP Building Rules 2012', clause: 'Rules 5.f.v, 7.a.vii, 8.g, 15.a.x', desc: 'Non-high-rise plots >750 sqm: 5% of site as organised open space (tot lot). High Rise and Group Development ≥ 4000 sqm: 10% of site open to sky + 2m green strip on all sides. Chowk/inner courtyard: min 25 sqm, 3m side. Group Housing ≥ 100 units: 3% of BUA for common amenities (shop, club, crèche, gym) per NBC 2005.' },
+      { doc: 'AP Building Rules 2012', clause: 'Rules 5.f.v, 7.a.vii, 8.g, 15.a.x', desc: 'Non-high-rise plots > 750 sqm: 5% of site as organised open space. High-rise ≥ 4000 sqm: 10% open to sky + 2 m green strip on all sides. Chowk: min 25 sqm, 3 m side. Group Housing ≥ 100 units: 3% of BUA for common amenities.', pdf: 'Hyderabad_Bylaws.pdf', page: 21, searchText: 'open space' },
     ],
     sanctions: [
-      { doc: 'AP Building Rules 2012', clause: 'Rules 19, 24, 25, 26 (pages 24–29)', desc: 'Building permit fee: 2% of licence fee (max Rs.10,000); no fee for parking floors. Non-high-rise valid 3 years; High Rise/GDS 5 years. Construction must commence within 18 months. OC mandatory for all buildings (except individual plots ≤100 sqm, height ≤7m). Penalties without OC: 3× utility tariff + 2× property tax annually.' },
+      { doc: 'AP Building Rules 2012', clause: 'Rules 19, 24, 25, 26', desc: 'Building permit fee: 2% of licence fee (max Rs. 10,000); parking floors exempt. Non-high-rise valid 3 years; High-Rise/GDS 5 years. Construction must commence within 18 months. OC mandatory for all buildings except plots ≤ 200 sqm, height ≤ 7 m.', pdf: 'Hyderabad_Bylaws.pdf', page: 25, searchText: 'Built Up Area' },
     ],
   };
 
@@ -290,6 +351,41 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
   closeSourceModal(): void { this.showSourceModal = false; }
 
   get currentSources() { return this.SOURCES[this.sourceSection] ?? []; }
+
+  docUrl(pdf: string): string {
+    return `http://localhost:8000/docs/${pdf}`;
+  }
+
+  openPdf(src: { pdf?: string; page?: number; searchText?: string; doc?: string; clause?: string }): void {
+    if (!src.pdf) return;
+    const printedPage   = src.page ?? 1;
+    const offset        = this.PDF_PAGE_OFFSETS[src.pdf] ?? 0;
+    this.pdfViewerUrl   = this.docUrl(src.pdf);
+    this.pdfPrintedPage = printedPage;
+    this.pdfCurrentPage = printedPage + offset;
+    this.pdfSearchText  = src.searchText ?? '';
+    this.pdfDocLabel    = src.doc ? `${src.doc}${src.clause ? ' — ' + src.clause : ''}` : src.pdf;
+    this.showPdfViewer  = true;
+  }
+
+  closePdfViewer(): void {
+    this.showPdfViewer = false;
+    this.pdfSearchText = '';
+  }
+
+  onPdfLoaded(pdfProxy: any): void {
+    if (!this.pdfSearchText) return;
+    try {
+      const bus = (pdfProxy as any)?.eventBus ?? (pdfProxy as any)?._pdfInfo?.eventBus;
+      if (bus) {
+        bus.dispatch('find', {
+          query: this.pdfSearchText, type: 'again',
+          caseSensitive: false, findPrevious: false,
+          highlightAll: true, phraseSearch: true,
+        });
+      }
+    } catch { /* graceful no-op */ }
+  }
 
   // ── Chat methods ──────────────────────────────────────────────
   toggleChat(): void {

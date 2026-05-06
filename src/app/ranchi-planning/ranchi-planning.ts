@@ -48,11 +48,11 @@ export class RanchiPlanningTool implements OnInit, AfterViewInit {
   openSections: Record<string, boolean> = {
     metrics:    true,
     setbacks:   true,
-    far:        true,
-    staircase:  true,
-    fire:       true,
-    compliance: true,
-    parking:    true,
+    far:        false,
+    staircase:  false,
+    fire:       false,
+    compliance: false,
+    parking:    false,
     basement:   false,
   };
 
@@ -175,12 +175,12 @@ export class RanchiPlanningTool implements OnInit, AfterViewInit {
           this.openSections = {
             metrics:    true,
             setbacks:   true,
-            far:        true,
-            staircase:  true,
-            fire:       true,
-            compliance: true,
-            parking:    true,
-            basement:   res.basement?.requested ?? false,
+            far:        false,
+            staircase:  false,
+            fire:       false,
+            compliance: false,
+            parking:    false,
+            basement:   false,
           };
           try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify({

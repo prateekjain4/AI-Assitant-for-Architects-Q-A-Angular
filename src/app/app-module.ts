@@ -1,4 +1,5 @@
 import { NgModule, provideBrowserGlobalErrorListeners } from '@angular/core';
+import { PdfViewerModule } from 'ng2-pdf-viewer';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { AppRoutingModule } from './app-routing-module';
@@ -52,6 +53,7 @@ import { ToastComponent } from './toast/toast.component';
     FormsModule,
     ReactiveFormsModule,
     NavbarModule,
+    PdfViewerModule,
   ],
   providers: [
     provideBrowserGlobalErrorListeners(),

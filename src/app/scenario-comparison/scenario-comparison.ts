@@ -26,6 +26,7 @@ export class ScenarioComparison {
   @Input() carSpaces:        number  = 0;
 
   scenarioData: any    = null;
+  aiAdvice:     any    = null;
   loading:      boolean = false;
   selectedTab:  string  = '';
   expandedFloor: string = '';
@@ -92,6 +93,7 @@ export class ScenarioComparison {
         next: (res) => {
           this.ngZone.run(() => {
             this.scenarioData = res;
+            this.aiAdvice     = res.ai_advice ?? null;
             this.selectedTab  = res.recommended;
             this.loading      = false;
             this.cdr.detectChanges();

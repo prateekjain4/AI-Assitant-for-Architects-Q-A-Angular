@@ -1,11 +1,14 @@
 import {
-  Component, OnInit, AfterViewInit,
+  Component, OnInit, AfterViewInit, OnDestroy,
   ChangeDetectorRef, NgZone, Inject, PLATFORM_ID, ViewChild, ElementRef
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { GlobalWorkerOptions } from 'pdfjs-dist';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { Subject, combineLatest } from 'rxjs';
+import { debounceTime, distinctUntilChanged, filter, takeUntil, startWith } from 'rxjs/operators';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 import { CostDataService } from '../services/cost-data.service';
@@ -14,6 +17,7 @@ import { ProjectService, ProjectSummary } from '../services/project.service';
 
 export interface ChatMessage { role: 'user' | 'ai'; text: string; ts: string; }
 export interface ChatSession  { id: string; title: string; messages: ChatMessage[]; createdAt: string; updatedAt: string; }
+export interface UsageOption  { value: string; label: string; group: string; requires_space_standards: boolean; }
 
 @Component({
   selector: 'app-bengaluru-planning',
@@ -21,7 +25,7 @@ export interface ChatSession  { id: string; title: string; messages: ChatMessage
   templateUrl: './bengaluru-planning.html',
   styleUrl: './bengaluru-planning.css',
 })
-export class BengaluruPlanningTool implements OnInit, AfterViewInit {
+export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('scenarioCompRef') scenarioCompRef?: ScenarioComparison;
   @ViewChild('blrChatBody', { static: false }) chatBodyRef?: ElementRef;
@@ -60,20 +64,43 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
 
   openSections: Record<string, boolean> = {
     metrics:       true,
+    sitePlan:      true,
     setbacks:      true,
-    far:           true,
-    staircase:     true,
-    fire:          true,
-    compliance:    true,
-    parking:       true,
+    far:           false,
+    staircase:     false,
+    fire:          false,
+    compliance:    false,
+    parking:       false,
     basement:      false,
-    accessibility: true,
-    compoundWall:  true,
-    watchOut:      true,
-    scenarios:     true,
+    accessibility: false,
+    compoundWall:  false,
+    scenarios:     false,
   };
 
-  detectedZone = '';
+  detectedZone     = '';
+  planningZone     = 'zone_A';   // 'zone_A' inside ORR, 'zone_B' outside
+  bbmpWardName     = '';
+  bbmpWardNo       = '';
+  bbmpZone         = '';
+  bbmpZoneOffice   = '';
+
+  // ── Dynamic usage dropdown ─────────────────────────────────────
+  allowedUsages: UsageOption[] = [];
+  usagesLoading = false;
+  private readonly destroy$ = new Subject<void>();
+
+  get usageGroups(): { name: string; options: UsageOption[] }[] {
+    const map = new Map<string, UsageOption[]>();
+    for (const opt of this.allowedUsages) {
+      if (!map.has(opt.group)) map.set(opt.group, []);
+      map.get(opt.group)!.push(opt);
+    }
+    return Array.from(map.entries()).map(([name, options]) => ({ name, options }));
+  }
+
+  get hasSpaceStdUsages(): boolean {
+    return this.allowedUsages.some(u => u.requires_space_standards);
+  }
 
   readonly zones = [
     { value: 'R',   label: 'R   — Residential' },
@@ -95,47 +122,66 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
   showSourceModal   = false;
   sourceSection     = '';
 
-  readonly SOURCES: Record<string, Array<{ doc: string; clause: string; desc: string; pdf?: string }>> = {
+  readonly SOURCES: Record<string, Array<{ doc: string; clause: string; desc: string; pdf?: string; page?: number; searchText?: string }>> = {
     metrics: [
-      { doc: 'BDA RMP 2031', clause: 'Tables 6 & 7 (Residential), Tables 12 & 13 (Commercial), Table 17 (Industrial)', desc: 'Plot area, maximum built-up area, and permissible ground coverage derived from FAR tables keyed by zone, plot size bracket, and road width bracket.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'BDA RMP 2031', clause: 'Tables 6 & 7 (Residential), Tables 12 & 13 (Commercial), Table 17 (Industrial)', desc: 'Plot area, maximum built-up area, and permissible ground coverage derived from FAR tables keyed by zone, plot size bracket, and road width bracket.', pdf: 'BDA_Zoning_Regulations.pdf', page: 18, searchText: 'Floor Area Ratio' },
     ],
     setbacks: [
-      { doc: 'BDA RMP 2031', clause: 'Section 4.5, Table 2', desc: 'Progressive setback requirements by building height tier — front, side, and rear margins increase with height. Applies to all zones.', pdf: 'BDA_Zoning_Regulations.pdf' },
-      { doc: 'Bangalore Building Bye-Laws', clause: 'Rule 8', desc: 'Marginal open space (setback) regulations and relaxation provisions for corner plots.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+      { doc: 'Bangalore Building Bye-Laws', clause: 'Rule 8', desc: 'Marginal open space (setback) regulations and relaxation provisions for corner plots.', pdf: 'Bangalore-Building-Byelaws.pdf', page: 18, searchText: 'marginal open space' },
+      { doc: 'BDA RMP 2031', clause: 'Section 4.5, Table 2', desc: 'Progressive setback requirements by building height tier — front, side, and rear margins increase with height. Applies to all zones.', pdf: 'BDA_Zoning_Regulations.pdf', page: 22, searchText: 'All-round setbacks' },
     ],
     far: [
-      { doc: 'BDA RMP 2031', clause: 'Tables 6 & 7', desc: 'Base FAR and TDR FAR for Residential zones (R/RM) by plot size × road width, split by Planning Zone A (within ORR) and Zone B (outside ORR).', pdf: 'BDA_Zoning_Regulations.pdf' },
-      { doc: 'BDA RMP 2031', clause: 'Tables 12 & 13', desc: 'FAR and ground coverage for Commercial zones C1–C5 by road width, for Planning Zone A and Zone B.', pdf: 'BDA_Zoning_Regulations.pdf' },
-      { doc: 'BDA RMP 2031', clause: 'Table 17', desc: 'FAR and coverage for Industrial zones I1–I5.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'BDA RMP 2031', clause: 'Tables 6 & 7', desc: 'Base FAR and TDR FAR for Residential zones (R/RM) by plot size × road width, split by Planning Zone A (within ORR) and Zone B (outside ORR).', pdf: 'BDA_Zoning_Regulations.pdf', page: 20, searchText: 'Floor Area Ratio' },
+      { doc: 'BDA RMP 2031', clause: 'Tables 12 & 13', desc: 'FAR and ground coverage for Commercial zones C1–C5 by road width, for Planning Zone A and Zone B.', pdf: 'BDA_Zoning_Regulations.pdf', page: 28, searchText: 'Commercial Zone' },
+      { doc: 'BDA RMP 2031', clause: 'Table 17', desc: 'FAR and coverage for Industrial zones I1–I5.', pdf: 'BDA_Zoning_Regulations.pdf', page: 34, searchText: 'Industrial Zone' },
     ],
     staircase: [
-      { doc: 'BDA RMP 2031', clause: 'Section 4.9.6', desc: 'Lift mandatory above G+3. High-rise buildings must provide at least one dedicated service lift. Buildings with fewer than 24 units or < 2,400 sqm BUA may use a combined passenger + service lift.', pdf: 'BDA_Zoning_Regulations.pdf' },
-      { doc: 'Bangalore Building Bye-Laws', clause: 'Rule 14', desc: 'Staircase width and count requirements by floor count and occupancy type.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+      { doc: 'Bangalore Building Bye-Laws', clause: 'Section 20.6', desc: 'Staircase width and count requirements by floor count and occupancy type.', pdf: 'Bangalore-Building-Byelaws.pdf', page: 68, searchText: 'staircase width' },
+      { doc: 'BDA RMP 2031', clause: 'Section 4.9.6', desc: 'Lift mandatory above G+3. High-rise buildings must provide at least one dedicated service lift. Buildings with fewer than 24 units or < 2,400 sqm BUA may use a combined passenger + service lift.', pdf: 'BDA_Zoning_Regulations.pdf', page: 30, searchText: 'lift' },
     ],
     fire: [
-      { doc: 'NBC 2016 Part IV', clause: 'Fire & Life Safety — Chapter 4', desc: 'Fire NOC trigger heights and built-up area thresholds by occupancy. Tender access road width (7m min), height clearance, turning radius. Refuge area every 15th floor.', pdf: 'NBC2016_Fire_Safety.pdf' },
-      { doc: 'BDA RMP 2031', clause: 'Section 4.11', desc: 'Non-residential buildings with BUA above 5,000 sqm require firefighting arrangements per Authority directions, irrespective of height.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'Bangalore Building Bye-Laws 2003', clause: 'Section 23', desc: 'Fire safety provisions — fire exits, emergency lighting, fire extinguisher placement, and firefighting shaft requirements per BBMP Bye-Laws 2003.', pdf: 'Bangalore-Building-Byelaws.pdf', page: 82, searchText: 'fire safety' },
+      { doc: 'NBC 2016 Part IV', clause: 'Fire & Life Safety — Chapter 4', desc: 'Fire NOC trigger heights and built-up area thresholds by occupancy. Tender access road width (7m min), height clearance, turning radius. Refuge area every 15th floor.', pdf: 'NBC2016_Fire_Safety.pdf', page: 12, searchText: 'Fire NOC' },
+      { doc: 'BDA RMP 2031', clause: 'Section 4.11', desc: 'Non-residential buildings with BUA above 5,000 sqm require firefighting arrangements per Authority directions, irrespective of height.', pdf: 'BDA_Zoning_Regulations.pdf', page: 35, searchText: 'firefighting' },
     ],
     parking: [
-      { doc: 'BDA RMP 2031', clause: 'Section 4.13, Table 4', desc: 'Parking requirements by use: Residential — 1 car/DU (50–120 sqm) to 1 car + extra per 120 sqm. Office — 1 car/50 sqm. Retail — 1 car/50 sqm. Hospital — 1 car/75 sqm.', pdf: 'BDA_Zoning_Regulations.pdf' },
-      { doc: 'Bangalore Building Bye-Laws', clause: 'Table 23 (BBMP)', desc: 'Detailed parking space standards, drive aisle widths, and EV charging mandate (5% of spaces).', pdf: 'Bangalore-Building-Byelaws.pdf' },
+      { doc: 'Bangalore Building Bye-Laws', clause: 'Table 23 (BBMP)', desc: 'Detailed parking space standards, drive aisle widths, and EV charging mandate (5% of spaces).', pdf: 'Bangalore-Building-Byelaws.pdf', page: 85, searchText: 'parking space' },
+      { doc: 'BDA RMP 2031', clause: 'Section 4.13, Table 4', desc: 'Parking requirements by use: Residential — 1 car/DU (50–120 sqm) to 1 car + extra per 120 sqm. Office — 1 car/50 sqm. Retail — 1 car/50 sqm. Hospital — 1 car/75 sqm.', pdf: 'BDA_Zoning_Regulations.pdf', page: 38, searchText: 'Parking' },
     ],
     basement: [
-      { doc: 'BDA RMP 2031', clause: 'Section 4.9.2', desc: 'Basement regulations: max height above avg GL = 1.2m, max overall depth = 4.5m, up to 5 levels permitted. Setback from boundary minimum 2m. Not counted in FAR.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'Bangalore Building Bye-Laws 2003', clause: 'Section 18', desc: 'Basement floor regulations — permitted uses, ventilation requirements (6 ACH mechanical), fire safety provisions, and setback from boundaries.', pdf: 'Bangalore-Building-Byelaws.pdf', page: 60, searchText: 'basement' },
+      { doc: 'BDA RMP 2031', clause: 'Section 4.9.2', desc: 'Basement regulations: max height above avg GL = 1.2m, max overall depth = 4.5m, up to 5 levels permitted. Setback from boundary minimum 2m. Not counted in FAR.', pdf: 'BDA_Zoning_Regulations.pdf', page: 30, searchText: 'Basement' },
     ],
     compliance: [
-      { doc: 'BDA RMP 2031', clause: 'Multiple Sections (4.5, 4.9, 4.11, 4.13)', desc: 'Compliance checklist derived from BDA RMP 2031 zoning regulations covering setbacks, height, basement, lifts, parking, and fire safety.', pdf: 'BDA_Zoning_Regulations.pdf' },
-      { doc: 'Bangalore Building Bye-Laws', clause: 'All applicable rules', desc: 'BBMP Building Bye-Laws (amended) for structural, occupancy, and marginal open space compliance.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+      { doc: 'Bangalore Building Bye-Laws', clause: 'All applicable rules', desc: 'BBMP Building Bye-Laws (amended) for structural, occupancy, and marginal open space compliance.', pdf: 'Bangalore-Building-Byelaws.pdf', page: 1, searchText: 'building' },
+      { doc: 'BDA RMP 2031', clause: 'Multiple Sections (4.5, 4.9, 4.11, 4.13)', desc: 'Compliance checklist derived from BDA RMP 2031 zoning regulations covering setbacks, height, basement, lifts, parking, and fire safety.', pdf: 'BDA_Zoning_Regulations.pdf', page: 14, searchText: 'compliance' },
     ],
     accessibility: [
-      { doc: 'Bangalore Building Bye-Laws 2003', clause: 'Schedule XI · Bye-law 31.0', desc: 'Mandatory for public/semi-public buildings ≥ 300 sqm covered area. Covers accessible ramps (1.80m wide, 1:10 slope), corridors (1.80m), lift cage (1100×2000mm), wheelchair toilet (1.50×1.75m), handrails at 800mm, Braille signage, and guiding floor material.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+      { doc: 'Bangalore Building Bye-Laws 2003', clause: 'Schedule XI · Bye-law 31.0', desc: 'Mandatory for public/semi-public buildings ≥ 300 sqm covered area. Covers accessible ramps (1.80m wide, 1:10 slope), corridors (1.80m), lift cage (1100×2000mm), wheelchair toilet (1.50×1.75m), handrails at 800mm, Braille signage, and guiding floor material.', pdf: 'Bangalore-Building-Byelaws.pdf', page: 112, searchText: 'accessibility' },
     ],
     compoundWall: [
-      { doc: 'Bangalore Building Bye-Laws 2003', clause: 'Section 20.8', desc: 'Front and side boundary walls max 1.5m above ground level. Rear walls max 2.0m. Corner plot walls restricted to 0.75m for 5m from intersection on each side, with rounded/chamfered corners. Barbed wire and prickly hedge prohibited on all boundaries.', pdf: 'Bangalore-Building-Byelaws.pdf' },
+      { doc: 'Bangalore Building Bye-Laws 2003', clause: 'Section 20.8', desc: 'Front and side boundary walls max 1.5m above ground level. Rear walls max 2.0m. Corner plot walls restricted to 0.75m for 5m from intersection on each side, with rounded/chamfered corners. Barbed wire and prickly hedge prohibited on all boundaries.', pdf: 'Bangalore-Building-Byelaws.pdf', page: 72, searchText: 'compound wall' },
     ],
     scenarios: [
-      { doc: 'BDA RMP 2031', clause: 'Tables 6, 7, 12, 13, 17', desc: 'Scenario comparison runs alternative height and floor configurations against the same FAR and setback tables from BDA RMP 2031.', pdf: 'BDA_Zoning_Regulations.pdf' },
+      { doc: 'BDA RMP 2031', clause: 'Tables 6, 7, 12, 13, 17', desc: 'Scenario comparison runs alternative height and floor configurations against the same FAR and setback tables from BDA RMP 2031.', pdf: 'BDA_Zoning_Regulations.pdf', page: 18, searchText: 'Floor Area Ratio' },
     ],
+  };
+
+  // ── PDF viewer state ──────────────────────────────────────────
+  showPdfViewer  = false;
+  pdfViewerUrl   = '';
+  pdfCurrentPage = 1;   // physical page sent to [page] binding
+  pdfPrintedPage = 1;   // document-printed page shown in badge
+  pdfSearchText  = '';
+  pdfDocLabel    = '';
+
+  // Front-matter page counts per PDF (physical page 1 = printed page 1 + offset)
+  // BDA: 4 blank + 6 roman-numeral + 2 unnumbered = 12 pages before printed "1"
+  // BBMP: no front matter, physical matches printed
+  private readonly PDF_PAGE_OFFSETS: Record<string, number> = {
+    'BDA_Zoning_Regulations.pdf':     12,
+    'Bangalore-Building-Byelaws.pdf':  0,
+    'NBC2016_Fire_Safety.pdf':         0,
   };
 
   openSource(section: string, event: Event): void {
@@ -150,6 +196,42 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
 
   docUrl(pdf: string): string {
     return `http://localhost:8000/docs/${pdf}`;
+  }
+
+  openPdf(src: { pdf?: string; page?: number; searchText?: string; doc?: string; clause?: string }): void {
+    if (!src.pdf) return;
+    const printedPage    = src.page ?? 1;
+    const offset         = this.PDF_PAGE_OFFSETS[src.pdf] ?? 0;
+    this.pdfViewerUrl    = this.docUrl(src.pdf);
+    this.pdfPrintedPage  = printedPage;
+    this.pdfCurrentPage  = printedPage + offset;
+    this.pdfSearchText   = src.searchText ?? '';
+    this.pdfDocLabel     = src.doc ? `${src.doc}${src.clause ? ' — ' + src.clause : ''}` : src.pdf;
+    this.showPdfViewer   = true;
+  }
+
+  closePdfViewer(): void {
+    this.showPdfViewer = false;
+    this.pdfSearchText = '';
+  }
+
+  // Trigger PDF.js find/highlight after document loads
+  onPdfLoaded(pdfProxy: any): void {
+    if (!this.pdfSearchText) return;
+    // PDF.js eventBus available on the pdfProxy via ng2-pdf-viewer
+    try {
+      const bus = (pdfProxy as any)?.eventBus ?? (pdfProxy as any)?._pdfInfo?.eventBus;
+      if (bus) {
+        bus.dispatch('find', {
+          query: this.pdfSearchText,
+          type: 'again',
+          caseSensitive: false,
+          findPrevious: false,
+          highlightAll: true,
+          phraseSearch: true,
+        });
+      }
+    } catch { /* graceful no-op if eventBus unavailable */ }
   }
 
   // ── My Projects ───────────────────────────────────────────────
@@ -364,6 +446,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
     @Inject(PLATFORM_ID) platformId: object,
   ) {
     this.isBrowser = isPlatformBrowser(platformId);
+    GlobalWorkerOptions.workerSrc = 'assets/pdf.worker.min.mjs';
     if (this.isBrowser) this.loadSessions();
   }
 
@@ -379,6 +462,54 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
       basement:       ['false'],
       floorHeight:    [3.2],
     });
+
+    // ── Dynamic usage dropdown: reload when zone or road width changes ──
+    const zone$      = this.form.get('zone')!.valueChanges.pipe(
+      startWith(this.form.value.zone),
+      distinctUntilChanged(),
+    );
+    const roadWidth$ = this.form.get('roadWidth')!.valueChanges.pipe(
+      startWith(this.form.value.roadWidth),
+      debounceTime(400),
+      distinctUntilChanged(),
+    );
+
+    combineLatest([zone$, roadWidth$])
+      .pipe(
+        filter(([zone, road]) => !!zone && !!road && Number(road) > 0),
+        takeUntil(this.destroy$),
+      )
+      .subscribe(([zone, road]) => this.loadAllowedUsages(zone, Number(road)));
+  }
+
+  private loadAllowedUsages(zone: string, roadWidth: number): void {
+    this.usagesLoading = true;
+    this.http
+      .get<{ usages: UsageOption[] }>(
+        `http://localhost:8000/permissible-usages?zone=${zone}&road_width=${roadWidth}`
+      )
+      .subscribe({
+        next: (res) => {
+          this.allowedUsages = res.usages;
+          // If the currently selected usage is no longer allowed, reset to first option
+          const current = this.form.value.usage;
+          const stillValid = this.allowedUsages.some(u => u.value === current);
+          if (!stillValid && this.allowedUsages.length) {
+            this.form.patchValue({ usage: this.allowedUsages[0].value }, { emitEvent: false });
+          }
+          this.usagesLoading = false;
+          this.cdr.detectChanges();
+        },
+        error: () => {
+          // On API error fall back to showing all options silently
+          this.usagesLoading = false;
+        },
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   ngAfterViewInit(): void {
@@ -390,7 +521,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
           const saved = JSON.parse(raw);
           this.form.patchValue(saved.formValues);
           this.result       = saved.result;
-          this.openSections = saved.openSections;
+          this.openSections = { ...this.openSections, ...saved.openSections };
           this.cdr.detectChanges();
         }
       } catch (_) {}
@@ -409,6 +540,27 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
           maxZoom: 19,
         }).addTo(this.map);
 
+        // ── Zone GeoJSON overlay ───────────────────────────────────
+        const canvasRenderer = L.canvas({ padding: 0.5 });
+        this.http.get<any>('assets/bangalore_zones_display.geojson').subscribe({
+          next: (geojson) => {
+            const options: any = {
+              renderer: canvasRenderer,
+              style: (feature: any) => this.getZoneStyle(feature?.properties?.zone_code),
+              onEachFeature: (feature: any, layer: any) => {
+                const p = feature.properties;
+                layer.bindTooltip(
+                  `<b>${p.zone_code}</b> — ${p.zone_name}` +
+                  (p.locality ? `<br><span style="font-size:11px">${p.locality}</span>` : ''),
+                  { sticky: true }
+                );
+              }
+            };
+            L.geoJSON(geojson, options).addTo(this.map);
+          },
+          error: (err) => console.error('Zone overlay failed:', err)
+        });
+
         this.map.on('click', (e: any) => {
           const { lat, lng } = e.latlng;
           this.setMapMarker(lat, lng, L);
@@ -418,6 +570,30 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
         console.warn('Map init failed:', err);
       }
     }, 100);
+  }
+
+  private getZoneStyle(zoneCode: string) {
+    const colours: Record<string, string> = {
+      'R':   '#3b82f6',
+      'RM':  '#8b5cf6',
+      'C1':  '#f97316',
+      'C2':  '#ef4444',
+      'C3':  '#dc2626',
+      'IT':  '#06b6d4',
+      'PSP': '#22c55e',
+      'I':   '#a16207',
+      'T':   '#64748b',
+      'P':   '#16a34a',
+      'GB':  '#166534',
+      'AG':  '#ca8a04',
+    };
+    return {
+      color:       colours[zoneCode] ?? '#6b7280',
+      fillColor:   colours[zoneCode] ?? '#6b7280',
+      weight:      1,
+      opacity:     0.7,
+      fillOpacity: 0.15,
+    };
   }
 
   private setMapMarker(lat: number, lng: number, L: any): void {
@@ -436,8 +612,13 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
           if (res?.found && res.zone_code) {
             this.detectedZone = res.zone_code;
             this.form.patchValue({ zone: res.zone_code });
-            this.cdr.detectChanges();
           }
+          this.planningZone   = res?.planning_zone   ?? 'zone_A';
+          this.bbmpWardName   = res?.bbmp_ward_name   ?? '';
+          this.bbmpWardNo     = res?.bbmp_ward_no     ?? '';
+          this.bbmpZone       = res?.bbmp_zone        ?? '';
+          this.bbmpZoneOffice = res?.bbmp_zone_office ?? '';
+          this.cdr.detectChanges();
         }),
         error: () => {},
       });
@@ -525,6 +706,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
       basement:         v.basement  === 'true',
       floor_height:     Number(v.floorHeight) || 3.2,
       locality:         'Bengaluru',
+      planning_zone:    this.planningZone,
     };
 
     this.http.post<any>('http://localhost:8000/planning', payload)
@@ -533,17 +715,17 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit {
           this.result = res;
           this.openSections = {
             metrics:       true,
+            sitePlan:      true,
             setbacks:      true,
-            far:           true,
-            staircase:     true,
-            fire:          true,
-            compliance:    true,
-            parking:       true,
-            basement:      res.basement?.requested ?? false,
-            accessibility: true,
-            compoundWall:  true,
-            watchOut:      true,
-            scenarios:     true,
+            far:           false,
+            staircase:     false,
+            fire:          false,
+            compliance:    false,
+            parking:       false,
+            basement:      false,
+            accessibility: false,
+            compoundWall:  false,
+            scenarios:     false,
           };
           try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify({

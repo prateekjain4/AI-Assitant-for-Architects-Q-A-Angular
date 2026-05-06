@@ -1,3 +1,56 @@
+/* ── PDF Viewer Overlay ─────────────────────────────────────────── */
+.bp-pdf-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+}
+.bp-pdf-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  height: 52px;
+  background: #1e293b;
+  color: #fff;
+  gap: 12px;
+  flex-shrink: 0;
+}
+.bp-pdf-title {
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+.bp-pdf-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.bp-pdf-page-badge {
+  font-size: 11px;
+  background: rgba(255,255,255,0.15);
+  border-radius: 10px;
+  padding: 2px 8px;
+  color: #cbd5e1;
+}
+.bp-pdf-close {
+  background: transparent;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 5px;
+  padding: 5px 12px;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.bp-pdf-close:hover { background: rgba(255,255,255,0.1); }
+
 /* ── Page shell ─────────────────────────────────────────────────── */
 .bp-page {
   display: flex; flex-direction: column;
@@ -352,7 +405,8 @@
 .bp-row    { display: flex; gap: 10px; margin-bottom: 12px; }
 .bp-label  { font-size: 12px; font-weight: 600; color: #374151; }
 .bp-req    { color: #ef4444; }
-.bp-hint   { font-size: 11px; color: #94a3b8; }
+.bp-hint         { font-size: 11px; color: #94a3b8; display: block; margin-top: 3px; }
+.bp-usage-loading{ font-size: 11px; color: #94a3b8; margin-left: 6px; font-style: italic; }
 .bp-input, .bp-select {
   padding: 8px 10px; border: 1px solid #d1d5db;
   border-radius: 6px; font-size: 13px; color: #1e293b;
@@ -573,6 +627,70 @@
 }
 .bp-highlight strong { color: #1d4ed8; font-size: 13px; }
 .bp-highlight span   { color: #64748b; }
+
+/* ── BBMP ward info strip (below map label) ──────────────────────── */
+.bp-ward-info {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  padding: 6px 12px; background: #eff6ff; border-bottom: 1px solid #bfdbfe;
+  font-size: 11px;
+}
+.bp-ward-badge {
+  font-weight: 600; color: #1d4ed8;
+  background: rgba(29,78,216,0.1); border: 1px solid rgba(29,78,216,0.2);
+  border-radius: 999px; padding: 2px 9px;
+}
+.bp-ward-zone {
+  color: #1e40af; background: rgba(30,64,175,0.08);
+  border: 1px solid rgba(30,64,175,0.15);
+  border-radius: 999px; padding: 2px 8px;
+}
+.bp-ward-office {
+  color: #475569; white-space: nowrap; overflow: hidden;
+  text-overflow: ellipsis; max-width: 280px;
+}
+
+/* ── BBMP zone office row in result header ───────────────────────── */
+.bp-result-bbmp-row {
+  display: flex; align-items: center; gap: 5px; flex-wrap: wrap;
+  margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 11px; color: rgba(255,255,255,0.65);
+}
+.bp-bbmp-zone-label {
+  color: #93c5fd; font-weight: 600;
+}
+.bp-bbmp-office-sep { opacity: 0.4; }
+.bp-bbmp-office { color: rgba(255,255,255,0.6); }
+
+/* ── Ward badge in result header badges row ──────────────────────── */
+.bp-badge-ward {
+  background: rgba(29,78,216,0.2); color: #93c5fd;
+  border: 1px solid rgba(147,197,253,0.3);
+}
+
+/* ── Planning zone A / B badges ─────────────────────────────────── */
+.bp-badge-zone-a {
+  background: rgba(16,185,129,0.15); color: #6ee7b7;
+  border: 1px solid rgba(110,231,183,0.3);
+}
+.bp-badge-zone-b {
+  background: rgba(245,158,11,0.15); color: #fcd34d;
+  border: 1px solid rgba(252,211,77,0.3);
+}
+
+/* ── ORR indicator pill (below ward info on map) ─────────────────── */
+.bp-orr-pill {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: rgba(255,255,255,0.7);
+  padding: 4px 10px; margin-top: 4px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 6px; border: 1px solid rgba(255,255,255,0.1);
+}
+.bp-orr-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.bp-orr-inside  { background: #6ee7b7; }
+.bp-orr-outside { background: #fcd34d; }
 
 /* ── Responsive ─────────────────────────────────────────────────── */
 @media (max-width: 900px) {

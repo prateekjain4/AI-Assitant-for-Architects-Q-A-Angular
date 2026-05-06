@@ -54,18 +54,25 @@ export class Map implements AfterViewInit {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(this.map);
 
-    // ── Zone GeoJSON overlay ───────────────────────────────────────
-    this.http.get<any>('assets/bangalore_zones.geojson').subscribe(geojson => {
-      L.geoJSON(geojson, {
-        style: (feature: any) => this.getZoneStyle(feature?.properties?.zone_code),
-        onEachFeature: (feature: any, layer: any) => {
-          layer.bindTooltip(
-            `<b>${feature.properties.zone_code}</b> — ${feature.properties.zone_name}<br>
-             <span style="font-size:11px">${feature.properties.locality}</span>`,
-            { sticky: true }
-          );
-        }
-      }).addTo(this.map);
+    // ── Zone GeoJSON overlay (display-optimised, ~5MB) ────────────
+    const canvasRenderer = L.canvas({ padding: 0.5 });
+    this.http.get<any>('assets/bangalore_zones_display.geojson').subscribe({
+      next: (geojson) => {
+        const options: any = {
+          renderer: canvasRenderer,
+          style: (feature: any) => this.getZoneStyle(feature?.properties?.zone_code),
+          onEachFeature: (feature: any, layer: any) => {
+            const p = feature.properties;
+            layer.bindTooltip(
+              `<b>${p.zone_code}</b> — ${p.zone_name}` +
+              (p.locality ? `<br><span style="font-size:11px">${p.locality}</span>` : ''),
+              { sticky: true }
+            );
+          }
+        };
+        L.geoJSON(geojson, options).addTo(this.map);
+      },
+      error: (err) => console.error('Failed to load zone GeoJSON:', err)
     });
 
     // ── Leaflet Draw setup ─────────────────────────────────────────
@@ -365,20 +372,25 @@ export class Map implements AfterViewInit {
 
   private getZoneStyle(zoneCode: string) {
     const colours: Record<string, string> = {
-      'R':   '#3b82f6',
-      'RM':  '#8b5cf6',
-      'C1':  '#f97316',
-      'C2':  '#ef4444',
-      'C3':  '#dc2626',
-      'IT':  '#06b6d4',
-      'PSP': '#22c55e',
+      'R':   '#3b82f6',  // blue       — Residential
+      'RM':  '#8b5cf6',  // violet     — Residential Mixed
+      'C1':  '#f97316',  // orange     — Commercial C1
+      'C2':  '#ef4444',  // red        — Commercial C2
+      'C3':  '#dc2626',  // dark red   — Commercial C3
+      'IT':  '#06b6d4',  // cyan       — IT / ITES
+      'PSP': '#22c55e',  // green      — Public Semi-Public
+      'I':   '#a16207',  // amber      — Industrial
+      'T':   '#64748b',  // slate      — Transportation
+      'P':   '#16a34a',  // dark green — Parks & Open Space
+      'GB':  '#166534',  // forest     — Green Belt
+      'AG':  '#ca8a04',  // yellow     — Agricultural
     };
     return {
       color:       colours[zoneCode] ?? '#6b7280',
       fillColor:   colours[zoneCode] ?? '#6b7280',
-      weight:      1.5,
-      opacity:     0.8,
-      fillOpacity: 0.12
+      weight:      1,
+      opacity:     0.7,
+      fillOpacity: 0.15
     };
   }
 }

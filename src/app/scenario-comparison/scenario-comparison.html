@@ -21,6 +21,13 @@
       </div>
     </div>
 
+    <!-- AI Reasoning block -->
+    <div *ngIf="aiAdvice?.reasoning" class="sc-ai-reasoning">
+      <span class="sc-ai-icon">✦</span>
+      <span class="sc-ai-label">AI Advisor</span>
+      <p class="sc-ai-text">{{ aiAdvice.reasoning }}</p>
+    </div>
+
     <!-- Scenario tabs — one per FAR utilisation level -->
     <div class="sc-tabs">
       <button
@@ -31,6 +38,7 @@
         (click)="selectTab(s.label)">
         <span class="sc-tab-pct">{{ s.label }}</span>
         <span class="sc-tab-sub">{{ s.floors_label }} · {{ s.building_height_m }}m</span>
+        <span *ngIf="aiAdvice?.scenario_notes?.[s.label]" class="sc-tab-note">{{ aiAdvice.scenario_notes[s.label] }}</span>
         <span *ngIf="s.label === scenarioData.recommended" class="rec-dot">★</span>
       </button>
     </div>

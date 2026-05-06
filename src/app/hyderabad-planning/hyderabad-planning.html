@@ -756,10 +756,33 @@
           <span class="hyd-source-clause">{{ src.clause }}</span>
         </div>
         <p class="hyd-source-desc">{{ src.desc }}</p>
-        <a *ngIf="src.pdf" class="hyd-source-link" [href]="src.pdf" target="_blank" rel="noopener">Open {{ src.doc }} (PDF) ↗</a>
+        <button *ngIf="src.pdf" class="hyd-source-link" (click)="openPdf(src); closeSourceModal()">
+          Open PDF — Page {{ src.page }} ↗
+        </button>
       </div>
       <p class="hyd-source-disclaimer">⚠ Always verify calculations against the official published GHMC Building Permissions Rules 2012 gazette. This tool is an aid — not a substitute for professional sign-off.</p>
     </div>
+  </div>
+
+  <!-- ── Inline PDF viewer ─────────────────────────────────────────── -->
+  <div class="hyd-pdf-viewer-overlay" *ngIf="showPdfViewer">
+    <div class="hyd-pdf-header">
+      <span class="hyd-pdf-label">{{ pdfDocLabel }}</span>
+      <div class="hyd-pdf-header-actions">
+        <span class="hyd-pdf-page-badge" *ngIf="pdfPrintedPage">Page {{ pdfPrintedPage }}</span>
+        <button class="hyd-pdf-close" (click)="closePdfViewer()">✕ Close</button>
+      </div>
+    </div>
+    <pdf-viewer
+      [src]="pdfViewerUrl"
+      [page]="pdfCurrentPage"
+      [render-text]="true"
+      [original-size]="false"
+      [fit-to-page]="false"
+      [zoom]="1.2"
+      (after-load-complete)="onPdfLoaded($event)"
+      style="width:100%; height:calc(100vh - 52px); display:block;">
+    </pdf-viewer>
   </div>
 
   <!-- ── Chat bubble ───────────────────────────────────────────── -->

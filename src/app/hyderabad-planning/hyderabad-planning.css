@@ -517,3 +517,20 @@
 @media (max-width: 540px) {
   .hyd-grid-2 { grid-template-columns: 1fr; }
 }
+/* ── PDF viewer overlay ───────────────────────────────────────────── */
+.hyd-pdf-viewer-overlay {
+  position: fixed; inset: 0; z-index: 1100;
+  background: #fff; display: flex; flex-direction: column;
+}
+.hyd-pdf-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0 16px; height: 52px; background: #1e293b; color: #f8fafc;
+  flex-shrink: 0;
+}
+.hyd-pdf-label { font-size: 13px; font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hyd-pdf-header-actions { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+.hyd-pdf-page-badge { background: #0ea5e9; color: #fff; font-size: 11px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
+.hyd-pdf-close { background: #ef4444; color: #fff; border: none; border-radius: 6px; padding: 5px 12px; font-size: 12px; cursor: pointer; }
+.hyd-pdf-close:hover { background: #dc2626; }
+.hyd-source-link { background: #0ea5e9; color: #fff; border: none; border-radius: 6px; padding: 6px 14px; font-size: 12px; cursor: pointer; margin-top: 6px; display: inline-block; }
+.hyd-source-link:hover { background: #0284c7; }

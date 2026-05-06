@@ -97,6 +97,15 @@
           Click on map to auto-detect BDA zone
           <span class="bp-zone-detected" *ngIf="detectedZone">· Zone detected: <strong>{{ detectedZone }}</strong></span>
         </div>
+        <div class="bp-ward-info" *ngIf="bbmpWardName">
+          <span class="bp-ward-badge">Ward {{ bbmpWardNo }} — {{ bbmpWardName }}</span>
+          <span class="bp-ward-zone">{{ bbmpZone }}</span>
+          <span class="bp-ward-office" title="{{ bbmpZoneOffice }}">📍 {{ bbmpZoneOffice }}</span>
+        </div>
+        <div class="bp-orr-pill" *ngIf="detectedZone">
+          <span class="bp-orr-dot" [class.bp-orr-inside]="planningZone === 'zone_A'" [class.bp-orr-outside]="planningZone === 'zone_B'"></span>
+          <span>{{ planningZone === 'zone_A' ? 'Inside ORR — BDA Planning Zone A (higher FAR)' : 'Outside ORR — BDA Planning Zone B (lower FAR)' }}</span>
+        </div>
 
         <!-- Search box -->
         <div class="bp-search-wrap">
@@ -179,26 +188,23 @@
               <input class="bp-input" type="number" formControlName="floorHeight" placeholder="3.2" min="2.8" step="0.1">
             </div>
             <div class="bp-field">
-              <label class="bp-label">Usage</label>
+              <label class="bp-label">
+                Usage
+                <span class="bp-usage-loading" *ngIf="usagesLoading">…</span>
+              </label>
               <select class="bp-select" formControlName="usage">
-                <optgroup label="Residential">
-                  <option value="residential">Residential (Dwelling)</option>
-                </optgroup>
-                <optgroup label="Commercial">
-                  <option value="commercial">Commercial / Retail / Office</option>
-                  <option value="restaurant">Restaurant / Food &amp; Beverage</option>
-                  <option value="hotel">Hotel / Guest House</option>
-                  <option value="mixed">Mixed Use (Residential + Commercial)</option>
-                </optgroup>
-                <optgroup label="Institutional / Healthcare">
-                  <option value="hospital">Hospital / Nursing Home</option>
-                  <option value="educational">Educational (School / College)</option>
-                </optgroup>
-                <optgroup label="Industrial">
-                  <option value="industrial">Industrial (General)</option>
-                  <option value="it_bt">IT / BT / Hi-Tech Office</option>
-                </optgroup>
+                <ng-container *ngFor="let group of usageGroups">
+                  <optgroup [label]="group.name">
+                    <option *ngFor="let opt of group.options" [value]="opt.value">
+                      {{ opt.label }}
+                    </option>
+                  </optgroup>
+                </ng-container>
               </select>
+              <span class="bp-hint" *ngIf="allowedUsages.length">
+                {{ allowedUsages.length }} usage{{ allowedUsages.length === 1 ? '' : 's' }} permitted for this zone &amp; road width.
+                <span *ngIf="hasSpaceStdUsages"> * Subject to BDA Table 25 space standards.</span>
+              </span>
             </div>
           </div>
 
@@ -241,7 +247,17 @@
             <span class="bp-badge bp-badge-ht">{{ result.building_height_m || form.value.buildingHeight }} m</span>
             <span class="bp-badge bp-badge-far">FAR {{ result.far }}</span>
             <span class="bp-badge bp-badge-tdr" *ngIf="result.far_tdr > 0">+{{ result.far_tdr }} TDR</span>
+            <span class="bp-badge bp-badge-ward" *ngIf="bbmpWardName">Ward {{ bbmpWardNo }} — {{ bbmpWardName }}</span>
+            <span class="bp-badge" [class.bp-badge-zone-a]="result.planning_zone === 'zone_A'" [class.bp-badge-zone-b]="result.planning_zone === 'zone_B'">
+              {{ result.planning_zone === 'zone_A' ? 'Zone A (Inside ORR)' : 'Zone B (Outside ORR)' }}
+            </span>
           </div>
+        </div>
+        <div class="bp-result-bbmp-row" *ngIf="bbmpZone">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;opacity:0.6"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg>
+          <span class="bp-bbmp-zone-label">{{ bbmpZone }}</span>
+          <span class="bp-bbmp-office-sep">·</span>
+          <span class="bp-bbmp-office">{{ bbmpZoneOffice }}</span>
         </div>
       </div>
 
@@ -292,6 +308,33 @@
               <span class="bp-metric-unit">to exhaust {{ result.far }} FAR · advisory</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Site Plan -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('sitePlan')">
+          <span>🏗 Site Plan</span>
+          <div class="bp-section-header-right">
+            <span>{{ openSections['sitePlan'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['sitePlan']">
+          <app-site-plan
+            [plotLengthM]="form.value.plotLength"
+            [plotWidthM]="form.value.plotWidth"
+            [roadWidthM]="form.value.roadWidth"
+            [buildingHeightM]="result.building_height_m || form.value.buildingHeight"
+            [numFloors]="result.staircase?.num_floors || 3"
+            [floorHeightM]="form.value.floorHeight || 3.2"
+            [setbackFront]="result.setbacks?.front || 3"
+            [setbackSide]="result.setbacks?.side || 1.5"
+            [setbackRear]="result.setbacks?.rear || 1.5"
+            [usage]="form.value.usage"
+            [cornerPlot]="form.value.cornerPlot === 'true'"
+            [groundCovPct]="result.ground_coverage_pct || 60"
+            [zone]="result.zone">
+          </app-site-plan>
         </div>
       </div>
 
@@ -436,7 +479,8 @@
           <div *ngIf="result.fire_data?.refuge_area?.required" class="bp-note bp-note-amber">
             ⚠ Refuge area required every {{ result.fire_data.refuge_area.frequency }} — min {{ result.fire_data.refuge_area.min_area_sqm }} sqm.
           </div>
-          <p class="bp-summary">{{ result.section_summaries?.fire }}</p>
+          <p class="bp-summary" *ngIf="result.fire_data?.thresholds_note">{{ result.fire_data.thresholds_note }}</p>
+          <p class="bp-summary" *ngIf="!result.fire_data?.thresholds_note">{{ result.section_summaries?.fire }}</p>
         </div>
       </div>
 
@@ -452,7 +496,7 @@
         <div class="bp-section-body" *ngIf="openSections['parking']">
           <div class="bp-setback-row">
             <div class="bp-setback-pill">Car spaces <strong>{{ result.parking?.required?.cars }}</strong></div>
-            <div class="bp-setback-pill">Two-wheelers <strong>{{ result.parking?.required?.two_wheelers }}</strong></div>
+            <div class="bp-setback-pill">Two-wheelers <strong>{{ result.parking?.required?.bikes }}</strong></div>
           </div>
           <p class="bp-summary" style="margin-top:8px">{{ result.section_summaries?.parking }}</p>
         </div>
@@ -488,6 +532,13 @@
           </div>
           <div class="bp-note bp-note-blue" *ngIf="result.basement?.setback_in_basement">{{ result.basement.setback_in_basement }}</div>
           <div class="bp-note bp-note-amber" *ngIf="result.basement?.ventilation">⚠ {{ result.basement.ventilation }}</div>
+          <div *ngIf="result.basement?.hotel_special_uses?.length" style="margin-top:8px">
+            <p class="bp-sub-label">Hotel additional basement uses (3-star+)</p>
+            <div *ngFor="let use of result.basement.hotel_special_uses" class="bp-compliance-item">
+              <span class="bp-compliance-dot">✓</span> {{ use }}
+            </div>
+            <div class="bp-note bp-note-blue" style="margin-top:4px">{{ result.basement.hotel_special_note }}</div>
+          </div>
         </div>
       </div>
 
@@ -537,17 +588,17 @@
             </div>
             <div class="bp-metric">
               <span class="bp-metric-label">Lift Lobby</span>
-              <span class="bp-metric-value">{{ result.accessibility?.lift?.lobby_min_size }}</span>
+              <span class="bp-metric-value">{{ result.accessibility?.lift?.lobby_min }}</span>
               <span class="bp-metric-unit">minimum</span>
             </div>
             <div class="bp-metric">
               <span class="bp-metric-label">Accessible Toilet</span>
-              <span class="bp-metric-value">{{ result.accessibility?.toilet?.min_size }}</span>
+              <span class="bp-metric-value">{{ result.accessibility?.toilet?.min_size_m }}</span>
               <span class="bp-metric-unit">WC height ≤ {{ result.accessibility?.toilet?.max_wc_seat_height_m }}m</span>
             </div>
             <div class="bp-metric">
               <span class="bp-metric-label">Handrail Height</span>
-              <span class="bp-metric-value">{{ result.accessibility?.handrails?.height_above_floor_mm }}</span>
+              <span class="bp-metric-value">{{ result.accessibility?.handrails?.height_mm }}</span>
               <span class="bp-metric-unit">mm above floor</span>
             </div>
           </div>
@@ -692,18 +743,40 @@
           <span class="bp-source-clause">{{ src.clause }}</span>
         </div>
         <p class="bp-source-desc">{{ src.desc }}</p>
-        <a *ngIf="src.pdf" class="bp-source-link" [href]="docUrl(src.pdf)" target="_blank" rel="noopener">
+        <button *ngIf="src.pdf" class="bp-source-link" (click)="openPdf(src)">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
             <polyline points="14 2 14 8 20 8"/>
           </svg>
-          Open {{ src.doc }} (PDF)
-        </a>
+          Open {{ src.doc }}<span *ngIf="src.page"> — p.{{ src.page }}</span>
+        </button>
       </div>
       <p class="bp-source-disclaimer">
         ⚠ Always verify calculations against the official published gazette before submission to the authority.
       </p>
     </div>
+  </div>
+
+  <!-- ── PDF Viewer Overlay ───────────────────────────────────── -->
+  <div class="bp-pdf-overlay" *ngIf="showPdfViewer">
+    <div class="bp-pdf-header">
+      <span class="bp-pdf-title">📄 {{ pdfDocLabel }}</span>
+      <div class="bp-pdf-header-actions">
+        <span class="bp-pdf-page-badge" *ngIf="pdfPrintedPage">Page {{ pdfPrintedPage }}</span>
+        <button class="bp-pdf-close" (click)="closePdfViewer()">✕ Close</button>
+      </div>
+    </div>
+    <pdf-viewer
+      #pdfViewerRef
+      [src]="pdfViewerUrl"
+      [page]="pdfCurrentPage"
+      [render-text]="true"
+      [original-size]="false"
+      [fit-to-page]="false"
+      [zoom]="1.2"
+      (after-load-complete)="onPdfLoaded($event)"
+      style="width:100%; height:calc(100vh - 52px); display:block;">
+    </pdf-viewer>
   </div>
 
   <!-- ── Chat bubble ───────────────────────────────────────────── -->
