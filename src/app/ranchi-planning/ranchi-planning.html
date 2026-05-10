@@ -30,8 +30,35 @@
 
       <!-- Form -->
       <div class="rp-form-card">
-        <h3 class="rp-form-title">Plot Details — Ranchi RMC</h3>
+        <h3 class="rp-form-title">Plot Details — Ranchi</h3>
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+          <!-- Authority / Jurisdiction -->
+          <div class="rp-field">
+            <label class="rp-label">Jurisdiction / Approving Authority <span class="rp-req">*</span></label>
+            <div class="rp-authority-group">
+              <label class="rp-authority-option" [class.selected]="form.value.authority === 'rmc'">
+                <input type="radio" formControlName="authority" value="rmc">
+                <span class="rp-authority-title">RMC</span>
+                <span class="rp-authority-sub">55 wards · 175 sq km urban area</span>
+              </label>
+              <label class="rp-authority-option" [class.selected]="form.value.authority === 'rrda'">
+                <input type="radio" formControlName="authority" value="rrda">
+                <span class="rp-authority-title">RRDA</span>
+                <span class="rp-authority-sub">268 villages · Angara, Kanke, Ratu, Nagri, Namkum, Ormanjhi</span>
+              </label>
+              <label class="rp-authority-option" [class.selected]="form.value.authority === 'gram_panchayat'">
+                <input type="radio" formControlName="authority" value="gram_panchayat">
+                <span class="rp-authority-title">Gram Panchayat</span>
+                <span class="rp-authority-sub">Rural villages · Panchayat Raj Act</span>
+              </label>
+            </div>
+          </div>
+
+          <!-- Gram Panchayat info banner -->
+          <div *ngIf="form.value.authority === 'gram_panchayat'" class="rp-gp-banner">
+            <strong>Gram Panchayat Jurisdiction</strong> — No formal JBBL building bylaws apply. Building permission is issued by the Gram Panchayat per the Jharkhand Panchayat Raj Act (HC order). Contact your local Gram Panchayat or BDO office.
+          </div>
 
           <!-- Zone -->
           <div class="rp-field">
@@ -103,8 +130,11 @@
             </div>
           </div>
 
-          <button type="submit" class="rp-submit" [disabled]="loading">
-            <span *ngIf="!loading">Calculate Regulations</span>
+          <button type="submit" class="rp-submit"
+                  [disabled]="loading || form.value.authority === 'gram_panchayat'">
+            <span *ngIf="!loading">
+              {{ form.value.authority === 'gram_panchayat' ? 'No Bylaws — Gram Panchayat Jurisdiction' : 'Calculate Regulations' }}
+            </span>
             <span *ngIf="loading" class="rp-spinner"></span>
           </button>
 
@@ -113,8 +143,20 @@
       </div>
     </div>
 
+    <!-- Gram Panchayat result state -->
+    <div class="rp-right rp-empty" *ngIf="result?.gram_panchayat">
+      <div class="rp-empty-inner">
+        <span class="rp-empty-icon">🏘</span>
+        <h4>Gram Panchayat Jurisdiction</h4>
+        <p>{{ result.message }}</p>
+        <ul class="rp-gp-contacts" style="text-align:left;margin:0 auto;max-width:320px;">
+          <li *ngFor="let c of result.contacts">{{ c }}</li>
+        </ul>
+      </div>
+    </div>
+
     <!-- Right: Results -->
-    <div class="rp-right" *ngIf="result && !result.error">
+    <div class="rp-right" *ngIf="result && !result.error && !result.gram_panchayat">
 
       <!-- Result header -->
       <div class="rp-result-header">
@@ -351,6 +393,32 @@
           <div *ngFor="let item of result.compliance" class="rp-compliance-item">
             <span class="rp-compliance-dot">✓</span> {{ item }}
           </div>
+        </div>
+      </div>
+
+      <!-- Scenario Comparison -->
+      <div class="rp-section rp-section-scenarios">
+        <div class="rp-section-header" (click)="toggleSection('scenarios')">
+          <span>📊 Building Scenarios</span>
+          <span>{{ openSections['scenarios'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="rp-section-body" *ngIf="openSections['scenarios']">
+          <app-scenario-comparison
+            [city]="'ranchi'"
+            [authority]="form.value.authority || 'rmc'"
+            [zone]="result.zone"
+            [roadWidth]="form.value.roadWidth"
+            [plotLengthM]="form.value.plotLength"
+            [plotWidthM]="form.value.plotWidth"
+            [usage]="form.value.usage"
+            [cornerPlot]="form.value.cornerPlot === 'true'"
+            [basement]="form.value.basement === 'true'"
+            [floorHeightM]="form.value.floorHeight || 3.2"
+            [buildingHeightM]="form.value.buildingHeight"
+            [plotAreaSqft]="result.plot_area"
+            [idealFloors]="result.staircase?.num_floors || 0"
+            [carSpaces]="result.parking?.required?.cars || 0">
+          </app-scenario-comparison>
         </div>
       </div>
 

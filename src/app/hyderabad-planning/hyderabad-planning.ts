@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 
@@ -238,7 +239,7 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
       locality:        'Hyderabad',
     };
 
-    this.http.post<any>('http://localhost:8000/planning-hyderabad', payload)
+    this.http.post<any>(environment.apiUrl + '/planning-hyderabad', payload)
       .subscribe({
         next: (res) => this.ngZone.run(() => {
           this.result = res;
@@ -353,7 +354,7 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
   get currentSources() { return this.SOURCES[this.sourceSection] ?? []; }
 
   docUrl(pdf: string): string {
-    return `http://localhost:8000/docs/${pdf}`;
+    return `${environment.apiUrl}/docs/${pdf}`;
   }
 
   openPdf(src: { pdf?: string; page?: number; searchText?: string; doc?: string; clause?: string }): void {
@@ -460,7 +461,7 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
     this.chatLoading = true;
     this.scrollToBottom();
 
-    this.http.post<any>('http://localhost:8000/chat', {
+    this.http.post<any>(environment.apiUrl + '/chat', {
       question:      text,
       planning_data: this.result || null,
       scenario_data: null,

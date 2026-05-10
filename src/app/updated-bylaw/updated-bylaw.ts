@@ -1,6 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { finalize } from 'rxjs/operators';
+import { environment } from '../../environments/environment';
 
 
 @Component({
@@ -19,7 +20,7 @@ export class UpdatedBylaw implements OnInit{
   loading = false;
   checking = false;
 
-  private changesApi = 'http://localhost:8000/changes';
+  private changesApi = environment.apiUrl + '/changes';
 
   constructor(private http: HttpClient, private cd: ChangeDetectorRef) {}
 
@@ -68,7 +69,7 @@ export class UpdatedBylaw implements OnInit{
       removed: []
     };
 
-    this.http.post<any>('http://localhost:8000/check-updates', {})
+    this.http.post<any>(environment.apiUrl + '/check-updates', {})
       // always make sure the flag is cleared once the observable completes
       .pipe(finalize(() => {
         // finalize will run on both success and error

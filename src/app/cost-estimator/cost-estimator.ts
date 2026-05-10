@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges, ChangeDetectorRef, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-cost-estimator',
@@ -45,7 +46,7 @@ export class CostEstimator implements OnChanges {
   fetch() {
     this.loading = true;
     this.error   = '';
-    this.http.post<any>('http://localhost:8000/estimate-cost', {
+    this.http.post<any>(environment.apiUrl + '/estimate-cost', {
       plot_length_m:     this.plotLengthM,
       plot_width_m:      this.plotWidthM,
       built_up_sqm:      this.builtUpSqm,

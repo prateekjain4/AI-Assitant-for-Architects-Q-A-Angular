@@ -7,6 +7,7 @@ import {
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DomSanitizer, SafeHtml } from '@angular/platform-browser';
+import { environment } from '../../environments/environment';
 
 interface Message {
   role: 'user' | 'ai' | 'error';
@@ -36,7 +37,7 @@ export class Askai implements AfterViewChecked {
     'What is the maximum height allowed for buildings in R zone?'
   ];
 
-  private apiUrl = 'http://localhost:8000/ask';
+  private apiUrl = environment.apiUrl + '/ask';
   private shouldScroll = false;
 
   constructor(

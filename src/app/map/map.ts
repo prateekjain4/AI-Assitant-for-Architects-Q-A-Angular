@@ -2,6 +2,7 @@ import { Component, AfterViewInit, Inject, PLATFORM_ID, ChangeDetectorRef, NgZon
 import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import * as turf from '@turf/turf';
+import { environment } from '../../environments/environment';
 import { MapData } from '../services/map-data';
 
 @Component({
@@ -302,7 +303,7 @@ export class Map implements AfterViewInit {
       this.cdr.detectChanges();
     });
 
-    this.http.post<any>('http://localhost:8000/detect-zone', { lat, lng })
+    this.http.post<any>(environment.apiUrl + '/detect-zone', { lat, lng })
       .subscribe({
         next: (res) => {
           this.ngZone.run(() => {

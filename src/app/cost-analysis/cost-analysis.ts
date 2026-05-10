@@ -2,6 +2,7 @@ import { Component, OnInit, ChangeDetectorRef, NgZone } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { CostDataService, CostAnalysisInput } from '../services/cost-data.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-cost-analysis',
@@ -54,7 +55,7 @@ export class CostAnalysisPage implements OnInit {
   fetchMain() {
     this.loading = true;
     this.error = '';
-    this.http.post<any>('http://localhost:8000/estimate-cost', this.buildPayload(this.tier))
+    this.http.post<any>(environment.apiUrl + '/estimate-cost', this.buildPayload(this.tier))
       .subscribe({
         next: (res) => this.ngZone.run(() => { this.result = res; this.loading = false; this.cdr.detectChanges(); }),
         error: ()  => this.ngZone.run(() => { this.error = 'Could not fetch estimate.'; this.loading = false; this.cdr.detectChanges(); }),
@@ -70,7 +71,7 @@ export class CostAnalysisPage implements OnInit {
   fetchAllTiers() {
     this.tierLoading = true;
     const reqs = (['low', 'mid', 'high'] as const).map(t =>
-      this.http.post<any>('http://localhost:8000/estimate-cost', this.buildPayload(t)).toPromise()
+      this.http.post<any>(environment.apiUrl + '/estimate-cost', this.buildPayload(t)).toPromise()
     );
     Promise.all(reqs).then(([low, mid, high]) => {
       this.ngZone.run(() => {
@@ -96,7 +97,7 @@ export class CostAnalysisPage implements OnInit {
     payload['setback_rear']      = scenario.setbacks?.rear    ?? payload['setback_rear'];
     payload['fire_noc_required'] = !!scenario.fire_noc_required;
 
-    this.http.post<any>('http://localhost:8000/estimate-cost', payload).subscribe({
+    this.http.post<any>(environment.apiUrl + '/estimate-cost', payload).subscribe({
       next: (res) => this.ngZone.run(() => {
         this.scenarioCosts[label] = res;
         this.scenarioCostLoading[label] = false;

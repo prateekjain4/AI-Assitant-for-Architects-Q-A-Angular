@@ -2,6 +2,7 @@ import { Component, Input, NgZone, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { CostDataService } from '../services/cost-data.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-scenario-comparison',
@@ -11,7 +12,8 @@ import { CostDataService } from '../services/cost-data.service';
 })
 export class ScenarioComparison {
 
-  @Input() city:             string  = 'bengaluru';   // 'bengaluru' | 'hyderabad'
+  @Input() city:             string  = 'bengaluru';   // 'bengaluru' | 'hyderabad' | 'ranchi'
+  @Input() authority:        string  = 'rmc';          // ranchi: 'rmc' | 'rrda'
   @Input() zone:             string  = '';
   @Input() roadWidth:        number  = 9;
   @Input() plotAreaSqft:     number  = 0;
@@ -85,8 +87,27 @@ export class ScenarioComparison {
       locality:         'Hyderabad',
     };
 
-    const url     = isHyderabad ? 'http://localhost:8000/scenarios-hyderabad' : 'http://localhost:8000/scenarios';
-    const payload = isHyderabad ? hyderabadPayload : bengaluruPayload;
+    const isRanchi = (this.city || '').toLowerCase() === 'ranchi';
+
+    const ranchiPayload = {
+      zone:             this.zone,
+      road_width:       this.roadWidth,
+      plot_length:      plotLen,
+      plot_width:       plotWd,
+      usage:            this.usage,
+      corner_plot:      this.cornerPlot,
+      basement:         this.basement,
+      floor_height:     this.floorHeightM    || 3.2,
+      building_height:  this.buildingHeightM || 0,
+      authority:        (this as any).authority || 'rmc',
+    };
+
+    const url     = isHyderabad ? environment.apiUrl + '/scenarios-hyderabad'
+                  : isRanchi    ? environment.apiUrl + '/scenarios-ranchi'
+                  :               environment.apiUrl + '/scenarios';
+    const payload = isHyderabad ? hyderabadPayload
+                  : isRanchi    ? ranchiPayload
+                  :               bengaluruPayload;
 
     this.http.post<any>(url, payload)
       .subscribe({
@@ -130,7 +151,7 @@ export class ScenarioComparison {
     const plotLenM = this.plotLengthM || Math.sqrt(this.plotAreaSqft / 10.7639);
     const plotWdM  = this.plotWidthM  || Math.sqrt(this.plotAreaSqft / 10.7639);
 
-    this.http.post<any>('http://localhost:8000/estimate-cost', {
+    this.http.post<any>(environment.apiUrl + '/estimate-cost', {
       plot_length_m:     plotLenM,
       plot_width_m:      plotWdM,
       built_up_sqm:      scenario.total_built_sqm,

@@ -408,3 +408,53 @@
   .chat-panel { width: calc(100vw - 20px); right: 10px; bottom: 84px; }
   .chat-fab   { bottom: 18px; right: 16px; }
 }
+
+/* ── Authority selector ─────────────────────────────────────────── */
+.rp-authority-group {
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 4px;
+}
+.rp-authority-option {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 10px 12px; border-radius: 8px; cursor: pointer;
+  border: 1.5px solid #e2e8f0; background: #f8fafc;
+  transition: border-color 0.15s, background 0.15s;
+}
+.rp-authority-option:has(input:checked) {
+  border-color: #3b82f6; background: #eff6ff;
+}
+.rp-authority-option input[type="radio"] {
+  margin-top: 2px; accent-color: #1d4ed8; flex-shrink: 0;
+}
+.rp-authority-title {
+  font-size: 13px; font-weight: 600; color: #1e293b; display: block;
+}
+.rp-authority-sub {
+  font-size: 11px; color: #64748b; display: block; margin-top: 1px;
+}
+
+/* ── Gram Panchayat info banner ─────────────────────────────────── */
+.rp-gp-banner {
+  background: #fffbeb; border: 1.5px solid #fcd34d;
+  border-radius: 10px; padding: 14px 16px;
+  display: flex; flex-direction: column; gap: 8px;
+}
+.rp-gp-banner-title {
+  font-size: 13px; font-weight: 700; color: #92400e;
+  display: flex; align-items: center; gap: 6px;
+}
+.rp-gp-banner-body  { font-size: 12px; color: #78350f; line-height: 1.6; margin: 0; }
+.rp-gp-contacts     { list-style: none; margin: 4px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.rp-gp-contacts li  { font-size: 12px; color: #92400e; display: flex; align-items: flex-start; gap: 5px; }
+.rp-gp-contacts li::before { content: '→'; flex-shrink: 0; }
+
+/* ── Scenario comparison section ────────────────────────────────── */
+.rp-section-scenarios {
+  background: #fff; border: 1px solid #e2e8f0;
+  border-radius: 10px; overflow: hidden;
+}
+.rp-section-scenarios .rp-section-header {
+  border-bottom: 1px solid #e2e8f0;
+}
+.rp-section-scenarios .rp-section-body {
+  padding: 0;
+}

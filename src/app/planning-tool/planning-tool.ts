@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import {FormBuilder, FormGroup, Validators} from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 import { MapData } from '../services/map-data';
 import { CostEstimator } from '../cost-estimator/cost-estimator';
 import { ScenarioComparison } from '../scenario-comparison/scenario-comparison';
@@ -422,7 +423,7 @@ export class PlanningTool implements OnInit, AfterViewInit {
     };
 
     this.toast.info('Generating PDF report…');
-    this.http.post('http://localhost:8000/generate-report', payload, {
+    this.http.post(environment.apiUrl + '/generate-report', payload, {
       responseType: 'blob'
     }).subscribe({
       next: blob => {
@@ -447,7 +448,7 @@ export class PlanningTool implements OnInit, AfterViewInit {
     this.chatLoading = true;
     this.scrollToBottom();
 
-    this.http.post<any>('http://localhost:8000/chat', {
+    this.http.post<any>(environment.apiUrl + '/chat', {
       question:      text,
       planning_data:   this.result || null,
       scenario_data:   this.scenarioCompRef?.scenarioData || null,
@@ -500,7 +501,7 @@ export class PlanningTool implements OnInit, AfterViewInit {
       ward:            detectedZone?.ward || '',
     };
     console.log(payload);
-    this.http.post('http://localhost:8000/planning', payload)
+    this.http.post(environment.apiUrl + '/planning', payload)
       .subscribe({
         next: (response: any) => {
           this.ngZone.run(() => {

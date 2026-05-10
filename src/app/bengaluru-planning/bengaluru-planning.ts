@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef, NgZone, Inject, PLATFORM_ID, ViewChild, ElementRef
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
+import { environment } from '../../environments/environment';
 import { GlobalWorkerOptions } from 'pdfjs-dist';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
@@ -195,7 +196,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
   get currentSources() { return this.SOURCES[this.sourceSection] ?? []; }
 
   docUrl(pdf: string): string {
-    return `http://localhost:8000/docs/${pdf}`;
+    return `${environment.apiUrl}/docs/${pdf}`;
   }
 
   openPdf(src: { pdf?: string; page?: number; searchText?: string; doc?: string; clause?: string }): void {
@@ -320,7 +321,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
       scenarios:       this.scenarioCompRef?.scenarioData ?? null,
     };
     this.toast.info('Generating PDF report…');
-    this.http.post('http://localhost:8000/generate-report', payload, { responseType: 'blob' })
+    this.http.post(environment.apiUrl + '/generate-report', payload, { responseType: 'blob' })
       .subscribe({
         next: blob => {
           const url    = window.URL.createObjectURL(blob);
@@ -408,7 +409,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     this.chatLoading = true;
     this.scrollToBottom();
 
-    this.http.post<any>('http://localhost:8000/chat', {
+    this.http.post<any>(environment.apiUrl + '/chat', {
       question:      text,
       planning_data: this.result || null,
       scenario_data: this.scenarioCompRef?.scenarioData || null,
@@ -486,7 +487,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     this.usagesLoading = true;
     this.http
       .get<{ usages: UsageOption[] }>(
-        `http://localhost:8000/permissible-usages?zone=${zone}&road_width=${roadWidth}`
+        `${environment.apiUrl}/permissible-usages?zone=${zone}&road_width=${roadWidth}`
       )
       .subscribe({
         next: (res) => {
@@ -606,7 +607,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private detectZone(lat: number, lng: number): void {
-    this.http.post<any>('http://localhost:8000/detect-zone', { lat, lng })
+    this.http.post<any>(environment.apiUrl + '/detect-zone', { lat, lng })
       .subscribe({
         next: (res) => this.ngZone.run(() => {
           if (res?.found && res.zone_code) {
@@ -709,7 +710,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
       planning_zone:    this.planningZone,
     };
 
-    this.http.post<any>('http://localhost:8000/planning', payload)
+    this.http.post<any>(environment.apiUrl + '/planning', payload)
       .subscribe({
         next: (res) => this.ngZone.run(() => {
           this.result = res;

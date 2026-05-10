@@ -3,6 +3,7 @@ import {
   ViewChild, ElementRef, ChangeDetectorRef, SimpleChanges
 } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 import Panzoom, { PanzoomObject } from '@panzoom/panzoom';
 
 export interface FloorZone {
@@ -250,7 +251,7 @@ export class SitePlan implements OnChanges, AfterViewInit, OnDestroy {
   generateFloorPlan() {
     this.aiLoading = true;
     this.aiError   = '';
-    this.http.post<any>('http://localhost:8000/generate-floor-plan', {
+    this.http.post<any>(environment.apiUrl + '/generate-floor-plan', {
       plot_length_m:       this.plotLengthM,
       plot_width_m:        this.plotWidthM,
       setback_front:       this.setbackFront,

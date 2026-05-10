@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface ProjectSummary {
   id:         number;
@@ -21,7 +22,7 @@ export interface ProjectDetail extends ProjectSummary {
 
 @Injectable({ providedIn: 'root' })
 export class ProjectService {
-  private readonly BASE = 'http://localhost:8000/projects';
+  private readonly BASE = environment.apiUrl + '/projects';
 
   constructor(private http: HttpClient) {}
 

@@ -1,5 +1,6 @@
 import { Component, Input, OnChanges, NgZone, ChangeDetectorRef } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-parking-layout',
@@ -33,7 +34,7 @@ export class ParkingLayout implements OnChanges {
 
   loadParking() {
     this.loading = true;
-    this.http.post<any>('http://localhost:8000/parking', {
+    this.http.post<any>(environment.apiUrl + '/parking', {
       usage:         this.usage,
       built_up_sqft: this.builtUpSqft,
       num_units:     this.numUnits,

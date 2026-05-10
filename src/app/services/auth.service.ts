@@ -3,6 +3,7 @@ import { isPlatformBrowser } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { BehaviorSubject, Observable, tap } from 'rxjs';
 import { Router } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 export interface AuthUser {
   user_id:             number;
@@ -22,7 +23,7 @@ interface TokenResponse extends AuthUser {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly BASE = 'http://localhost:8000/auth';
+  private readonly BASE = environment.apiUrl + '/auth';
   private readonly TOKEN_KEY = 'bylaw_token';
   private readonly USER_KEY  = 'bylaw_user';
   private readonly isBrowser: boolean;
