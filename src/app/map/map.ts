@@ -44,7 +44,8 @@ export class Map implements AfterViewInit {
   }
 
   async initMap() {
-    const L = await import('leaflet');
+    const leafletModule = await import('leaflet');
+    const L: any = (leafletModule as any).default ?? leafletModule;
     await import('leaflet-draw');
     await import('leaflet-geometryutil');
     this.L = L;
