@@ -531,7 +531,8 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
 
   private async initMap(): Promise<void> {
     if (this.map) return;
-    const L = await import('leaflet');
+    const leafletModule = await import('leaflet');
+    const L: any = (leafletModule as any).default ?? leafletModule;
     setTimeout(() => {
       try {
         this.map = L.map('blr-map', { zoomControl: true })
