@@ -25,7 +25,52 @@
       <!-- Map -->
       <div class="hyd-map-card">
         <div class="hyd-map-label">Click on map to mark plot location</div>
+
+        <!-- Search bar -->
+        <div style="position:relative; margin-bottom:8px;">
+          <div style="display:flex; align-items:center; gap:8px; background:#fff; border:1.5px solid #3b82f6; border-radius:10px; padding:10px 12px; box-shadow:0 2px 12px rgba(59,130,246,0.12);">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2">
+              <circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              style="flex:1; border:none; outline:none; font-size:14px; color:#1e293b; background:transparent;"
+              type="text"
+              [(ngModel)]="searchQuery"
+              [ngModelOptions]="{standalone:true}"
+              (input)="onSearchInput()"
+              (blur)="onSearchBlur()"
+              placeholder="Search locality or landmark in Hyderabad..."
+              autocomplete="off"
+            />
+            <button *ngIf="searchQuery" (click)="clearSearch()"
+              style="background:none;border:none;color:#94a3b8;font-size:14px;cursor:pointer;padding:0 4px;">✕</button>
+          </div>
+          <div *ngIf="showDropdown && searchResults.length > 0"
+            style="position:absolute; width:100%; background:#fff; border:1.5px solid #3b82f6; border-radius:0 0 10px 10px; box-shadow:0 8px 24px rgba(0,0,0,0.12); z-index:9999; max-height:240px; overflow-y:auto;">
+            <div *ngFor="let result of searchResults"
+              (mousedown)="selectResult(result)"
+              style="padding:10px 14px; font-size:13px; color:#334155; cursor:pointer; border-bottom:0.5px solid #f1f5f9;"
+              onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background=''">
+              {{ result.display_name }}
+            </div>
+          </div>
+        </div>
+
         <div id="hyderabad-map" class="hyd-map"></div>
+
+        <!-- Zone detection status -->
+        <div *ngIf="zoneDetecting" style="margin-top:8px; display:flex; align-items:center; gap:8px; font-size:13px; color:#3b82f6;">
+          <span style="display:inline-block; width:14px; height:14px; border:2px solid #3b82f6; border-top-color:transparent; border-radius:50%; animation:spin 0.7s linear infinite;"></span>
+          Detecting zone…
+        </div>
+        <div *ngIf="!zoneDetecting && detectedZoneCode" style="margin-top:8px; display:flex; align-items:center; gap:8px; font-size:13px;">
+          <span style="background:#dcfce7; color:#15803d; border-radius:6px; padding:3px 10px; font-weight:600;">
+            ✓ Zone auto-detected: {{ detectedZoneCode }}<span *ngIf="detectedZoneName"> — {{ detectedZoneName }}</span>
+          </span>
+        </div>
+        <div *ngIf="!zoneDetecting && zoneNotInCoverage" style="margin-top:8px; font-size:13px; color:#92400e; background:#fef3c7; border-radius:6px; padding:4px 10px;">
+          Area not in HMDA zone coverage — select zone manually.
+        </div>
       </div>
 
       <!-- Form -->
@@ -63,9 +108,8 @@
               <span class="hyd-err" *ngIf="form.get('roadWidth')?.invalid && form.get('roadWidth')?.touched">Required</span>
             </div>
             <div class="hyd-field">
-              <label class="hyd-label">Building Height (m) <span class="hyd-req">*</span></label>
-              <input class="hyd-input" type="number" formControlName="buildingHeight" placeholder="e.g. 12" min="3">
-              <span class="hyd-err" *ngIf="form.get('buildingHeight')?.invalid && form.get('buildingHeight')?.touched">Required</span>
+              <label class="hyd-label">Building Height (m)</label>
+              <input class="hyd-input" type="number" formControlName="buildingHeight" placeholder="e.g. 12 (optional)" min="3">
             </div>
           </div>
 
@@ -76,12 +120,20 @@
               <input class="hyd-input" type="number" formControlName="floorHeight" placeholder="3.0" min="2.8" step="0.1">
             </div>
             <div class="hyd-field">
-              <label class="hyd-label">Usage</label>
+              <label class="hyd-label">
+                Usage
+                <span style="font-size:11px; color:#64748b; font-weight:400;" *ngIf="usagesLoading"> …</span>
+              </label>
               <select class="hyd-select" formControlName="usage">
-                <option value="residential">Residential (Dwelling)</option>
-                <option value="commercial">Commercial (Shops / Offices / Markets)</option>
-                <option value="mixed">Mixed Use (Residential + Commercial)</option>
+                <ng-container *ngFor="let group of usageGroups">
+                  <optgroup [label]="group.name">
+                    <option *ngFor="let opt of group.options" [value]="opt.value">{{ opt.label }}</option>
+                  </optgroup>
+                </ng-container>
               </select>
+              <span class="hyd-hint" *ngIf="allowedUsages.length">
+                {{ allowedUsages.length }} usage{{ allowedUsages.length === 1 ? '' : 's' }} permitted for this zone &amp; road width.
+              </span>
             </div>
           </div>
 
@@ -181,6 +233,33 @@
               <span class="hyd-metric-unit">to exhaust FAR · advisory</span>
             </div>
           </div>
+        </div>
+      </div>
+
+      <!-- Site Plan -->
+      <div class="hyd-section">
+        <div class="hyd-section-header" (click)="toggleSection('sitePlan')">
+          <span>🏗 Site Plan</span>
+          <div class="hyd-section-header-right">
+            <span>{{ openSections['sitePlan'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['sitePlan']">
+          <app-site-plan
+            [plotLengthM]="form.value.plotLength"
+            [plotWidthM]="form.value.plotWidth"
+            [roadWidthM]="form.value.roadWidth"
+            [buildingHeightM]="result.building_height_m || form.value.buildingHeight"
+            [numFloors]="result.num_floors || 3"
+            [floorHeightM]="form.value.floorHeight || 3.0"
+            [setbackFront]="result.setbacks?.front || 3"
+            [setbackSide]="result.setbacks?.side || 1.5"
+            [setbackRear]="result.setbacks?.rear || 1.5"
+            [usage]="form.value.usage"
+            [cornerPlot]="form.value.cornerPlot === 'true'"
+            [groundCovPct]="result.ground_coverage_pct || 55"
+            [zone]="result.zone">
+          </app-site-plan>
         </div>
       </div>
 

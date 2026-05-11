@@ -85,7 +85,7 @@ export class RanchiPlanningTool implements OnInit, AfterViewInit {
       plotLength:      ['', Validators.required],
       plotWidth:       ['', Validators.required],
       roadWidth:       ['', Validators.required],
-      buildingHeight:  ['', Validators.required],
+      buildingHeight:  [''],
       usage:           ['residential'],
       cornerPlot:      ['false'],
       basement:        ['false'],

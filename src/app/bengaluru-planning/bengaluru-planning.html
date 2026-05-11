@@ -175,9 +175,8 @@
               <span class="bp-err" *ngIf="form.get('roadWidth')?.invalid && form.get('roadWidth')?.touched">Required</span>
             </div>
             <div class="bp-field">
-              <label class="bp-label">Building Height (m) <span class="bp-req">*</span></label>
-              <input class="bp-input" type="number" formControlName="buildingHeight" placeholder="e.g. 15" min="3">
-              <span class="bp-err" *ngIf="form.get('buildingHeight')?.invalid && form.get('buildingHeight')?.touched">Required</span>
+              <label class="bp-label">Building Height (m)</label>
+              <input class="bp-input" type="number" formControlName="buildingHeight" placeholder="e.g. 15 (optional)" min="3">
             </div>
           </div>
 

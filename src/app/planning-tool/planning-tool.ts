@@ -373,7 +373,7 @@ export class PlanningTool implements OnInit, AfterViewInit {
       plotLength: [''],
       plotWidth: [''],
       roadWidth: ['', Validators.required],
-      buildingHeight: ['', Validators.required],
+      buildingHeight: [''],
       usage: [''],
       // new fields
       cornerPlot:     ['false'],

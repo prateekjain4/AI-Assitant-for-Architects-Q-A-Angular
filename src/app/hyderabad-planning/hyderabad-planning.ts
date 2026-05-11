@@ -1,14 +1,18 @@
-import { Component, OnInit, AfterViewInit, ChangeDetectorRef, NgZone, Inject, PLATFORM_ID, ViewChild, ElementRef } from '@angular/core';
+import { Component, OnInit, AfterViewInit, OnDestroy, ChangeDetectorRef, NgZone, Inject, PLATFORM_ID, ViewChild, ElementRef } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Subject } from 'rxjs';
+import { distinctUntilChanged, startWith, takeUntil } from 'rxjs/operators';
 import { Router } from '@angular/router';
+import * as turf from '@turf/turf';
 import { environment } from '../../environments/environment';
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 
 export interface HydChatMessage { role: 'user' | 'ai'; text: string; ts: string; }
 export interface HydChatSession  { id: string; title: string; messages: HydChatMessage[]; createdAt: string; updatedAt: string; }
+export interface HydUsageOption  { value: string; label: string; group: string; requires_space_standards: boolean; }
 
 @Component({
   selector: 'app-hyderabad-planning',
@@ -16,7 +20,7 @@ export interface HydChatSession  { id: string; title: string; messages: HydChatM
   templateUrl: './hyderabad-planning.html',
   styleUrl: './hyderabad-planning.css',
 })
-export class HyderabadPlanningTool implements OnInit, AfterViewInit {
+export class HyderabadPlanningTool implements OnInit, AfterViewInit, OnDestroy {
 
   @ViewChild('hydChatBody', { static: false }) chatBodyRef?: ElementRef;
 
@@ -42,11 +46,39 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
   private map: any = null;
   private plotMarker: any = null;
   private readonly isBrowser: boolean;
+  private zoneFeatures: any[] = [];
+
+  // ── Map search ────────────────────────────────────────────────
+  searchQuery   = '';
+  searchResults: any[] = [];
+  showDropdown  = false;
+  private searchTimeout: any = null;
+
+  // ── Zone detection ─────────────────────────────────────────────
+  zoneDetecting     = false;
+  detectedZoneCode  = '';
+  detectedZoneName  = '';
+  zoneNotInCoverage = false;
+
+  // ── Dynamic usage dropdown ─────────────────────────────────────
+  allowedUsages: HydUsageOption[] = [];
+  usagesLoading = false;
+  private readonly destroy$ = new Subject<void>();
+
+  get usageGroups(): { name: string; options: HydUsageOption[] }[] {
+    const map = new Map<string, HydUsageOption[]>();
+    for (const opt of this.allowedUsages) {
+      if (!map.has(opt.group)) map.set(opt.group, []);
+      map.get(opt.group)!.push(opt);
+    }
+    return Array.from(map.entries()).map(([name, options]) => ({ name, options }));
+  }
 
   readonly HYD_CENTER = [17.3850, 78.4867];
   readonly STORAGE_KEY = 'hyd_planning_state';
 
   openSections: Record<string, boolean> = {
+    sitePlan:      true,
     metrics:       true,
     setbacks:      true,
     far:           false,
@@ -108,11 +140,49 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
       plotLength:     ['', Validators.required],
       plotWidth:      ['', Validators.required],
       roadWidth:      ['', Validators.required],
-      buildingHeight: ['', Validators.required],
-      usage:          ['residential'],
+      buildingHeight: [''],
+      usage:          ['residential', Validators.required],
       cornerPlot:     ['false'],
       basement:       ['false'],
       floorHeight:    [3.0],
+    });
+
+    // Reload allowed usages whenever zone or road width changes
+    this.form.get('zone')!.valueChanges.pipe(
+      startWith(this.form.value.zone),
+      distinctUntilChanged(),
+      takeUntil(this.destroy$),
+    ).subscribe(() => this.loadAllowedUsages());
+
+    this.form.get('roadWidth')!.valueChanges.pipe(
+      distinctUntilChanged(),
+      takeUntil(this.destroy$),
+    ).subscribe(() => this.loadAllowedUsages());
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  private loadAllowedUsages(): void {
+    const zone      = this.form.value.zone ?? 'R2';
+    const roadWidth = parseFloat(this.form.value.roadWidth) || 9;
+    this.usagesLoading = true;
+    this.http.get<{ usages: HydUsageOption[] }>(
+      `${environment.apiUrl}/permissible-usages-hyderabad?zone=${zone}&road_width=${roadWidth}`
+    ).subscribe({
+      next: (res) => {
+        this.allowedUsages = res.usages;
+        const current   = this.form.value.usage;
+        const stillValid = this.allowedUsages.some(u => u.value === current);
+        if (!stillValid && this.allowedUsages.length) {
+          this.form.patchValue({ usage: this.allowedUsages[0].value }, { emitEvent: false });
+        }
+        this.usagesLoading = false;
+        this.cdr.detectChanges();
+      },
+      error: () => { this.usagesLoading = false; },
     });
   }
 
@@ -132,6 +202,66 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
     }
   }
 
+  // ── Map search methods ────────────────────────────────────────
+  onSearchInput(): void {
+    const query = this.searchQuery.trim();
+    if (this.searchTimeout) clearTimeout(this.searchTimeout);
+    if (query.length < 3) {
+      this.searchResults = [];
+      this.showDropdown  = false;
+      return;
+    }
+    this.searchTimeout = setTimeout(() => this.fetchSearchResults(query), 400);
+  }
+
+  private fetchSearchResults(query: string): void {
+    const url = `https://nominatim.openstreetmap.org/search`
+      + `?q=${encodeURIComponent(query + ', Hyderabad')}`
+      + `&format=json&limit=6`
+      + `&viewbox=78.2,17.1,78.7,17.6`
+      + `&bounded=1&addressdetails=1`;
+
+    this.http.get<any[]>(url, { headers: { 'Accept-Language': 'en' } }).subscribe({
+      next: (results) => this.ngZone.run(() => {
+        this.searchResults = results.map(r => ({
+          display_name: r.display_name.split(',').slice(0, 3).join(',').trim(),
+          lat: parseFloat(r.lat),
+          lng: parseFloat(r.lon),
+        }));
+        this.showDropdown = this.searchResults.length > 0;
+        this.cdr.detectChanges();
+      }),
+      error: () => this.ngZone.run(() => {
+        this.searchResults = [];
+        this.showDropdown  = false;
+      }),
+    });
+  }
+
+  selectResult(result: any): void {
+    this.showDropdown  = false;
+    this.searchQuery   = result.display_name;
+    this.searchResults = [];
+    if (!this.map) return;
+    this.map.flyTo([result.lat, result.lng], 16, { duration: 1.2 });
+    import('leaflet').then((leafletModule: any) => {
+      const L = leafletModule.default ?? leafletModule;
+      this.setMapMarker(result.lat, result.lng, L);
+    });
+    this.detectZoneFromPoint(result.lat, result.lng);
+  }
+
+  onSearchBlur(): void {
+    setTimeout(() => { this.showDropdown = false; this.cdr.detectChanges(); }, 200);
+  }
+
+  clearSearch(): void {
+    this.searchQuery   = '';
+    this.searchResults = [];
+    this.showDropdown  = false;
+    if (this.plotMarker && this.map) { this.plotMarker.remove(); this.plotMarker = null; }
+  }
+
   private async initMap(): Promise<void> {
     if (this.map) return;
     const leafletModule = await import('leaflet');
@@ -149,6 +279,7 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
         const canvasRenderer = L.canvas({ padding: 0.5 });
         this.http.get<any>('assets/hyderabad_zones_display.geojson').subscribe({
           next: (geojson) => {
+            this.zoneFeatures = geojson.features ?? [];
             const options: any = {
               renderer: canvasRenderer,
               style: (feature: any) => this.getZoneStyle(feature?.properties?.zone_code),
@@ -170,6 +301,7 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
           this.ngZone.run(() => {
             const { lat, lng } = e.latlng;
             this.setMapMarker(lat, lng, L);
+            this.detectZoneFromPoint(lat, lng);
           });
         });
       } catch (err) {
@@ -213,6 +345,42 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
       .openPopup();
   }
 
+  private detectZoneFromPoint(lat: number, lng: number): void {
+    this.zoneDetecting     = true;
+    this.zoneNotInCoverage = false;
+    this.detectedZoneCode  = '';
+    this.detectedZoneName  = '';
+    this.cdr.detectChanges();
+
+    // Yield to render the spinner before the synchronous turf loop
+    setTimeout(() => {
+      const pt = turf.point([lng, lat]);
+      let found: any = null;
+      for (const feature of this.zoneFeatures) {
+        try {
+          if (turf.booleanPointInPolygon(pt, feature)) {
+            found = feature.properties;
+            break;
+          }
+        } catch { /* skip malformed */ }
+      }
+
+      this.ngZone.run(() => {
+        this.zoneDetecting = false;
+        if (found) {
+          this.detectedZoneCode  = found.zone_code ?? '';
+          this.detectedZoneName  = found.zone_name ?? '';
+          this.zoneNotInCoverage = false;
+          const match = this.zones.find(z => z.value === found.zone_code);
+          if (match) this.form.get('zone')?.setValue(match.value);
+        } else {
+          this.zoneNotInCoverage = true;
+        }
+        this.cdr.detectChanges();
+      });
+    }, 0);
+  }
+
   toggleSection(key: string): void {
     this.openSections[key] = !this.openSections[key];
   }
@@ -245,6 +413,7 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit {
         next: (res) => this.ngZone.run(() => {
           this.result = res;
           this.openSections = {
+            sitePlan:      true,
             metrics:       true,
             setbacks:      true,
             far:           false,

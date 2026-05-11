@@ -1,3 +1,5 @@
+@keyframes spin { to { transform: rotate(360deg); } }
+
 /* ── Page shell ─────────────────────────────────────────────────── */
 .hyd-page {
   display: flex;
@@ -82,6 +84,7 @@
   box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
 }
 .hyd-err    { font-size: 11px; color: #ef4444; }
+.hyd-hint   { font-size: 11px; color: #64748b; margin-top: 2px; }
 .hyd-submit {
   width: 100%; padding: 11px; margin-top: 4px;
   background: #1d4ed8; color: #fff;

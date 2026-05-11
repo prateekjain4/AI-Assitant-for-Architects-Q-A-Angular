@@ -90,9 +90,8 @@
               <span class="rp-err" *ngIf="form.get('roadWidth')?.invalid && form.get('roadWidth')?.touched">Required</span>
             </div>
             <div class="rp-field">
-              <label class="rp-label">Building Height (m) <span class="rp-req">*</span></label>
-              <input class="rp-input" type="number" formControlName="buildingHeight" placeholder="e.g. 12" min="3">
-              <span class="rp-err" *ngIf="form.get('buildingHeight')?.invalid && form.get('buildingHeight')?.touched">Required</span>
+              <label class="rp-label">Building Height (m)</label>
+              <input class="rp-input" type="number" formControlName="buildingHeight" placeholder="e.g. 12 (optional)" min="3">
             </div>
           </div>
 
