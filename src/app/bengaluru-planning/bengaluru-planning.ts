@@ -461,8 +461,9 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
   ngOnInit(): void {
     this.form = this.fb.group({
       zone:           ['R', Validators.required],
-      plotLength:     ['', Validators.required],
-      plotWidth:      ['', Validators.required],
+      plotLength:     [''],
+      plotWidth:      [''],
+      plotAreaSqft:   [''],
       roadWidth:      ['', Validators.required],
       buildingHeight: [''],
       usage:          ['residential'],
@@ -687,6 +688,18 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     ];
   }
 
+  // ── FAR utilised at current floor count ───────────────────────
+  get farUtilisedPct(): string {
+    if (!this.result) return '0';
+    const floors    = this.result.staircase?.num_floors ?? 0;
+    const maxBuilt  = this.result.max_built_area ?? 0;
+    const far       = this.result.far ?? 1;
+    const plotArea  = this.result.plot_area ?? 0;
+    const footprint = (this.result.ground_coverage_pct / 100) * plotArea;
+    const actual    = Math.min(floors * footprint, maxBuilt);
+    return Math.round((actual / maxBuilt) * 100).toString();
+  }
+
   // ── Setback SVG scale helpers ──────────────────────────────────
   get frontPx(): number { return Math.min(58, (this.result?.setbacks?.front ?? 0) * 8); }
   get rearPx():  number { return Math.min(38, (this.result?.setbacks?.rear  ?? 0) * 8); }
@@ -756,14 +769,22 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
   onSubmit(): void {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
+    const v = this.form.value;
+    const hasDims  = Number(v.plotLength) > 0 && Number(v.plotWidth) > 0;
+    const hasSqft  = Number(v.plotAreaSqft) > 0;
+    if (!hasDims && !hasSqft) {
+      this.errorMessage = 'Enter Plot Length & Width, or Plot Area in sqft.';
+      return;
+    }
+
     this.loading = true;
     this.result  = null;
-    const v = this.form.value;
 
-    const payload = {
+    const payload: any = {
       zone:             v.zone,
-      plot_length:      Number(v.plotLength),
-      plot_width:       Number(v.plotWidth),
+      plot_length:      Number(v.plotLength) || null,
+      plot_width:       Number(v.plotWidth)  || null,
+      plot_area_sqft:   hasSqft ? Number(v.plotAreaSqft) : null,
       coordinates:      [],
       road_width:       Number(v.roadWidth),
       building_height:  Number(v.buildingHeight),
@@ -780,18 +801,19 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
         next: (res) => this.ngZone.run(() => {
           this.result = res;
           this.openSections = {
-            metrics:       true,
-            sitePlan:      true,
-            setbacks:      true,
-            far:           false,
-            staircase:     false,
-            fire:          false,
-            compliance:    false,
-            parking:       false,
-            basement:      false,
-            accessibility: false,
-            compoundWall:  false,
-            scenarios:     false,
+            metrics:        true,
+            sitePlan:       true,
+            setbacks:       true,
+            far:            false,
+            staircase:      false,
+            fire:           false,
+            compliance:     false,
+            parking:        false,
+            basement:       false,
+            accessibility:  false,
+            compoundWall:   false,
+            scenarios:      false,
+            compliance_dash: true,
           };
           try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify({

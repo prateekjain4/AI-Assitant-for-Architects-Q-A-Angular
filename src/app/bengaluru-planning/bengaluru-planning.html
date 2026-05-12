@@ -159,15 +159,20 @@
           <!-- Plot dimensions -->
           <div class="bp-row">
             <div class="bp-field">
-              <label class="bp-label">Plot Length (m) <span class="bp-req">*</span></label>
+              <label class="bp-label">Plot Length (m)</label>
               <input class="bp-input" type="number" formControlName="plotLength" placeholder="e.g. 20" min="1">
-              <span class="bp-err" *ngIf="form.get('plotLength')?.invalid && form.get('plotLength')?.touched">Required</span>
             </div>
             <div class="bp-field">
-              <label class="bp-label">Plot Width (m) <span class="bp-req">*</span></label>
+              <label class="bp-label">Plot Width (m)</label>
               <input class="bp-input" type="number" formControlName="plotWidth" placeholder="e.g. 15" min="1">
-              <span class="bp-err" *ngIf="form.get('plotWidth')?.invalid && form.get('plotWidth')?.touched">Required</span>
             </div>
+          </div>
+
+          <!-- Plot area direct sqft input -->
+          <div class="bp-field bp-field-sqft">
+            <label class="bp-label">Plot Area (sqft) <span class="bp-label-alt">— overrides Length × Width if filled</span></label>
+            <input class="bp-input" type="number" formControlName="plotAreaSqft" placeholder="e.g. 2400" min="1">
+            <span class="bp-hint">Enter either Length &amp; Width above, or Plot Area in sqft here.</span>
           </div>
 
           <!-- Road & height -->
@@ -268,31 +273,6 @@
         <div *ngFor="let w of result.warnings">⚠ {{ w }}</div>
       </div>
 
-      <!-- Compliance Dashboard -->
-      <div class="bp-section">
-        <div class="bp-section-header" (click)="toggleSection('compliance_dash')">
-          <span>⚡ Compliance Summary</span>
-          <div class="bp-section-header-right">
-            <span>{{ openSections['compliance_dash'] ? '▲' : '▼' }}</span>
-          </div>
-        </div>
-        <div class="bp-section-body" *ngIf="openSections['compliance_dash']">
-          <div class="bp-compliance-grid">
-            <div *ngFor="let item of complianceItems"
-                 class="bp-comp-item"
-                 [class.bp-comp-ok]="item.status === 'ok'"
-                 [class.bp-comp-warn]="item.status === 'warn'"
-                 [class.bp-comp-err]="item.status === 'error'">
-              <span class="bp-comp-icon">{{ item.status === 'ok' ? '✓' : item.status === 'warn' ? '⚠' : '✗' }}</span>
-              <div>
-                <span class="bp-comp-label">{{ item.label }}</span>
-                <span class="bp-comp-note">{{ item.note }}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Key Metrics -->
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('metrics')">
@@ -329,10 +309,10 @@
               <span class="bp-metric-value">{{ result.staircase?.num_floors }}</span>
               <span class="bp-metric-unit">G+{{ (result.staircase?.num_floors ?? 1) - 1 }} · {{ result.building_height_m }} m{{ result.building_height_auto ? ' (auto)' : '' }}</span>
             </div>
-            <div class="bp-metric" *ngIf="result.min_floors_for_max_far" title="Advisory only — not a regulatory requirement. Shows how many floors at this footprint are needed to exhaust the full FAR budget.">
-              <span class="bp-metric-label">FAR Budget Floors ⓘ</span>
-              <span class="bp-metric-value">{{ result.min_floors_for_max_far }}</span>
-              <span class="bp-metric-unit">to exhaust {{ result.far }} FAR · advisory</span>
+            <div class="bp-metric" title="Percentage of the maximum allowable FAR captured at the current floor count. See Scenario Comparison for alternative heights.">
+              <span class="bp-metric-label">FAR Utilised ⓘ</span>
+              <span class="bp-metric-value">{{ farUtilisedPct }}%</span>
+              <span class="bp-metric-unit">of max {{ result.far }} · see scenarios for more</span>
             </div>
           </div>
 
@@ -364,30 +344,38 @@
         </div>
       </div>
 
-      <!-- Site Plan -->
+      <!-- FAR -->
       <div class="bp-section">
-        <div class="bp-section-header" (click)="toggleSection('sitePlan')">
-          <span>🏗 Site Plan</span>
+        <div class="bp-section-header" (click)="toggleSection('far')">
+          <span>📊 FAR &amp; Built-up Area</span>
           <div class="bp-section-header-right">
-            <span>{{ openSections['sitePlan'] ? '▲' : '▼' }}</span>
+            <button class="bp-source-chip" (click)="openSource('far', $event)" title="View source regulation">📄 Source</button>
+            <span>{{ openSections['far'] ? '▲' : '▼' }}</span>
           </div>
         </div>
-        <div class="bp-section-body" *ngIf="openSections['sitePlan']">
-          <app-site-plan
-            [plotLengthM]="form.value.plotLength"
-            [plotWidthM]="form.value.plotWidth"
-            [roadWidthM]="form.value.roadWidth"
-            [buildingHeightM]="result.building_height_m || form.value.buildingHeight"
-            [numFloors]="result.staircase?.num_floors || 3"
-            [floorHeightM]="form.value.floorHeight || 3.2"
-            [setbackFront]="result.setbacks?.front || 3"
-            [setbackSide]="result.setbacks?.side || 1.5"
-            [setbackRear]="result.setbacks?.rear || 1.5"
-            [usage]="form.value.usage"
-            [cornerPlot]="form.value.cornerPlot === 'true'"
-            [groundCovPct]="result.ground_coverage_pct || 60"
-            [zone]="result.zone">
-          </app-site-plan>
+        <div class="bp-section-body" *ngIf="openSections['far']">
+          <div class="bp-metrics">
+            <div class="bp-metric">
+              <span class="bp-metric-label">Base FAR</span>
+              <span class="bp-metric-value">{{ result.far_base }}</span>
+              <span class="bp-metric-unit">BDA RMP 2031</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">TDR FAR</span>
+              <span class="bp-metric-value">{{ result.far_tdr }}</span>
+              <span class="bp-metric-unit">transferable dev rights</span>
+            </div>
+            <div class="bp-metric bp-metric-primary">
+              <span class="bp-metric-label">Total FAR</span>
+              <span class="bp-metric-value">{{ result.far }}</span>
+              <span class="bp-metric-unit">base + TDR</span>
+            </div>
+          </div>
+          <div class="bp-note bp-note-info" *ngIf="result.far_exclusions?.length > 0">
+            <strong>FAR exclusions:</strong>
+            <span *ngFor="let ex of result.far_exclusions; let last = last"> {{ ex }}{{ last ? '' : ' ·' }}</span>
+          </div>
+          <p class="bp-summary">{{ result.section_summaries?.far }}</p>
         </div>
       </div>
 
@@ -447,38 +435,55 @@
         </div>
       </div>
 
-      <!-- FAR -->
+      <!-- Compliance Dashboard -->
       <div class="bp-section">
-        <div class="bp-section-header" (click)="toggleSection('far')">
-          <span>📊 FAR &amp; Built-up Area</span>
+        <div class="bp-section-header" (click)="toggleSection('compliance_dash')">
+          <span>⚡ Compliance Summary</span>
           <div class="bp-section-header-right">
-            <button class="bp-source-chip" (click)="openSource('far', $event)" title="View source regulation">📄 Source</button>
-            <span>{{ openSections['far'] ? '▲' : '▼' }}</span>
+            <span>{{ openSections['compliance_dash'] ? '▲' : '▼' }}</span>
           </div>
         </div>
-        <div class="bp-section-body" *ngIf="openSections['far']">
-          <div class="bp-metrics">
-            <div class="bp-metric">
-              <span class="bp-metric-label">Base FAR</span>
-              <span class="bp-metric-value">{{ result.far_base }}</span>
-              <span class="bp-metric-unit">BDA RMP 2031</span>
-            </div>
-            <div class="bp-metric">
-              <span class="bp-metric-label">TDR FAR</span>
-              <span class="bp-metric-value">{{ result.far_tdr }}</span>
-              <span class="bp-metric-unit">transferable dev rights</span>
-            </div>
-            <div class="bp-metric bp-metric-primary">
-              <span class="bp-metric-label">Total FAR</span>
-              <span class="bp-metric-value">{{ result.far }}</span>
-              <span class="bp-metric-unit">base + TDR</span>
+        <div class="bp-section-body" *ngIf="openSections['compliance_dash']">
+          <div class="bp-compliance-grid">
+            <div *ngFor="let item of complianceItems"
+                 class="bp-comp-item"
+                 [class.bp-comp-ok]="item.status === 'ok'"
+                 [class.bp-comp-warn]="item.status === 'warn'"
+                 [class.bp-comp-err]="item.status === 'error'">
+              <span class="bp-comp-icon">{{ item.status === 'ok' ? '✓' : item.status === 'warn' ? '⚠' : '✗' }}</span>
+              <div>
+                <span class="bp-comp-label">{{ item.label }}</span>
+                <span class="bp-comp-note">{{ item.note }}</span>
+              </div>
             </div>
           </div>
-          <div class="bp-note bp-note-info" *ngIf="result.far_exclusions?.length > 0">
-            <strong>FAR exclusions:</strong>
-            <span *ngFor="let ex of result.far_exclusions; let last = last"> {{ ex }}{{ last ? '' : ' ·' }}</span>
+        </div>
+      </div>
+
+      <!-- Site Plan -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('sitePlan')">
+          <span>🏗 Site Plan</span>
+          <div class="bp-section-header-right">
+            <span>{{ openSections['sitePlan'] ? '▲' : '▼' }}</span>
           </div>
-          <p class="bp-summary">{{ result.section_summaries?.far }}</p>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['sitePlan']">
+          <app-site-plan
+            [plotLengthM]="form.value.plotLength"
+            [plotWidthM]="form.value.plotWidth"
+            [roadWidthM]="form.value.roadWidth"
+            [buildingHeightM]="result.building_height_m || form.value.buildingHeight"
+            [numFloors]="result.staircase?.num_floors || 3"
+            [floorHeightM]="form.value.floorHeight || 3.2"
+            [setbackFront]="result.setbacks?.front || 3"
+            [setbackSide]="result.setbacks?.side || 1.5"
+            [setbackRear]="result.setbacks?.rear || 1.5"
+            [usage]="form.value.usage"
+            [cornerPlot]="form.value.cornerPlot === 'true'"
+            [groundCovPct]="result.ground_coverage_pct || 60"
+            [zone]="result.zone">
+          </app-site-plan>
         </div>
       </div>
 

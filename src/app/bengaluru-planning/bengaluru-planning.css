@@ -412,6 +412,8 @@
 .bp-row    { display: flex; gap: 10px; margin-bottom: 12px; }
 .bp-label  { font-size: 12px; font-weight: 600; color: #374151; }
 .bp-req    { color: #ef4444; }
+.bp-label-alt  { font-weight: 400; color: #94a3b8; margin-left: 4px; }
+.bp-field-sqft { margin-bottom: 12px; }
 .bp-hint         { font-size: 11px; color: #94a3b8; display: block; margin-top: 3px; }
 .bp-usage-loading{ font-size: 11px; color: #94a3b8; margin-left: 6px; font-style: italic; }
 .bp-input, .bp-select {
