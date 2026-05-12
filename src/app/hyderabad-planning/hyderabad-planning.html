@@ -174,7 +174,7 @@
           <h4 class="hyd-result-title">Planning Result — Hyderabad GHMC</h4>
           <div class="hyd-badges">
             <span class="hyd-badge hyd-badge-zone">{{ result.zone_display }}</span>
-            <span class="hyd-badge hyd-badge-ht">{{ result.building_height_m }} m</span>
+            <span class="hyd-badge hyd-badge-ht">{{ result.building_height_m }} m<span *ngIf="result.building_height_auto" class="hyd-badge-auto"> · auto</span></span>
             <span class="hyd-badge hyd-badge-far">FAR {{ result.far }}</span>
             <span class="hyd-badge hyd-badge-warn" *ngIf="result.height_capped">Height capped</span>
           </div>
@@ -220,7 +220,7 @@
             <div class="hyd-metric">
               <span class="hyd-metric-label">Building Height</span>
               <span class="hyd-metric-value">{{ result.building_height_m }}</span>
-              <span class="hyd-metric-unit">m (effective)</span>
+              <span class="hyd-metric-unit">m · {{ result.building_height_auto ? 'auto — max by road width' : 'effective' }}</span>
             </div>
             <div class="hyd-metric">
               <span class="hyd-metric-label">Floors Feasible</span>

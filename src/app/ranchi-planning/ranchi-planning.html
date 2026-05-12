@@ -163,7 +163,7 @@
           <h4 class="rp-result-title">Planning Result — Ranchi RMC</h4>
           <div class="rp-badges">
             <span class="rp-badge rp-badge-zone">{{ result.zone_display }}</span>
-            <span class="rp-badge rp-badge-ht">{{ result.building_height_m }} m</span>
+            <span class="rp-badge rp-badge-ht">{{ result.building_height_m }} m<span *ngIf="result.building_height_auto" class="rp-badge-auto"> · auto</span></span>
             <span class="rp-badge rp-badge-far">FAR {{ result.far }}</span>
             <span class="rp-badge rp-badge-warn" *ngIf="result.height_capped">Height capped</span>
           </div>
@@ -209,7 +209,7 @@
             <div class="rp-metric">
               <span class="rp-metric-label">Building Height</span>
               <span class="rp-metric-value">{{ result.building_height_m }}</span>
-              <span class="rp-metric-unit">m (effective)</span>
+              <span class="rp-metric-unit">m · {{ result.building_height_auto ? 'auto — max by road width' : 'effective' }}</span>
             </div>
             <div class="rp-metric">
               <span class="rp-metric-label">Floors Feasible</span>

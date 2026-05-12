@@ -113,6 +113,7 @@
 }
 .rp-badge-zone { background: rgba(99,102,241,0.2); color: #a5b4fc; border: 1px solid rgba(165,180,252,0.3); }
 .rp-badge-ht   { background: rgba(16,185,129,0.15); color: #6ee7b7; border: 1px solid rgba(110,231,183,0.3); }
+.rp-badge-auto { font-size: 10px; opacity: 0.75; font-style: italic; }
 .rp-badge-far  { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(147,197,253,0.3); }
 .rp-badge-warn { background: rgba(245,158,11,0.15); color: #fcd34d; border: 1px solid rgba(252,211,77,0.3); }
 

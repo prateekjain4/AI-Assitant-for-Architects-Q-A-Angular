@@ -13,6 +13,7 @@ import { debounceTime, distinctUntilChanged, filter, takeUntil, startWith } from
 import { AuthService } from '../services/auth.service';
 import { ToastService } from '../services/toast.service';
 import { CostDataService } from '../services/cost-data.service';
+import { ValuationDataService } from '../services/valuation-data.service';
 import { ScenarioComparison } from '../scenario-comparison/scenario-comparison';
 import { ProjectService, ProjectSummary } from '../services/project.service';
 
@@ -60,6 +61,10 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
   private plotMarker: any = null;
   private readonly isBrowser: boolean;
 
+  // ── Map marker (for zone detection + valuation page) ─────────
+  markerLat: number | null = null;
+  markerLng: number | null = null;
+
   readonly BLR_CENTER  = [12.9716, 77.5946];
   readonly STORAGE_KEY = 'blr_planning_state';
 
@@ -75,7 +80,8 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     basement:      false,
     accessibility: false,
     compoundWall:  false,
-    scenarios:     false,
+    scenarios:        false,
+    compliance_dash:  true,
   };
 
   detectedZone     = '';
@@ -443,6 +449,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     public  auth:           AuthService,
     private toast:          ToastService,
     private costData:       CostDataService,
+    private valData:        ValuationDataService,
     private projectService: ProjectService,
     @Inject(PLATFORM_ID) platformId: object,
   ) {
@@ -565,6 +572,8 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
 
         this.map.on('click', (e: any) => {
           const { lat, lng } = e.latlng;
+          this.markerLat = lat;
+          this.markerLng = lng;
           this.setMapMarker(lat, lng, L);
           this.detectZone(lat, lng);
         });
@@ -630,6 +639,59 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     this.openSections[key] = !this.openSections[key];
   }
 
+  // ── Compliance dashboard ───────────────────────────────────────
+  get complianceItems(): { label: string; status: 'ok' | 'warn' | 'error'; note: string }[] {
+    if (!this.result) return [];
+    const r = this.result;
+    const floors = r.staircase?.num_floors ?? 0;
+    const cars   = r.parking?.required?.cars ?? 0;
+    return [
+      {
+        label: 'Setbacks',
+        status: 'ok',
+        note: `Front ${r.setbacks?.front}m · Side ${r.setbacks?.side}m · Rear ${r.setbacks?.rear}m`,
+      },
+      {
+        label: 'Fire NOC',
+        status: r.fire_data?.noc_required ? 'warn' : 'ok',
+        note: r.fire_data?.noc_required
+          ? 'Required — file with BBMP Fire Wing before construction'
+          : 'Not required at this height / area',
+      },
+      {
+        label: 'Lift / Elevator',
+        status: r.staircase?.lift_mandatory ? 'warn' : 'ok',
+        note: r.staircase?.lift_mandatory
+          ? `Mandatory above G+3 (${floors} floors)`
+          : 'Not mandatory at this floor count',
+      },
+      {
+        label: 'Accessibility',
+        status: r.accessibility?.required ? 'warn' : 'ok',
+        note: r.accessibility?.required
+          ? 'Ramp, accessible toilet & guiding floor required'
+          : 'Not mandatory for this usage/area',
+      },
+      {
+        label: 'Progressive Setbacks',
+        status: floors > 4 ? 'warn' : 'ok',
+        note: floors > 4
+          ? 'BDA Table 2 applies — setbacks increase above 15 m'
+          : 'Standard setbacks apply at this height',
+      },
+      {
+        label: 'Parking',
+        status: 'ok',
+        note: `${cars} car space${cars !== 1 ? 's' : ''} required`,
+      },
+    ];
+  }
+
+  // ── Setback SVG scale helpers ──────────────────────────────────
+  get frontPx(): number { return Math.min(58, (this.result?.setbacks?.front ?? 0) * 8); }
+  get rearPx():  number { return Math.min(38, (this.result?.setbacks?.rear  ?? 0) * 8); }
+  get sidePx():  number { return Math.min(38, (this.result?.setbacks?.side  ?? 0) * 8); }
+
   // ── Map search ────────────────────────────────────────────────
   onSearchInput(): void {
     const query = this.searchQuery.trim();
@@ -671,6 +733,8 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     this.searchQuery   = result.display_name;
     this.searchResults = [];
     if (!this.map) return;
+    this.markerLat = result.lat;
+    this.markerLng = result.lng;
     this.map.flyTo([result.lat, result.lng], 16, { duration: 1.2 });
     import('leaflet').then(L => {
       this.setMapMarker(result.lat, result.lng, L);
@@ -777,6 +841,29 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
       scenarios:        this.scenarioCompRef?.scenarioData?.scenarios || [],
     });
     this.router.navigate(['/cost-analysis']);
+  }
+
+  openMarketValuation(): void {
+    if (!this.result) return;
+    const v = this.form.value;
+    this.valData.set({
+      city:                  'bengaluru',
+      zone:                  v.zone  || 'R',
+      usage:                 v.usage || 'residential',
+      maxBuiltSqm:           +(this.result.max_built_area || 0),
+      numFloors:              this.result.staircase?.num_floors || 1,
+      plotAreaSqm:           +(this.result.plot_area || 0),
+      totalConstructionCost:  0,
+      lat:                    this.markerLat,
+      lng:                    this.markerLng,
+      plotLengthM:           +(v.plotLength || 0),
+      plotWidthM:            +(v.plotWidth  || 0),
+      roadWidth:             +(v.roadWidth  || 0),
+      planningZone:           this.planningZone,
+      far:                    this.result.far || 0,
+      locality:               'Bengaluru',
+    });
+    this.router.navigate(['/market-valuation']);
   }
 
   goToCities(): void {

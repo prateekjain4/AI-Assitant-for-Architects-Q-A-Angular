@@ -36,6 +36,9 @@
       <button class="bp-cost-btn" *ngIf="result" (click)="openCostAnalysis()">
         ₹ Cost Analysis
       </button>
+      <button class="bp-val-btn" *ngIf="result" (click)="openMarketValuation()">
+        📊 Market Valuation
+      </button>
       <span class="bp-user" *ngIf="auth.isLoggedIn">{{ auth.currentUser?.user_name }}</span>
     </div>
   </div>
@@ -243,7 +246,7 @@
           <h4 class="bp-result-title">Planning Result — BDA RMP 2031</h4>
           <div class="bp-badges">
             <span class="bp-badge bp-badge-zone">{{ result.zone }}</span>
-            <span class="bp-badge bp-badge-ht">{{ result.building_height_m || form.value.buildingHeight }} m</span>
+            <span class="bp-badge bp-badge-ht">{{ result.building_height_m || form.value.buildingHeight }} m<span *ngIf="result.building_height_auto" class="bp-badge-auto"> · auto</span></span>
             <span class="bp-badge bp-badge-far">FAR {{ result.far }}</span>
             <span class="bp-badge bp-badge-tdr" *ngIf="result.far_tdr > 0">+{{ result.far_tdr }} TDR</span>
             <span class="bp-badge bp-badge-ward" *ngIf="bbmpWardName">Ward {{ bbmpWardNo }} — {{ bbmpWardName }}</span>
@@ -263,6 +266,31 @@
       <!-- Watch-out warnings -->
       <div class="bp-warn-banner" *ngIf="result.warnings?.length > 0">
         <div *ngFor="let w of result.warnings">⚠ {{ w }}</div>
+      </div>
+
+      <!-- Compliance Dashboard -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('compliance_dash')">
+          <span>⚡ Compliance Summary</span>
+          <div class="bp-section-header-right">
+            <span>{{ openSections['compliance_dash'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['compliance_dash']">
+          <div class="bp-compliance-grid">
+            <div *ngFor="let item of complianceItems"
+                 class="bp-comp-item"
+                 [class.bp-comp-ok]="item.status === 'ok'"
+                 [class.bp-comp-warn]="item.status === 'warn'"
+                 [class.bp-comp-err]="item.status === 'error'">
+              <span class="bp-comp-icon">{{ item.status === 'ok' ? '✓' : item.status === 'warn' ? '⚠' : '✗' }}</span>
+              <div>
+                <span class="bp-comp-label">{{ item.label }}</span>
+                <span class="bp-comp-note">{{ item.note }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Key Metrics -->
@@ -299,7 +327,7 @@
             <div class="bp-metric">
               <span class="bp-metric-label">Floors Feasible</span>
               <span class="bp-metric-value">{{ result.staircase?.num_floors }}</span>
-              <span class="bp-metric-unit">G+{{ (result.staircase?.num_floors ?? 1) - 1 }} · by height</span>
+              <span class="bp-metric-unit">G+{{ (result.staircase?.num_floors ?? 1) - 1 }} · {{ result.building_height_m }} m{{ result.building_height_auto ? ' (auto)' : '' }}</span>
             </div>
             <div class="bp-metric" *ngIf="result.min_floors_for_max_far" title="Advisory only — not a regulatory requirement. Shows how many floors at this footprint are needed to exhaust the full FAR budget.">
               <span class="bp-metric-label">FAR Budget Floors ⓘ</span>
@@ -307,6 +335,32 @@
               <span class="bp-metric-unit">to exhaust {{ result.far }} FAR · advisory</span>
             </div>
           </div>
+
+          <!-- FAR Composition Bar -->
+          <div class="bp-far-bar-wrap" *ngIf="result.far">
+            <div class="bp-far-bar-label">FAR Composition</div>
+            <div class="bp-far-bar-track">
+              <div class="bp-far-seg bp-far-seg-base"
+                   [style.width.%]="(result.far_base / result.far) * 100"
+                   [title]="'Base FAR: ' + result.far_base">
+                <span *ngIf="(result.far_base / result.far) > 0.25">{{ result.far_base }}</span>
+              </div>
+              <div class="bp-far-seg bp-far-seg-tdr"
+                   [style.width.%]="(result.far_tdr / result.far) * 100"
+                   *ngIf="result.far_tdr > 0"
+                   [title]="'TDR FAR: ' + result.far_tdr">
+                <span *ngIf="(result.far_tdr / result.far) > 0.15">{{ result.far_tdr }}</span>
+              </div>
+            </div>
+            <div class="bp-far-bar-legend">
+              <span class="bp-far-legend-dot bp-far-legend-base"></span> Base {{ result.far_base }}
+              <span class="bp-far-legend-dot bp-far-legend-tdr" *ngIf="result.far_tdr > 0"></span>
+              <span *ngIf="result.far_tdr > 0"> TDR {{ result.far_tdr }}</span>
+              <strong> = {{ result.far }} total FAR</strong>
+              &nbsp;·&nbsp; Max built-up {{ result.max_built_area | number:'1.0-0' }} sqm
+            </div>
+          </div>
+
         </div>
       </div>
 
@@ -347,6 +401,37 @@
           </div>
         </div>
         <div class="bp-section-body" *ngIf="openSections['setbacks']">
+
+          <!-- Setback Diagram -->
+          <svg class="bp-setback-svg" viewBox="0 0 280 200" xmlns="http://www.w3.org/2000/svg">
+            <!-- Plot boundary -->
+            <rect x="20" y="10" width="240" height="160" fill="white" stroke="#94a3b8" stroke-width="1.5"/>
+            <!-- Front (bottom) shaded zone -->
+            <rect x="20" [attr.y]="170 - frontPx" width="240" [attr.height]="frontPx"
+                  fill="rgba(59,130,246,0.12)" stroke="none"/>
+            <!-- Rear (top) shaded zone -->
+            <rect x="20" y="10" width="240" [attr.height]="rearPx"
+                  fill="rgba(20,184,166,0.12)" stroke="none"/>
+            <!-- Left side shaded zone -->
+            <rect x="20" y="10" [attr.width]="sidePx" height="160"
+                  fill="rgba(139,92,246,0.12)" stroke="none"/>
+            <!-- Right side shaded zone -->
+            <rect [attr.x]="260 - sidePx" y="10" [attr.width]="sidePx" height="160"
+                  fill="rgba(139,92,246,0.12)" stroke="none"/>
+            <!-- Buildable area outline -->
+            <rect [attr.x]="20 + sidePx" [attr.y]="10 + rearPx"
+                  [attr.width]="240 - 2 * sidePx" [attr.height]="160 - frontPx - rearPx"
+                  fill="rgba(248,250,252,0.8)" stroke="#3b82f6" stroke-width="1" stroke-dasharray="4,3"/>
+            <!-- Labels -->
+            <text x="140" y="191" text-anchor="middle" font-size="9" fill="#3b82f6" font-weight="600">↑ Road — Front {{ result.setbacks?.front }}m</text>
+            <text x="140" y="23" text-anchor="middle" font-size="9" fill="#0f766e">Rear {{ result.setbacks?.rear }}m</text>
+            <text x="9" y="92" text-anchor="middle" font-size="9" fill="#7c3aed" transform="rotate(-90,9,92)">Side {{ result.setbacks?.side }}m</text>
+            <text x="274" y="92" text-anchor="middle" font-size="9" fill="#7c3aed" transform="rotate(90,274,92)">Side {{ result.setbacks?.side }}m</text>
+            <!-- Buildable area label -->
+            <text [attr.x]="20 + sidePx + (240 - 2 * sidePx) / 2" [attr.y]="10 + rearPx + (160 - frontPx - rearPx) / 2 + 4"
+                  text-anchor="middle" font-size="10" fill="#334155" font-weight="500">Buildable Area</text>
+          </svg>
+
           <div class="bp-setback-row">
             <div class="bp-setback-pill">Front <strong>{{ result.setbacks?.front }} m</strong></div>
             <div class="bp-setback-pill">Side <strong>{{ result.setbacks?.side }} m</strong></div>
