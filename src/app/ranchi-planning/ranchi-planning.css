@@ -28,6 +28,14 @@
 .rp-city-name  { font-size: 15px; font-weight: 700; display: block; }
 .rp-city-auth  { font-size: 11px; color: #64748b; }
 .rp-user       { font-size: 13px; color: #94a3b8; }
+.rp-topbar-right { display: flex; align-items: center; gap: 10px; }
+.rp-topbar-btn {
+  display: flex; align-items: center; gap: 5px;
+  font-size: 12px; color: #94a3b8; background: rgba(255,255,255,0.07);
+  border: 1px solid rgba(255,255,255,0.12); border-radius: 6px;
+  padding: 5px 12px; cursor: pointer; transition: all 0.15s;
+}
+.rp-topbar-btn:hover { color: #fff; border-color: rgba(255,255,255,0.3); }
 
 /* ── Body ───────────────────────────────────────────────────────── */
 .rp-body {

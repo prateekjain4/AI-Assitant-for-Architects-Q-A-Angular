@@ -212,6 +212,32 @@ export class RanchiPlanningTool implements OnInit, AfterViewInit {
     this.router.navigate(['/planning']);
   }
 
+  downloadReport(): void {
+    if (!this.result) return;
+    const payload = {
+      ...this.result,
+      city:       'ranchi',
+      zone:       this.form.value.zone,
+      road_width: this.form.value.roadWidth,
+      locality:   'Ranchi',
+      scenarios:  null,
+    };
+    this.toast.info('Generating PDF report…');
+    this.http.post(environment.apiUrl + '/generate-report', payload, { responseType: 'blob' })
+    .subscribe({
+      next: (blob: Blob) => {
+        const url    = window.URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href     = url;
+        anchor.download = `planning-report-ranchi-${Date.now()}.pdf`;
+        anchor.click();
+        window.URL.revokeObjectURL(url);
+        this.toast.success('Report downloaded!');
+      },
+      error: () => this.toast.error('Failed to generate report. Please try again.'),
+    });
+  }
+
   // ── Regulatory source references ─────────────────────────────
   showSourceModal = false;
   sourceSection   = '';

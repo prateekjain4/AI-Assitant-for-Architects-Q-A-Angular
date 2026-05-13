@@ -320,6 +320,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     if (!this.result) return;
     const payload = {
       ...this.result,
+      city:            'bengaluru',
       zone:            this.form.value.zone,
       road_width:      this.form.value.roadWidth,
       building_height: Number(this.form.value.buildingHeight),

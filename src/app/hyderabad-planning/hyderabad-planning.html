@@ -13,6 +13,13 @@
       </div>
     </div>
     <div class="hyd-topbar-right" *ngIf="auth.isLoggedIn">
+      <button class="hyd-topbar-btn" *ngIf="result && !result.error" (click)="downloadReport()">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/>
+          <polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>
+        </svg>
+        Download
+      </button>
       <span class="hyd-user">{{ auth.currentUser?.user_name }}</span>
     </div>
   </div>
@@ -236,33 +243,6 @@
         </div>
       </div>
 
-      <!-- Site Plan -->
-      <div class="hyd-section">
-        <div class="hyd-section-header" (click)="toggleSection('sitePlan')">
-          <span>🏗 Site Plan</span>
-          <div class="hyd-section-header-right">
-            <span>{{ openSections['sitePlan'] ? '▲' : '▼' }}</span>
-          </div>
-        </div>
-        <div class="hyd-section-body" *ngIf="openSections['sitePlan']">
-          <app-site-plan
-            [plotLengthM]="form.value.plotLength"
-            [plotWidthM]="form.value.plotWidth"
-            [roadWidthM]="form.value.roadWidth"
-            [buildingHeightM]="result.building_height_m || form.value.buildingHeight"
-            [numFloors]="result.num_floors || 3"
-            [floorHeightM]="form.value.floorHeight || 3.0"
-            [setbackFront]="result.setbacks?.front || 3"
-            [setbackSide]="result.setbacks?.side || 1.5"
-            [setbackRear]="result.setbacks?.rear || 1.5"
-            [usage]="form.value.usage"
-            [cornerPlot]="form.value.cornerPlot === 'true'"
-            [groundCovPct]="result.ground_coverage_pct || 55"
-            [zone]="result.zone">
-          </app-site-plan>
-        </div>
-      </div>
-
       <!-- Setbacks -->
       <div class="hyd-section">
         <div class="hyd-section-header" (click)="toggleSection('setbacks')">
@@ -430,6 +410,33 @@
           <div *ngFor="let item of result.compliance" class="hyd-compliance-item">
             <span class="hyd-compliance-dot">✓</span> {{ item }}
           </div>
+        </div>
+      </div>
+
+      <!-- Site Plan -->
+      <div class="hyd-section">
+        <div class="hyd-section-header" (click)="toggleSection('sitePlan')">
+          <span>🏗 Site Plan</span>
+          <div class="hyd-section-header-right">
+            <span>{{ openSections['sitePlan'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="hyd-section-body" *ngIf="openSections['sitePlan']">
+          <app-site-plan
+            [plotLengthM]="form.value.plotLength"
+            [plotWidthM]="form.value.plotWidth"
+            [roadWidthM]="form.value.roadWidth"
+            [buildingHeightM]="result.building_height_m || form.value.buildingHeight"
+            [numFloors]="result.num_floors || 3"
+            [floorHeightM]="form.value.floorHeight || 3.0"
+            [setbackFront]="result.setbacks?.front || 3"
+            [setbackSide]="result.setbacks?.side || 1.5"
+            [setbackRear]="result.setbacks?.rear || 1.5"
+            [usage]="form.value.usage"
+            [cornerPlot]="form.value.cornerPlot === 'true'"
+            [groundCovPct]="result.ground_coverage_pct || 55"
+            [zone]="result.zone">
+          </app-site-plan>
         </div>
       </div>
 
