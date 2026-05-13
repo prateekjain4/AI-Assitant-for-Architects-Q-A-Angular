@@ -463,7 +463,7 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
       zone:           ['R', Validators.required],
       plotLength:     [''],
       plotWidth:      [''],
-      plotAreaSqft:   [''],
+      plotAreaSqm:    [''],
       roadWidth:      ['', Validators.required],
       buildingHeight: [''],
       usage:          ['residential'],
@@ -771,9 +771,9 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
 
     const v = this.form.value;
     const hasDims  = Number(v.plotLength) > 0 && Number(v.plotWidth) > 0;
-    const hasSqft  = Number(v.plotAreaSqft) > 0;
-    if (!hasDims && !hasSqft) {
-      this.errorMessage = 'Enter Plot Length & Width, or Plot Area in sqft.';
+    const hasSqm   = Number(v.plotAreaSqm) > 0;
+    if (!hasDims && !hasSqm) {
+      this.errorMessage = 'Enter Plot Length & Width, or Plot Area in sqm.';
       return;
     }
 
@@ -782,9 +782,9 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
 
     const payload: any = {
       zone:             v.zone,
-      plot_length:      Number(v.plotLength) || null,
-      plot_width:       Number(v.plotWidth)  || null,
-      plot_area_sqft:   hasSqft ? Number(v.plotAreaSqft) : null,
+      plot_length:      hasSqm ? null : (Number(v.plotLength) || null),
+      plot_width:       hasSqm ? null : (Number(v.plotWidth)  || null),
+      plot_area_sqft:   hasSqm ? Number(v.plotAreaSqm) * 10.764 : null,
       coordinates:      [],
       road_width:       Number(v.roadWidth),
       building_height:  Number(v.buildingHeight),
