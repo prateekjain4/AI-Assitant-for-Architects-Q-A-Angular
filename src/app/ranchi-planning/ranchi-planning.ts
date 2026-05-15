@@ -55,6 +55,7 @@ export class RanchiPlanningTool implements OnInit, AfterViewInit {
     compliance: false,
     parking:    false,
     basement:   false,
+    sitePlan:   false,
     scenarios:  true,
   };
 
@@ -82,8 +83,9 @@ export class RanchiPlanningTool implements OnInit, AfterViewInit {
     this.form = this.fb.group({
       authority:       ['rmc', Validators.required],
       zone:            ['general_zone', Validators.required],
-      plotLength:      ['', Validators.required],
-      plotWidth:       ['', Validators.required],
+      plotLength:      [''],
+      plotWidth:       [''],
+      plotAreaSqm:     [''],
       roadWidth:       ['', Validators.required],
       buildingHeight:  [''],
       usage:           ['residential'],
@@ -149,21 +151,58 @@ export class RanchiPlanningTool implements OnInit, AfterViewInit {
     this.openSections[key] = !this.openSections[key];
   }
 
+  onPlotAreaInput(): void {
+    if (Number(this.form.value.plotAreaSqm) > 0) {
+      this.form.patchValue({ plotLength: '', plotWidth: '' }, { emitEvent: false });
+    }
+  }
+
+  onPlotDimInput(): void {
+    if (Number(this.form.value.plotLength) > 0 || Number(this.form.value.plotWidth) > 0) {
+      this.form.patchValue({ plotAreaSqm: '' }, { emitEvent: false });
+    }
+  }
+
+  get sitePlanLength(): number {
+    const l = Number(this.form.value.plotLength);
+    if (l > 0) return l;
+    const area = Number(this.form.value.plotAreaSqm);
+    if (area > 0) return +Math.sqrt(area * 1.333).toFixed(1);
+    return 20;
+  }
+
+  get sitePlanWidth(): number {
+    const w = Number(this.form.value.plotWidth);
+    if (w > 0) return w;
+    const area = Number(this.form.value.plotAreaSqm);
+    if (area > 0) return +Math.sqrt(area * 0.75).toFixed(1);
+    return 15;
+  }
+
   onSubmit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       return;
     }
 
+    const v = this.form.value;
+    const hasDims = Number(v.plotLength) > 0 && Number(v.plotWidth) > 0;
+    const hasSqm  = Number(v.plotAreaSqm) > 0;
+    if (!hasDims && !hasSqm) {
+      this.errorMessage = 'Enter Plot Length & Width, or Plot Area in sqm.';
+      return;
+    }
+
     this.loading = true;
     this.result  = null;
-    const v = this.form.value;
 
+    const sqSide = hasSqm ? +Math.sqrt(Number(v.plotAreaSqm)).toFixed(2) : null;
     const payload = {
       authority:        v.authority || 'rmc',
       zone:             v.zone,
-      plot_length:      Number(v.plotLength),
-      plot_width:       Number(v.plotWidth),
+      plot_length:      hasSqm ? sqSide : Number(v.plotLength),
+      plot_width:       hasSqm ? sqSide : Number(v.plotWidth),
+      plot_area_sqm:    hasSqm ? Number(v.plotAreaSqm) : null,
       road_width:       Number(v.roadWidth),
       building_height:  Number(v.buildingHeight),
       usage:            v.usage || 'residential',

@@ -701,6 +701,35 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     return Math.round((actual / maxBuilt) * 100).toString();
   }
 
+  onPlotAreaInput(): void {
+    if (Number(this.form.value.plotAreaSqm) > 0) {
+      this.form.patchValue({ plotLength: '', plotWidth: '' }, { emitEvent: false });
+    }
+  }
+
+  onPlotDimInput(): void {
+    if (Number(this.form.value.plotLength) > 0 || Number(this.form.value.plotWidth) > 0) {
+      this.form.patchValue({ plotAreaSqm: '' }, { emitEvent: false });
+    }
+  }
+
+  // ── Site plan dimensions — fall back to area-derived estimate when only sqm is entered ──
+  get sitePlanLength(): number {
+    const l = Number(this.form.value.plotLength);
+    if (l > 0) return l;
+    const area = Number(this.form.value.plotAreaSqm);
+    if (area > 0) return +Math.sqrt(area * 1.333).toFixed(1);
+    return 20;
+  }
+
+  get sitePlanWidth(): number {
+    const w = Number(this.form.value.plotWidth);
+    if (w > 0) return w;
+    const area = Number(this.form.value.plotAreaSqm);
+    if (area > 0) return +Math.sqrt(area * 0.75).toFixed(1);
+    return 15;
+  }
+
   // ── Setback SVG scale helpers ──────────────────────────────────
   get frontPx(): number { return Math.min(58, (this.result?.setbacks?.front ?? 0) * 8); }
   get rearPx():  number { return Math.min(38, (this.result?.setbacks?.rear  ?? 0) * 8); }

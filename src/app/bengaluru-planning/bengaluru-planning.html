@@ -160,18 +160,21 @@
           <div class="bp-row">
             <div class="bp-field">
               <label class="bp-label">Plot Length (m)</label>
-              <input class="bp-input" type="number" formControlName="plotLength" placeholder="e.g. 20" min="1">
+              <input class="bp-input" type="number" formControlName="plotLength" placeholder="e.g. 20" min="1"
+                     (input)="onPlotDimInput()">
             </div>
             <div class="bp-field">
               <label class="bp-label">Plot Width (m)</label>
-              <input class="bp-input" type="number" formControlName="plotWidth" placeholder="e.g. 15" min="1">
+              <input class="bp-input" type="number" formControlName="plotWidth" placeholder="e.g. 15" min="1"
+                     (input)="onPlotDimInput()">
             </div>
           </div>
 
           <!-- Plot area direct sqm input -->
           <div class="bp-field bp-field-sqft">
             <label class="bp-label">Plot Area (sqm) <span class="bp-label-alt">— overrides Length × Width if filled</span></label>
-            <input class="bp-input" type="number" formControlName="plotAreaSqm" placeholder="e.g. 223" min="1">
+            <input class="bp-input" type="number" formControlName="plotAreaSqm" placeholder="e.g. 223" min="1"
+                   (input)="onPlotAreaInput()">
             <span class="bp-hint">Enter either Length &amp; Width above, or Plot Area in sqm here.</span>
           </div>
 
@@ -470,8 +473,8 @@
         </div>
         <div class="bp-section-body" *ngIf="openSections['sitePlan']">
           <app-site-plan
-            [plotLengthM]="form.value.plotLength"
-            [plotWidthM]="form.value.plotWidth"
+            [plotLengthM]="sitePlanLength"
+            [plotWidthM]="sitePlanWidth"
             [roadWidthM]="form.value.roadWidth"
             [buildingHeightM]="result.building_height_m || form.value.buildingHeight"
             [numFloors]="result.staircase?.num_floors || 3"

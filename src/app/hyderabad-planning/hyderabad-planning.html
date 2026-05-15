@@ -96,15 +96,23 @@
           <!-- Plot dimensions -->
           <div class="hyd-row">
             <div class="hyd-field">
-              <label class="hyd-label">Plot Length (m) <span class="hyd-req">*</span></label>
-              <input class="hyd-input" type="number" formControlName="plotLength" placeholder="e.g. 20" min="1">
-              <span class="hyd-err" *ngIf="form.get('plotLength')?.invalid && form.get('plotLength')?.touched">Required</span>
+              <label class="hyd-label">Plot Length (m)</label>
+              <input class="hyd-input" type="number" formControlName="plotLength" placeholder="e.g. 20" min="1"
+                     (input)="onPlotDimInput()">
             </div>
             <div class="hyd-field">
-              <label class="hyd-label">Plot Width (m) <span class="hyd-req">*</span></label>
-              <input class="hyd-input" type="number" formControlName="plotWidth" placeholder="e.g. 15" min="1">
-              <span class="hyd-err" *ngIf="form.get('plotWidth')?.invalid && form.get('plotWidth')?.touched">Required</span>
+              <label class="hyd-label">Plot Width (m)</label>
+              <input class="hyd-input" type="number" formControlName="plotWidth" placeholder="e.g. 15" min="1"
+                     (input)="onPlotDimInput()">
             </div>
+          </div>
+
+          <!-- Plot area direct sqm input -->
+          <div class="hyd-field">
+            <label class="hyd-label">Plot Area (sqm) <span class="hyd-label-alt">— overrides Length × Width if filled</span></label>
+            <input class="hyd-input" type="number" formControlName="plotAreaSqm" placeholder="e.g. 300" min="1"
+                   (input)="onPlotAreaInput()">
+            <span class="hyd-hint">Enter either Length &amp; Width above, or Plot Area in sqm here.</span>
           </div>
 
           <!-- Road & height -->
@@ -423,8 +431,8 @@
         </div>
         <div class="hyd-section-body" *ngIf="openSections['sitePlan']">
           <app-site-plan
-            [plotLengthM]="form.value.plotLength"
-            [plotWidthM]="form.value.plotWidth"
+            [plotLengthM]="sitePlanLength"
+            [plotWidthM]="sitePlanWidth"
             [roadWidthM]="form.value.roadWidth"
             [buildingHeightM]="result.building_height_m || form.value.buildingHeight"
             [numFloors]="result.num_floors || 3"

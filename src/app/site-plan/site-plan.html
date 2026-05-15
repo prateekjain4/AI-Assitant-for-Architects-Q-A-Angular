@@ -18,7 +18,6 @@
       <span class="layer-label">Layers:</span>
       <label class="layer-toggle"><input type="checkbox" [(ngModel)]="layers.setbacks">   Setbacks</label>
       <label class="layer-toggle"><input type="checkbox" [(ngModel)]="layers.dimensions"> Dimensions</label>
-      <label class="layer-toggle"><input type="checkbox" [(ngModel)]="layers.grid">       Grid</label>
       <label class="layer-toggle" *ngIf="aiZones.length > 0">
         <input type="checkbox" [(ngModel)]="layers.zones"> AI Zones
       </label>
@@ -67,14 +66,6 @@
              class="drawing-svg">
 
           <defs>
-            <!-- Setback hatch -->
-            <pattern id="hatchSetback" patternUnits="userSpaceOnUse" width="8" height="8" patternTransform="rotate(45)">
-              <line x1="0" y1="0" x2="0" y2="8" stroke="#93c5fd" stroke-width="1.2"/>
-            </pattern>
-            <!-- Buildable hatch -->
-            <pattern id="hatchBuild" patternUnits="userSpaceOnUse" width="10" height="10" patternTransform="rotate(45)">
-              <line x1="0" y1="0" x2="0" y2="10" stroke="#fde68a" stroke-width="1"/>
-            </pattern>
             <!-- Neighbour hatch -->
             <pattern id="hatchNbr" patternUnits="userSpaceOnUse" width="7" height="7" patternTransform="rotate(-45)">
               <line x1="0" y1="0" x2="0" y2="7" stroke="#9ca3af" stroke-width="1"/>
@@ -112,7 +103,7 @@
           <g *ngIf="layers.setbacks">
             <!-- Full plot fill (setback colour) -->
             <rect [attr.x]="plotX" [attr.y]="plotY" [attr.width]="plotW" [attr.height]="plotH"
-                  fill="url(#hatchSetback)" opacity="0.7"/>
+                  fill="#dbeafe" opacity="0.6"/>
             <!-- Buildable fill on top -->
             <rect [attr.x]="bldX" [attr.y]="bldY" [attr.width]="bldW" [attr.height]="bldH"
                   fill="#fffbeb" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6,3"/>
@@ -138,18 +129,6 @@
             </text>
           </g>
 
-          <!-- ── COLUMN GRID layer ──────────────────────────── -->
-          <g *ngIf="layers.grid">
-            <ng-container *ngFor="let g of gridLines">
-              <line [attr.x1]="g.x1" [attr.y1]="g.y1" [attr.x2]="g.x2" [attr.y2]="g.y2"
-                    stroke="#94a3b8" stroke-width="0.6" stroke-dasharray="4,4"/>
-              <!-- Grid bubble -->
-              <circle *ngIf="g.axis==='x'" [attr.cx]="g.x1" [attr.cy]="bldY - 14" r="9" fill="#fff" stroke="#64748b" stroke-width="1"/>
-              <text   *ngIf="g.axis==='x'" [attr.x]="g.x1" [attr.y]="bldY - 10" text-anchor="middle" font-size="8" fill="#374151">{{g.label}}</text>
-              <circle *ngIf="g.axis==='y'" [attr.cx]="bldX - 14" [attr.cy]="g.y1" r="9" fill="#fff" stroke="#64748b" stroke-width="1"/>
-              <text   *ngIf="g.axis==='y'" [attr.x]="bldX - 14" [attr.y]="g.y1 + 3" text-anchor="middle" font-size="8" fill="#374151">{{g.label}}</text>
-            </ng-container>
-          </g>
 
           <!-- ── AI ZONES layer ─────────────────────────────── -->
           <g *ngIf="layers.zones && aiZones.length > 0">

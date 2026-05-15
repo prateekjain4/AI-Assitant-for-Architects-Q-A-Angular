@@ -78,15 +78,23 @@
           <!-- Plot dimensions -->
           <div class="rp-row">
             <div class="rp-field">
-              <label class="rp-label">Plot Length (m) <span class="rp-req">*</span></label>
-              <input class="rp-input" type="number" formControlName="plotLength" placeholder="e.g. 20" min="1">
-              <span class="rp-err" *ngIf="form.get('plotLength')?.invalid && form.get('plotLength')?.touched">Required</span>
+              <label class="rp-label">Plot Length (m)</label>
+              <input class="rp-input" type="number" formControlName="plotLength" placeholder="e.g. 20" min="1"
+                     (input)="onPlotDimInput()">
             </div>
             <div class="rp-field">
-              <label class="rp-label">Plot Width (m) <span class="rp-req">*</span></label>
-              <input class="rp-input" type="number" formControlName="plotWidth" placeholder="e.g. 15" min="1">
-              <span class="rp-err" *ngIf="form.get('plotWidth')?.invalid && form.get('plotWidth')?.touched">Required</span>
+              <label class="rp-label">Plot Width (m)</label>
+              <input class="rp-input" type="number" formControlName="plotWidth" placeholder="e.g. 15" min="1"
+                     (input)="onPlotDimInput()">
             </div>
+          </div>
+
+          <!-- Plot area direct sqm input -->
+          <div class="rp-field">
+            <label class="rp-label">Plot Area (sqm) <span class="rp-label-alt">— overrides Length × Width if filled</span></label>
+            <input class="rp-input" type="number" formControlName="plotAreaSqm" placeholder="e.g. 300" min="1"
+                   (input)="onPlotAreaInput()">
+            <span class="rp-hint">Enter either Length &amp; Width above, or Plot Area in sqm here.</span>
           </div>
 
           <!-- Road & height -->
@@ -399,6 +407,33 @@
           <div *ngFor="let item of result.compliance" class="rp-compliance-item">
             <span class="rp-compliance-dot">✓</span> {{ item }}
           </div>
+        </div>
+      </div>
+
+      <!-- Site Plan -->
+      <div class="rp-section">
+        <div class="rp-section-header" (click)="toggleSection('sitePlan')">
+          <span>🏗 Site Plan</span>
+          <div class="rp-section-header-right">
+            <span>{{ openSections['sitePlan'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="rp-section-body" *ngIf="openSections['sitePlan']">
+          <app-site-plan
+            [plotLengthM]="sitePlanLength"
+            [plotWidthM]="sitePlanWidth"
+            [roadWidthM]="form.value.roadWidth"
+            [buildingHeightM]="result.building_height_m || form.value.buildingHeight"
+            [numFloors]="result.staircase?.num_floors || 3"
+            [floorHeightM]="form.value.floorHeight || 3.2"
+            [setbackFront]="result.setbacks?.front || 3"
+            [setbackSide]="result.setbacks?.side || 1.5"
+            [setbackRear]="result.setbacks?.rear || 1.5"
+            [usage]="form.value.usage"
+            [cornerPlot]="form.value.cornerPlot === 'true'"
+            [groundCovPct]="result.ground_coverage_pct || 60"
+            [zone]="result.zone">
+          </app-site-plan>
         </div>
       </div>
 

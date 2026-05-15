@@ -111,26 +111,29 @@ export class SitePlan implements OnChanges, AfterViewInit, OnDestroy {
   // ── Computed SVG dimensions ──────────────────────────────────
   get S() { return this.SCALE; }
 
-  get totalPlotW()  { return (this.NBR_W * 2 + this.plotLengthM) * this.S; }
-  get totalPlotH()  { return (this.NBR_W + this.plotWidthM + this.roadWidthM + this.ROAD_EXTRA) * this.S; }
+  get effLength() { return Math.max(1, Number(this.plotLengthM) || 20); }
+  get effWidth()  { return Math.max(1, Number(this.plotWidthM)  || 15); }
+
+  get totalPlotW()  { return (this.NBR_W * 2 + this.effLength) * this.S; }
+  get totalPlotH()  { return (this.NBR_W + this.effWidth + this.roadWidthM + this.ROAD_EXTRA) * this.S; }
   get svgW()        { return this.totalPlotW + this.PAD * 2; }
   get svgH()        { return this.totalPlotH + this.PAD * 2 + this.TITLE_H; }
 
   // Plot origin in SVG coords
   get plotX()  { return this.PAD + this.NBR_W * this.S; }
   get plotY()  { return this.PAD + this.NBR_W * this.S; }
-  get plotW()  { return this.plotLengthM * this.S; }
-  get plotH()  { return this.plotWidthM  * this.S; }
+  get plotW()  { return this.effLength * this.S; }
+  get plotH()  { return this.effWidth  * this.S; }
 
   // Buildable area
   get bldX()   { return this.plotX + this.setbackSide  * this.S; }
   get bldY()   { return this.plotY + this.setbackRear  * this.S; }
-  get bldW()   { return Math.max(0, this.plotLengthM - 2 * this.setbackSide)  * this.S; }
-  get bldH()   { return Math.max(0, this.plotWidthM - this.setbackFront - this.setbackRear) * this.S; }
+  get bldW()   { return Math.max(0, this.effLength - 2 * this.setbackSide)  * this.S; }
+  get bldH()   { return Math.max(0, this.effWidth - this.setbackFront - this.setbackRear) * this.S; }
 
   get buildableAreaM2() {
-    return ((this.plotLengthM - 2 * this.setbackSide) *
-            (this.plotWidthM - this.setbackFront - this.setbackRear)).toFixed(0);
+    return ((this.effLength - 2 * this.setbackSide) *
+            (this.effWidth - this.setbackFront - this.setbackRear)).toFixed(0);
   }
 
   // Road
@@ -148,8 +151,8 @@ export class SitePlan implements OnChanges, AfterViewInit, OnDestroy {
   get gridLines(): { x1: number, y1: number, x2: number, y2: number, label: string, axis: 'x'|'y', idx: number }[] {
     const lines: any[] = [];
     const step = 5;
-    const cols = Math.floor((this.plotLengthM - 2 * this.setbackSide) / step);
-    const rows = Math.floor((this.plotWidthM  - this.setbackFront - this.setbackRear) / step);
+    const cols = Math.floor((this.effLength - 2 * this.setbackSide) / step);
+    const rows = Math.floor((this.effWidth  - this.setbackFront - this.setbackRear) / step);
     const cols_letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
 
     for (let i = 0; i <= cols; i++) {
@@ -165,8 +168,8 @@ export class SitePlan implements OnChanges, AfterViewInit, OnDestroy {
 
   // Dimension strings
   get dimFront()  { return { x1: this.plotX, x2: this.plotX + this.plotW, y: this.plotY + this.plotH + this.roadH + 22, label: `${this.setbackFront}m front setback` }; }
-  get dimPlotW()  { return { x1: this.plotX, x2: this.plotX + this.plotW, y: this.plotY + this.plotH + this.roadH + 42, label: `${this.plotLengthM}m` }; }
-  get dimPlotH()  { return { y1: this.plotY, y2: this.plotY + this.plotH, x: this.plotX + this.plotW + 22, label: `${this.plotWidthM}m` }; }
+  get dimPlotW()  { return { x1: this.plotX, x2: this.plotX + this.plotW, y: this.plotY + this.plotH + this.roadH + 42, label: `${this.effLength}m` }; }
+  get dimPlotH()  { return { y1: this.plotY, y2: this.plotY + this.plotH, x: this.plotX + this.plotW + 22, label: `${this.effWidth}m` }; }
   get dimBldW()   { return { x1: this.bldX,  x2: this.bldX + this.bldW,  y: this.plotY + this.plotH + this.roadH + 8,  label: `${(this.plotLengthM - 2 * this.setbackSide).toFixed(1)}m buildable` }; }
 
   // AI zone helpers
@@ -184,11 +187,11 @@ export class SitePlan implements OnChanges, AfterViewInit, OnDestroy {
   get elevSvgW()   { return this.svgW; }
   get elevSvgH()   { return 480 + this.TITLE_H; }
   get elevGroundY(){ return 400; }
-  get elevScale()  { return Math.min((this.svgW - this.PAD * 2) / (this.plotLengthM + this.NBR_W * 2), 30); }
+  get elevScale()  { return Math.min((this.svgW - this.PAD * 2) / (this.effLength + this.NBR_W * 2), 30); }
   get elevNbrW()   { return this.NBR_W * this.elevScale; }
   get elevPlotX()  { return this.PAD + this.elevNbrW; }
   get elevBldX()   { return this.elevPlotX + this.setbackSide * this.elevScale; }
-  get elevBldW()   { return (this.plotLengthM - 2 * this.setbackSide) * this.elevScale; }
+  get elevBldW()   { return (this.effLength - 2 * this.setbackSide) * this.elevScale; }
   get elevBldH()   { return this.buildingHeightM * this.elevScale; }
   get elevBldTopY(){ return this.elevGroundY - this.elevBldH; }
   get elevNbrH()   { return Math.min(this.buildingHeightM * 0.7, 8) * this.elevScale; }
@@ -205,7 +208,7 @@ export class SitePlan implements OnChanges, AfterViewInit, OnDestroy {
   get skyPlanePoints(): string {
     const es = this.elevScale;
     const leftX  = this.elevPlotX;
-    const rightX = this.elevPlotX + this.plotLengthM * es;
+    const rightX = this.elevPlotX + this.effLength * es;
     const maxH   = this.buildingHeightM * 1.4 * es;
     const slope  = 1.25;
     const runL   = maxH / slope;
@@ -214,7 +217,7 @@ export class SitePlan implements OnChanges, AfterViewInit, OnDestroy {
 
   get skyPlanePointsRight(): string {
     const es = this.elevScale;
-    const rightX = this.elevPlotX + this.plotLengthM * es;
+    const rightX = this.elevPlotX + this.effLength * es;
     const maxH   = this.buildingHeightM * 1.4 * es;
     const slope  = 1.25;
     const runR   = maxH / slope;
@@ -321,10 +324,10 @@ export class SitePlan implements OnChanges, AfterViewInit, OnDestroy {
       addLine(x+w,y+h,x,y+h,layer); addLine(x,y+h,x,y,layer);
     };
 
-    rect(0, 0, this.plotLengthM, -this.plotWidthM, 'PLOT_BOUNDARY');
+    rect(0, 0, this.effLength, -this.effWidth, 'PLOT_BOUNDARY');
     rect(this.setbackSide, -this.setbackRear,
-         this.plotLengthM - 2 * this.setbackSide,
-         -(this.plotWidthM - this.setbackFront - this.setbackRear), 'BUILDABLE_AREA');
+         this.effLength - 2 * this.setbackSide,
+         -(this.effWidth - this.setbackFront - this.setbackRear), 'BUILDABLE_AREA');
 
     const dxf = `0\nSECTION\n2\nHEADER\n0\nENDSEC\n0\nSECTION\n2\nENTITIES\n${lines.join('\n')}\n0\nENDSEC\n0\nEOF`;
     const blob = new Blob([dxf], { type: 'application/octet-stream' });
