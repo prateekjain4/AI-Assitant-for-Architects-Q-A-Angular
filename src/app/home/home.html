@@ -1,92 +1,507 @@
-<!-- HERO / INTRO -->
-<div class="container my-5">
-  <div class="text-center">
-    <h1 class="fw-bold">AI Assistant for Architects</h1>
-    <p class="text-muted mt-3">
-      A smart platform to interpret building bylaws, assist in planning, and simplify regulatory compliance in Bangalore.
+<!-- ══ HERO ══════════════════════════════════════════════════════════ -->
+<section class="hero">
+  <div class="hero-inner">
+    <span class="hero-eyebrow">AI-POWERED BYLAW INTELLIGENCE</span>
+    <h1 class="hero-h1">
+      Understand. Plan.<br><span class="hero-accent">Comply Faster.</span>
+    </h1>
+    <p class="hero-sub">
+      AI-powered building bylaw assistant for architects and developers across India.
+      Instantly calculate FAR, setbacks, floor count, parking and more.
+    </p>
+    <div class="hero-ctas">
+      <a routerLink="/planning" class="btn-primary-hero">Analyse a Plot →</a>
+      <a routerLink="/ask"       class="btn-ghost-hero">Ask AI Assistant</a>
+    </div>
+    <p class="hero-trust">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      Built on official BDA, BBMP, HMDA &amp; RMC regulations
     </p>
   </div>
-</div>
 
-<!-- WHAT THIS PLATFORM DOES -->
-<div class="container my-5">
-  <div class="row text-center">
+  <!-- ── Planning page browser mockup ────────────────────────────── -->
+  <div class="hero-mockup-wrap">
+    <div class="browser-window">
 
-    <div class="col-md-4">
-      <h5 class="fw-bold">Bylaw Intelligence</h5>
-      <p class="text-muted">
-        Understand zoning rules, FAR, setbacks, and regulations instantly without manually reading lengthy documents.
-      </p>
+      <!-- Browser chrome -->
+      <div class="browser-chrome">
+        <div class="browser-dots">
+          <span class="bd bd-red"></span>
+          <span class="bd bd-yellow"></span>
+          <span class="bd bd-green"></span>
+        </div>
+        <div class="browser-bar">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#64748b" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          <span>planiq.app/bengaluru</span>
+        </div>
+      </div>
+
+      <!-- App frame -->
+      <div class="app-frame">
+
+        <!-- App topbar -->
+        <div class="app-topbar">
+          <div class="apt-left">
+            <button class="apt-back">← Cities</button>
+            <div class="apt-badge">
+              <span>🏙</span>
+              <div>
+                <span class="apt-city">Bengaluru</span>
+                <span class="apt-auth">BDA RMP 2031</span>
+              </div>
+            </div>
+          </div>
+          <div class="apt-right">
+            <button class="apt-btn">My Projects</button>
+            <button class="apt-btn apt-btn-success">✓ Complete</button>
+            <button class="apt-btn">⬇ Report</button>
+            <button class="apt-btn apt-btn-cost">₹ Cost</button>
+          </div>
+        </div>
+
+        <!-- App main layout: form left + results right -->
+        <div class="app-layout">
+
+          <!-- LEFT: Input form -->
+          <div class="app-form">
+            <div class="af-title">Plot Details</div>
+
+            <div class="af-group">
+              <label class="af-label">Zone Type</label>
+              <div class="af-val af-val-highlight">RM Zone — Residential Mixed</div>
+            </div>
+            <div class="af-row">
+              <div class="af-group">
+                <label class="af-label">Road Width (m)</label>
+                <div class="af-val">12</div>
+              </div>
+              <div class="af-group">
+                <label class="af-label">Plot Area (sqm)</label>
+                <div class="af-val">200</div>
+              </div>
+            </div>
+            <div class="af-row">
+              <div class="af-group">
+                <label class="af-label">Usage</label>
+                <div class="af-val">Residential</div>
+              </div>
+              <div class="af-group">
+                <label class="af-label">Corner Plot</label>
+                <div class="af-val">No</div>
+              </div>
+            </div>
+            <div class="af-group">
+              <label class="af-label">Locality</label>
+              <div class="af-val">Koramangala, Bengaluru</div>
+            </div>
+
+            <button class="af-analyse-btn">⚡ Analyse Plot</button>
+          </div>
+
+          <!-- RIGHT: Results -->
+          <div class="app-results">
+
+            <!-- Stat cards row -->
+            <div class="ar-stats">
+              <div class="ar-stat ar-stat-blue">
+                <span class="ar-val">2.25</span>
+                <span class="ar-lbl">FAR Allowed</span>
+              </div>
+              <div class="ar-stat ar-stat-green">
+                <span class="ar-val">4,850</span>
+                <span class="ar-lbl">Max Built-up sqft</span>
+              </div>
+              <div class="ar-stat ar-stat-amber">
+                <span class="ar-val">G + 4</span>
+                <span class="ar-lbl">Floors</span>
+              </div>
+              <div class="ar-stat">
+                <span class="ar-val">60%</span>
+                <span class="ar-lbl">Gnd Coverage</span>
+              </div>
+            </div>
+
+            <!-- Detail row: setbacks + site plan + compliance -->
+            <div class="ar-details">
+
+              <div class="ar-card">
+                <div class="ar-card-title">Setbacks</div>
+                <div class="ar-row"><span>Front</span><strong>4.0 m</strong></div>
+                <div class="ar-row"><span>Side (each)</span><strong>2.0 m</strong></div>
+                <div class="ar-row"><span>Rear</span><strong>3.0 m</strong></div>
+                <div class="ar-row"><span>Max Height</span><strong>15 m</strong></div>
+                <div class="ar-row"><span>Parking (2-wheeler)</span><strong>2 slots</strong></div>
+              </div>
+
+              <!-- Mini site plan -->
+              <div class="ar-siteplan">
+                <div class="ar-card-title">Site Plan</div>
+                <svg viewBox="0 0 180 130" xmlns="http://www.w3.org/2000/svg" style="width:100%;border-radius:4px;">
+                  <rect width="180" height="130" fill="#0f172a" rx="4"/>
+                  <!-- Neighbour top -->
+                  <rect x="0" y="0" width="180" height="16" fill="#1e293b"/>
+                  <text x="90" y="11" text-anchor="middle" font-size="5.5" fill="#475569">NEIGHBOUR (REAR)</text>
+                  <!-- Plot boundary -->
+                  <rect x="20" y="16" width="140" height="84" fill="none" stroke="#94a3b8" stroke-width="1"/>
+                  <!-- Setback fill -->
+                  <rect x="20" y="16" width="140" height="84" fill="#1d4ed810"/>
+                  <!-- Buildable footprint -->
+                  <rect x="42" y="30" width="96" height="52" fill="#fffbeb" fill-opacity="0.07" stroke="#f59e0b" stroke-width="1" stroke-dasharray="4,2.5"/>
+                  <text x="90" y="59" text-anchor="middle" font-size="6" font-weight="bold" fill="#fbbf24">BUILDABLE AREA</text>
+                  <text x="90" y="68" text-anchor="middle" font-size="5" fill="#d97706">120 sq m  ·  60% GC</text>
+                  <!-- Front setback label -->
+                  <text x="90" y="90" text-anchor="middle" font-size="5" fill="#93c5fd">FRONT SETBACK — 4m</text>
+                  <!-- Road -->
+                  <rect x="0" y="100" width="180" height="18" fill="#1e293b"/>
+                  <text x="90" y="111" text-anchor="middle" font-size="5.5" font-weight="bold" fill="#64748b">ROAD — 12m</text>
+                  <!-- Side labels -->
+                  <text x="31" y="59" text-anchor="middle" font-size="4.5" fill="#93c5fd" transform="rotate(-90,31,59)">2m</text>
+                  <text x="149" y="59" text-anchor="middle" font-size="4.5" fill="#93c5fd" transform="rotate(90,149,59)">2m</text>
+                  <!-- Dims -->
+                  <line x1="20" y1="14" x2="160" y2="14" stroke="#475569" stroke-width="0.5" stroke-dasharray="2,2"/>
+                  <text x="90" y="12" text-anchor="middle" font-size="4.5" fill="#64748b">20.0 m</text>
+                </svg>
+              </div>
+
+              <div class="ar-card">
+                <div class="ar-card-title">Compliance</div>
+                <div class="ar-check ar-ok">
+                  <span class="ar-check-icon">✓</span> FAR within limits
+                </div>
+                <div class="ar-check ar-ok">
+                  <span class="ar-check-icon">✓</span> Setbacks verified
+                </div>
+                <div class="ar-check ar-ok">
+                  <span class="ar-check-icon">✓</span> Height compliant
+                </div>
+                <div class="ar-check ar-ok">
+                  <span class="ar-check-icon">✓</span> GC within 60%
+                </div>
+                <div class="ar-check ar-warn">
+                  <span class="ar-check-icon">⚠</span> Fire NOC required
+                </div>
+                <div class="ar-card-title" style="margin-top:10px;">NBC 2016 — Fire</div>
+                <div class="ar-row"><span>Staircase Width</span><strong>1.5 m</strong></div>
+                <div class="ar-row"><span>Exit Nos.</span><strong>2</strong></div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <div class="col-md-4">
-      <h5 class="fw-bold">Planning Assistance</h5>
-      <p class="text-muted">
-        Get guidance on building layouts based on plot size, road width, and zoning classifications.
-      </p>
-    </div>
-
-    <div class="col-md-4">
-      <h5 class="fw-bold">Regulatory Updates</h5>
-      <p class="text-muted">
-        Stay informed with the latest amendments and changes in building bylaws and compliance requirements.
-      </p>
-    </div>
-
   </div>
-</div>
+</section>
 
-<!-- REAL-WORLD CONTEXT -->
-<div class="container my-5">
-  <h4 class="fw-bold text-center mb-4">Why This Matters</h4>
-
-  <div class="row">
-    <div class="col-md-6">
-      <p class="text-muted">
-        Architects and planners often spend significant time navigating complex building regulations and zoning laws. Misinterpretation can lead to design rejections, project delays, and financial losses.
-      </p>
+<!-- ══ STATS BAR ════════════════════════════════════════════════════ -->
+<section class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item">
+      <span class="stat-num">3</span>
+      <span class="stat-lbl">Cities Covered</span>
     </div>
-
-    <div class="col-md-6">
-      <p class="text-muted">
-        This platform bridges that gap by providing quick, reliable, and contextual insights — allowing professionals to focus more on design and less on manual compliance checks.
-      </p>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">5+</span>
+      <span class="stat-lbl">Authority Types</span>
     </div>
-  </div>
-</div>
-
-<!-- USE CASES -->
-<div class="container my-5">
-  <h4 class="fw-bold text-center mb-4">Use Cases</h4>
-
-  <div class="row text-center">
-    <div class="col-md-3">
-      <p class="fw-bold">Residential Projects</p>
-      <p class="text-muted small">Check setbacks, coverage, and permissible heights.</p>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">BBMP</span>
+      <span class="stat-lbl">Primary Source</span>
     </div>
-
-    <div class="col-md-3">
-      <p class="fw-bold">Commercial Buildings</p>
-      <p class="text-muted small">Understand FAR limits and parking requirements.</p>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">NBC 2016</span>
+      <span class="stat-lbl">Fire Safety Standard</span>
     </div>
-
-    <div class="col-md-3">
-      <p class="fw-bold">Plot Evaluation</p>
-      <p class="text-muted small">Analyze zoning constraints before purchase.</p>
-    </div>
-
-    <div class="col-md-3">
-      <p class="fw-bold">Compliance Checks</p>
-      <p class="text-muted small">Validate designs against current bylaws.</p>
+    <div class="stat-div"></div>
+    <div class="stat-item">
+      <span class="stat-num">100%</span>
+      <span class="stat-lbl">Regulation-first AI</span>
     </div>
   </div>
-</div>
+</section>
 
-<!-- QUOTE / CLOSING -->
-<div class="bg-light py-5 mt-5">
-  <div class="container text-center">
-    <p class="text-muted fst-italic">
-      "Good architecture begins with clarity — in design, in intent, and in understanding the rules that shape it."
-    </p>
+<!-- ══ FEATURES ═════════════════════════════════════════════════════ -->
+<section class="section-white">
+  <div class="section-inner">
+    <p class="section-eyebrow">POWERFUL CAPABILITIES</p>
+    <h2 class="section-h2">Everything you need for compliant, confident planning</h2>
+
+    <div class="features-grid">
+
+      <div class="feature-card">
+        <div class="fc-icon fc-blue">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/>
+            <line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/>
+          </svg>
+        </div>
+        <h3 class="fc-title">Bylaw Intelligence</h3>
+        <p class="fc-desc">Instant answers on FAR, setbacks, ground coverage, permissible height, parking and more — straight from official regulations.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="fc-icon fc-green">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+          </svg>
+        </div>
+        <h3 class="fc-title">Visual Site Plan</h3>
+        <p class="fc-desc">Auto-generated site plan showing buildable footprint, setback zones and elevation section — export as SVG, DXF or PDF.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="fc-icon fc-amber">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <h3 class="fc-title">Scenario Comparison</h3>
+        <p class="fc-desc">Compare multiple building configurations side-by-side to choose the optimal floor count, height and layout for your plot.</p>
+      </div>
+
+      <div class="feature-card">
+        <div class="fc-icon fc-purple">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
+          </svg>
+        </div>
+        <h3 class="fc-title">AI Chat Assistant</h3>
+        <p class="fc-desc">Ask plain-language questions about setbacks, fire NOC, TDR, parking or any bylaw — the AI answers with your plot context loaded.</p>
+      </div>
+
+    </div>
   </div>
-</div>
+</section>
+
+<!-- ══ HOW IT WORKS ═════════════════════════════════════════════════ -->
+<section class="section-grey">
+  <div class="section-inner">
+    <p class="section-eyebrow">HOW IT WORKS</p>
+    <h2 class="section-h2">From plot details to compliance in minutes</h2>
+
+    <div class="steps-row">
+
+      <div class="step">
+        <div class="step-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/>
+          </svg>
+        </div>
+        <div class="step-num">1</div>
+        <h4 class="step-title">Enter Plot Details</h4>
+        <p class="step-desc">Zone, dimensions or area, road width, usage and city. Draw plot on map or enter directly.</p>
+      </div>
+
+      <div class="step-arrow">→</div>
+
+      <div class="step">
+        <div class="step-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8">
+            <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+          </svg>
+        </div>
+        <div class="step-num">2</div>
+        <h4 class="step-title">AI Detects Rules</h4>
+        <p class="step-desc">Identifies jurisdiction, applicable bylaws, zone type, and the full regulatory ruleset.</p>
+      </div>
+
+      <div class="step-arrow">→</div>
+
+      <div class="step">
+        <div class="step-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </div>
+        <div class="step-num">3</div>
+        <h4 class="step-title">Calculates Everything</h4>
+        <p class="step-desc">FAR, setbacks, ground coverage, floors, height, parking, fire NOC — all at once.</p>
+      </div>
+
+      <div class="step-arrow">→</div>
+
+      <div class="step">
+        <div class="step-icon">
+          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="1.8">
+            <rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/>
+          </svg>
+        </div>
+        <div class="step-num">4</div>
+        <h4 class="step-title">Visualise &amp; Export</h4>
+        <p class="step-desc">Site plan, elevation section, cost estimate — download PDF report or DXF for CAD.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ CITIES ═══════════════════════════════════════════════════════ -->
+<section class="section-white">
+  <div class="section-inner">
+    <p class="section-eyebrow">COVERAGE</p>
+    <h2 class="section-h2">Three cities. Official regulations. One platform.</h2>
+
+    <div class="cities-grid">
+
+      <div class="city-card city-bengaluru">
+        <div class="city-header">
+          <span class="city-flag">🏙</span>
+          <div>
+            <h3 class="city-name">Bengaluru</h3>
+            <span class="city-auth">BDA &amp; BBMP</span>
+          </div>
+          <a routerLink="/bengaluru" class="city-btn">Open →</a>
+        </div>
+        <p class="city-desc">Full BDA RMP 2031 rules engine — FAR matrix, progressive setbacks, TDR, space standards, fire NOC, parking, accessibility. Zone detection via map click.</p>
+        <div class="city-tags">
+          <span>BDA RMP 2031</span><span>BBMP</span><span>14 Zone Types</span><span>FAR Matrix</span>
+        </div>
+      </div>
+
+      <div class="city-card city-hyderabad">
+        <div class="city-header">
+          <span class="city-flag">🕌</span>
+          <div>
+            <h3 class="city-name">Hyderabad</h3>
+            <span class="city-auth">GHMC &amp; HMDA</span>
+          </div>
+          <a routerLink="/hyderabad" class="city-btn">Open →</a>
+        </div>
+        <p class="city-desc">HMDA Building Rules — setbacks by plot area, FAR by zone, high-rise rules, open space and solar requirements, accessibility compliance.</p>
+        <div class="city-tags">
+          <span>HMDA Rules</span><span>GHMC</span><span>High-rise</span><span>Open Space</span>
+        </div>
+      </div>
+
+      <div class="city-card city-ranchi">
+        <div class="city-header">
+          <span class="city-flag">🏗</span>
+          <div>
+            <h3 class="city-name">Ranchi</h3>
+            <span class="city-auth">RMC &amp; RRDA</span>
+          </div>
+          <a routerLink="/ranchi" class="city-btn">Open →</a>
+        </div>
+        <p class="city-desc">RMC Bye-Laws 2009 — depth × width × height setback tables, zone-based FAR, fire NOC threshold, RMC and RRDA jurisdiction support.</p>
+        <div class="city-tags">
+          <span>RMC 2009</span><span>RRDA</span><span>3 Zone Types</span><span>Jharkhand</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ USE CASES ════════════════════════════════════════════════════ -->
+<section class="section-grey">
+  <div class="section-inner">
+    <p class="section-eyebrow">USE CASES</p>
+    <h2 class="section-h2">For every stage of your project</h2>
+
+    <div class="usecases-grid">
+
+      <div class="uc-card">
+        <div class="uc-icon">🏠</div>
+        <h4 class="uc-title">Residential Projects</h4>
+        <p class="uc-desc">Check setbacks, coverage, permissible height and FAR for hassle-free approvals. Compare G+2 vs G+3 vs G+4 scenarios instantly.</p>
+      </div>
+
+      <div class="uc-card">
+        <div class="uc-icon">🏢</div>
+        <h4 class="uc-title">Commercial Buildings</h4>
+        <p class="uc-desc">Understand FAR limits, parking requirements, land-use and mixed-use rules, fire NOC thresholds and exit widths.</p>
+      </div>
+
+      <div class="uc-card">
+        <div class="uc-icon">📍</div>
+        <h4 class="uc-title">Plot Evaluation</h4>
+        <p class="uc-desc">Analyse zoning, road impact, development potential and regulatory constraints before purchasing or bidding on a plot.</p>
+      </div>
+
+      <div class="uc-card">
+        <div class="uc-icon">✅</div>
+        <h4 class="uc-title">Compliance Checks</h4>
+        <p class="uc-desc">Validate designs against current bylaws, catch violations early and avoid rejection at the building plan approval stage.</p>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ══ AUTHORITIES ══════════════════════════════════════════════════ -->
+<section class="authorities-section">
+  <div class="section-inner">
+    <div class="auth-left">
+      <div class="auth-shield">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+      </div>
+      <div>
+        <h3 class="auth-title">Trusted by architects and planners across India</h3>
+        <p class="auth-sub">Design with confidence. Build with compliance.</p>
+      </div>
+    </div>
+
+    <div class="auth-center">
+      <p class="auth-eyebrow">BUILT ON OFFICIAL SOURCES &amp; REGULATIONS</p>
+      <div class="auth-logos">
+        <div class="auth-logo-item">
+          <div class="auth-logo-icon">🏛</div>
+          <span class="auth-logo-name">BBMP</span>
+          <span class="auth-logo-sub">Bruhat Bengaluru Mahanagara Palike</span>
+        </div>
+        <div class="auth-logo-item">
+          <div class="auth-logo-icon">🏗</div>
+          <span class="auth-logo-name">BDA</span>
+          <span class="auth-logo-sub">Bangalore Development Authority</span>
+        </div>
+        <div class="auth-logo-item">
+          <div class="auth-logo-icon">🏙</div>
+          <span class="auth-logo-name">HMDA</span>
+          <span class="auth-logo-sub">Hyderabad Metro Dev. Authority</span>
+        </div>
+        <div class="auth-logo-item">
+          <div class="auth-logo-icon">📋</div>
+          <span class="auth-logo-name">RMC</span>
+          <span class="auth-logo-sub">Ranchi Municipal Corporation</span>
+        </div>
+        <div class="auth-logo-item">
+          <div class="auth-logo-icon">🔥</div>
+          <span class="auth-logo-name">NBC 2016</span>
+          <span class="auth-logo-sub">National Building Code — Fire Safety</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-right">
+      <div class="auth-update-card">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2">
+          <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <div>
+          <strong>Updated Continuously</strong>
+          <p>We track amendments so you don't have to.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ FINAL CTA ════════════════════════════════════════════════════ -->
+<section class="cta-section">
+  <div class="cta-inner">
+    <h2 class="cta-h2">Start analysing your plot today</h2>
+    <p class="cta-sub">Free to use. No account needed for your first analysis. Trusted regulations, instant results.</p>
+    <div class="cta-btns">
+      <a routerLink="/bengaluru" class="btn-primary-cta">Bengaluru →</a>
+      <a routerLink="/hyderabad" class="btn-outline-cta">Hyderabad →</a>
+      <a routerLink="/ranchi"    class="btn-outline-cta">Ranchi →</a>
+    </div>
+  </div>
+</section>

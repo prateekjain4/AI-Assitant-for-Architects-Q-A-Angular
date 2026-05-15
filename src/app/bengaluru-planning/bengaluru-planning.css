@@ -310,6 +310,7 @@
 /* ── Body ───────────────────────────────────────────────────────── */
 .bp-body {
   display: flex; gap: 18px; padding: 18px; flex: 1; align-items: flex-start;
+  max-width: 1400px; margin-left: auto; margin-right: auto; width: 100%;
 }
 .bp-left  { width: 380px; flex-shrink: 0; display: flex; flex-direction: column; gap: 14px; }
 .bp-right { flex: 1; display: flex; flex-direction: column; gap: 12px; }

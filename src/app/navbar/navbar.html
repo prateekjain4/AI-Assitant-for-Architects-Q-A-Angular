@@ -1,91 +1,113 @@
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark px-3">
-  <a class="navbar-brand fw-bold" routerLink="/">PlanIQ</a>
+<nav class="site-nav">
+  <div class="nav-inner">
 
-  <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-    <span class="navbar-toggler-icon"></span>
-  </button>
+    <!-- Logo -->
+    <a class="nav-logo" routerLink="/" (click)="closeMenu()">
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="30" height="30" rx="7" fill="#2563eb"/>
+        <path d="M15 7L8 11.5V23H12.5V17.5H17.5V23H22V11.5L15 7Z" fill="white"/>
+        <rect x="12.5" y="17.5" width="5" height="5.5" fill="#93c5fd"/>
+      </svg>
+      <span class="nav-logo-text">PlanIQ</span>
+    </a>
 
-  <div class="collapse navbar-collapse" id="navbarNav">
-    <ul class="navbar-nav ms-auto">
+    <!-- Desktop centre links -->
+    <div class="nav-links">
+      <a class="nav-link" routerLink="/"
+         routerLinkActive="nav-link-active"
+         [routerLinkActiveOptions]="{exact:true}">Home</a>
 
-      <!-- Home -->
-      <li class="nav-item">
-        <a class="nav-link" routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">
-          Home
-        </a>
-      </li>
-
-      <!-- Services Dropdown -->
-      <li class="nav-item dropdown">
-        <a 
-          class="nav-link dropdown-toggle" 
-          href="#" 
-          id="servicesDropdown" 
-          role="button" 
-          data-bs-toggle="dropdown" 
-          aria-expanded="false"
-        >
+      <!-- Services dropdown -->
+      <div class="nav-dd-wrap">
+        <button class="nav-link nav-dd-trigger">
           Services
-        </a>
-
-        <ul class="dropdown-menu dropdown-menu-end">
-          <li>
-            <a class="dropdown-item" routerLink="/ask">Ask AI</a>
-          </li>
-          <li>
-            <a class="dropdown-item" routerLink="/planning">Planning Tool</a>
-          </li>
-        </ul>
-      </li>
-
-      <!-- About -->
-      <li class="nav-item">
-        <a class="nav-link" routerLink="/about" routerLinkActive="active">
-          About
-        </a>
-      </li>
-
-      <!-- Auth: logged out -->
-      <ng-container *ngIf="!auth.isLoggedIn">
-        <li class="nav-item">
-          <a class="nav-link" routerLink="/login" routerLinkActive="active">Sign In</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link nav-signup-btn" routerLink="/signup">Start Free Trial</a>
-        </li>
-      </ng-container>
-
-      <!-- Auth: logged in -->
-      <ng-container *ngIf="auth.isLoggedIn">
-        <li class="nav-item dropdown">
-          <a class="nav-link dropdown-toggle nav-user-pill"
-             href="#" role="button"
-             data-bs-toggle="dropdown" aria-expanded="false">
-            <span class="nav-user-icon">👤</span>
-            {{ auth.currentUser?.user_name }}
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <polyline points="6 9 12 15 18 9"/>
+          </svg>
+        </button>
+        <div class="nav-dd-panel">
+          <a class="nav-dd-item" routerLink="/planning" (click)="closeMenu()">
+            <span class="nav-dd-flag">🏗</span>
+            <div>
+              <strong>Planning Tool</strong>
+              <span>FAR, setbacks, compliance</span>
+            </div>
           </a>
-          <ul class="dropdown-menu dropdown-menu-end">
-            <li>
-              <span class="dropdown-item-text nav-firm-label">
-                {{ auth.currentUser?.firm_name }}
-                <span class="nav-plan-badge nav-plan-{{ auth.currentUser?.plan_tier }}">
-                  {{ auth.currentUser?.plan_tier | titlecase }}
-                </span>
-              </span>
-            </li>
-            <li *ngIf="auth.currentUser?.subscription_status === 'trial'">
-              <span class="dropdown-item-text nav-trial-note">
-                ⏳ {{ auth.trialDaysLeft() }} days left in trial
-              </span>
-            </li>
-            <li><hr class="dropdown-divider"></li>
-            <li>
-              <button class="dropdown-item text-danger" (click)="auth.logout()">Sign Out</button>
-            </li>
-          </ul>
-        </li>
+        </div>
+      </div>
+
+      <a class="nav-link" routerLink="/ask" routerLinkActive="nav-link-active">Ask AI</a>
+      <a class="nav-link" routerLink="/about" routerLinkActive="nav-link-active">About</a>
+    </div>
+
+    <!-- Desktop auth -->
+    <div class="nav-auth">
+      <ng-container *ngIf="!auth.isLoggedIn">
+        <a class="nav-link" routerLink="/login">Sign In</a>
+        <a class="nav-cta-btn" routerLink="/signup">Start Free Trial</a>
       </ng-container>
 
-    </ul>
+      <ng-container *ngIf="auth.isLoggedIn">
+        <div class="nav-dd-wrap">
+          <button class="nav-user-btn">
+            <span class="nav-user-avatar">{{ (auth.currentUser?.user_name || 'U')[0].toUpperCase() }}</span>
+            {{ auth.currentUser?.user_name }}
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <polyline points="6 9 12 15 18 9"/>
+            </svg>
+          </button>
+          <div class="nav-dd-panel nav-dd-right">
+            <div class="nav-dd-firm-row">
+              <span class="nav-dd-firm-name">{{ auth.currentUser?.firm_name }}</span>
+              <span class="nav-plan-badge nav-plan-{{ auth.currentUser?.plan_tier }}">
+                {{ auth.currentUser?.plan_tier | titlecase }}
+              </span>
+            </div>
+            <div *ngIf="auth.currentUser?.subscription_status === 'trial'" class="nav-dd-trial">
+              ⏳ {{ auth.trialDaysLeft() }} days left in trial
+            </div>
+            <hr class="nav-dd-divider">
+            <button class="nav-dd-signout" (click)="auth.logout()">Sign Out</button>
+          </div>
+        </div>
+      </ng-container>
+    </div>
+
+    <!-- Hamburger -->
+    <button class="nav-hamburger" (click)="toggleMenu()" [class.is-open]="menuOpen" aria-label="Menu">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+  </div>
+
+  <!-- Mobile menu -->
+  <div class="nav-mobile-menu" [class.is-open]="menuOpen">
+    <a class="nav-mob-link" routerLink="/" (click)="closeMenu()">Home</a>
+
+    <button class="nav-mob-link nav-mob-cities-btn" (click)="toggleCities($event)">
+      Services
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+           [style.transform]="citiesOpen ? 'rotate(180deg)' : 'rotate(0)'">
+        <polyline points="6 9 12 15 18 9"/>
+      </svg>
+    </button>
+    <div class="nav-mob-cities" [class.is-open]="citiesOpen">
+      <a class="nav-mob-city" routerLink="/planning" (click)="closeMenu()">🏗 Planning Tool</a>
+    </div>
+
+    <a class="nav-mob-link" routerLink="/ask"   (click)="closeMenu()">Ask AI</a>
+    <a class="nav-mob-link" routerLink="/about" (click)="closeMenu()">About</a>
+
+    <div class="nav-mob-auth">
+      <ng-container *ngIf="!auth.isLoggedIn">
+        <a class="nav-mob-signin" routerLink="/login"  (click)="closeMenu()">Sign In</a>
+        <a class="nav-mob-cta"    routerLink="/signup" (click)="closeMenu()">Start Free Trial</a>
+      </ng-container>
+      <ng-container *ngIf="auth.isLoggedIn">
+        <span class="nav-mob-user-name">{{ auth.currentUser?.user_name }}</span>
+        <button class="nav-mob-signout" (click)="auth.logout(); closeMenu()">Sign Out</button>
+      </ng-container>
+    </div>
   </div>
 </nav>
