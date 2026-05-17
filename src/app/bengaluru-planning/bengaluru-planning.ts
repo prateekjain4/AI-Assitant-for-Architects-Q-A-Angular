@@ -69,19 +69,25 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
   readonly STORAGE_KEY = 'blr_planning_state';
 
   openSections: Record<string, boolean> = {
-    metrics:       true,
-    sitePlan:      true,
-    setbacks:      true,
-    far:           false,
-    staircase:     false,
-    fire:          false,
-    compliance:    false,
-    parking:       false,
-    basement:      false,
-    accessibility: false,
-    compoundWall:  false,
-    scenarios:        false,
-    compliance_dash:  true,
+    metrics:             true,
+    sitePlan:            false,
+    setbacks:            false,
+    far:                 false,
+    staircase:           false,
+    fire:                false,
+    compliance:          false,
+    parking:             false,
+    basement:            false,
+    accessibility:       false,
+    compoundWall:        false,
+    scenarios:           false,
+    compliance_dash:     false,
+    waterProximity:      false,
+    rajkaluveProximity:  false,
+    bmrdaMetrics:        true,
+    bmrdaSetbacks:       false,
+    bmrdaFire:           false,
+    bmrdaCompliance:     false,
   };
 
   detectedZone     = '';
@@ -90,6 +96,28 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
   bbmpWardNo       = '';
   bbmpZone         = '';
   bbmpZoneOffice   = '';
+
+  // ── Authority selector (BDA vs BMRDA sub-authorities) ─────────
+  selectedAuthority = '';
+  bmrdaResult: any  = null;
+
+  readonly BMRDA_AUTHORITIES = [
+    { value: 'anekal', label: 'Anekal LPA', endpoint: '/planning-anekal', areas: 'Anekal, Chandapura, Jigani, Bommasandra', isStub: false },
+    // Hoskote, Nelamangala, Kanakapura, Ramanagara, BIAAPA — enabled when bylaws are extracted
+  ];
+
+  get selectedAuthorityInfo() {
+    return this.BMRDA_AUTHORITIES.find(a => a.value === this.selectedAuthority);
+  }
+
+  onAuthorityChange(value: string): void {
+    this.selectedAuthority = value;
+    this.bmrdaResult = null;
+    this.result = null;
+    // Reset zone to the first valid option for the chosen authority set
+    const defaultZone = value ? 'R' : 'R';
+    this.form.patchValue({ zone: defaultZone });
+  }
 
   // ── Dynamic usage dropdown ─────────────────────────────────────
   allowedUsages: UsageOption[] = [];
@@ -124,6 +152,21 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
     { value: 'PSP', label: 'PSP — Public Semi-Public' },
     { value: 'T',   label: 'T   — Transportation' },
   ];
+
+  readonly bmrdaZones = [
+    { value: 'R',   label: 'R   — Residential Zone' },
+    { value: 'C',   label: 'C   — Commercial Zone' },
+    { value: 'I',   label: 'I   — Industrial Zone' },
+    { value: 'PSP', label: 'PSP — Public and Semi-Public Zone' },
+    { value: 'PU',  label: 'PU  — Public Utilities Zone' },
+    { value: 'OS',  label: 'OS  — Open Space, Parks & Playgrounds' },
+    { value: 'TC',  label: 'TC  — Transport and Communication Zone' },
+    { value: 'AG',  label: 'AG  — Agricultural Zone' },
+  ];
+
+  get activeZones() {
+    return this.selectedAuthority ? this.bmrdaZones : this.zones;
+  }
 
   // ── Regulatory source references ─────────────────────────────
   showSourceModal   = false;
@@ -625,6 +668,8 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
           if (res?.found && res.zone_code) {
             this.detectedZone = res.zone_code;
             this.form.patchValue({ zone: res.zone_code });
+            this.selectedAuthority = '';  // BDA zone detected — clear BMRDA authority
+            this.bmrdaResult = null;
           }
           this.planningZone   = res?.planning_zone   ?? 'zone_A';
           this.bbmpWardName   = res?.bbmp_ward_name   ?? '';
@@ -809,13 +854,24 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
 
     this.loading = true;
     this.result  = null;
+    this.bmrdaResult = null;
 
+    if (this.selectedAuthority) {
+      this._submitBmrda(v, hasDims, hasSqm);
+    } else {
+      this._submitBda(v, hasDims, hasSqm);
+    }
+  }
+
+  private _submitBda(v: any, hasDims: boolean, hasSqm: boolean): void {
     const payload: any = {
       zone:             v.zone,
       plot_length:      hasSqm ? null : (Number(v.plotLength) || null),
       plot_width:       hasSqm ? null : (Number(v.plotWidth)  || null),
       plot_area_sqft:   hasSqm ? Number(v.plotAreaSqm) * 10.764 : null,
-      coordinates:      [],
+      coordinates:      (this.markerLat != null && this.markerLng != null)
+                          ? [{ lat: this.markerLat, lng: this.markerLng }]
+                          : [],
       road_width:       Number(v.roadWidth),
       building_height:  Number(v.buildingHeight),
       usage:            v.usage || 'residential',
@@ -831,19 +887,25 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
         next: (res) => this.ngZone.run(() => {
           this.result = res;
           this.openSections = {
-            metrics:        true,
-            sitePlan:       true,
-            setbacks:       true,
-            far:            false,
-            staircase:      false,
-            fire:           false,
-            compliance:     false,
-            parking:        false,
-            basement:       false,
-            accessibility:  false,
-            compoundWall:   false,
-            scenarios:      false,
-            compliance_dash: true,
+            metrics:             true,
+            sitePlan:            false,
+            setbacks:            false,
+            far:                 false,
+            staircase:           false,
+            fire:                false,
+            compliance:          false,
+            parking:             false,
+            basement:            false,
+            accessibility:       false,
+            compoundWall:        false,
+            scenarios:           false,
+            compliance_dash:     false,
+            waterProximity:      !!res.water_proximity?.in_buffer_zone,
+            rajkaluveProximity:  !!res.rajkaluve_proximity?.in_buffer_zone,
+            bmrdaMetrics:        true,
+            bmrdaSetbacks:       false,
+            bmrdaFire:           false,
+            bmrdaCompliance:     false,
           };
           try {
             localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
@@ -852,6 +914,44 @@ export class BengaluruPlanningTool implements OnInit, AfterViewInit, OnDestroy {
               openSections: this.openSections,
             }));
           } catch (_) {}
+          this.loading      = false;
+          this.errorMessage = '';
+          this.cdr.detectChanges();
+        }),
+        error: () => this.ngZone.run(() => {
+          this.loading = false;
+          this.errorMessage = 'Failed to calculate — check inputs and try again.';
+          this.toast.error(this.errorMessage);
+          this.cdr.detectChanges();
+        }),
+      });
+  }
+
+  private _submitBmrda(v: any, hasDims: boolean, hasSqm: boolean): void {
+    // BMRDA endpoints require plot_length + plot_width (no sqft / coordinates)
+    let plotLength = hasDims ? Number(v.plotLength) : Math.sqrt(Number(v.plotAreaSqm) * 1.333);
+    let plotWidth  = hasDims ? Number(v.plotWidth)  : Math.sqrt(Number(v.plotAreaSqm) * 0.75);
+    plotLength = +plotLength.toFixed(2);
+    plotWidth  = +plotWidth.toFixed(2);
+
+    const authority = this.selectedAuthorityInfo!;
+    const payload: any = {
+      zone:             v.zone,
+      plot_length:      plotLength,
+      plot_width:       plotWidth,
+      road_width:       Number(v.roadWidth),
+      building_height:  Number(v.buildingHeight),
+      usage:            v.usage || 'residential',
+      corner_plot:      v.cornerPlot === 'true',
+      basement:         v.basement  === 'true',
+      floor_height:     Number(v.floorHeight) || 3.2,
+      locality:         authority.label.split('(')[0].trim(),
+    };
+
+    this.http.post<any>(environment.apiUrl + authority.endpoint, payload)
+      .subscribe({
+        next: (res) => this.ngZone.run(() => {
+          this.bmrdaResult = res;
           this.loading      = false;
           this.errorMessage = '';
           this.cdr.detectChanges();

@@ -78,9 +78,9 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit, OnDestroy {
   readonly STORAGE_KEY = 'hyd_planning_state';
 
   openSections: Record<string, boolean> = {
-    sitePlan:      true,
     metrics:       true,
-    setbacks:      true,
+    sitePlan:      false,
+    setbacks:      false,
     far:           false,
     staircase:     false,
     fire:          false,
@@ -451,9 +451,9 @@ export class HyderabadPlanningTool implements OnInit, AfterViewInit, OnDestroy {
         next: (res) => this.ngZone.run(() => {
           this.result = res;
           this.openSections = {
-            sitePlan:      true,
             metrics:       true,
-            setbacks:      true,
+            sitePlan:      false,
+            setbacks:      false,
             far:           false,
             staircase:     false,
             fire:          false,

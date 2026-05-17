@@ -144,16 +144,32 @@
 
       <!-- Form -->
       <div class="bp-form-card">
-        <h3 class="bp-form-title">Plot Details — BDA RMP 2031</h3>
+        <h3 class="bp-form-title">Plot Details</h3>
         <form [formGroup]="form" (ngSubmit)="onSubmit()">
+
+          <!-- Authority -->
+          <div class="bp-field">
+            <label class="bp-label">
+              Planning Authority
+              <span class="bp-label-alt" *ngIf="selectedAuthority" style="font-weight:400;color:#92400e"> · Map pin not available for BMRDA areas</span>
+            </label>
+            <select class="bp-select" [ngModel]="selectedAuthority" (ngModelChange)="onAuthorityChange($event)" [ngModelOptions]="{standalone: true}">
+              <option value="">— BDA (use map pin to detect zone)</option>
+              <option value="anekal">Anekal LPA (BMRDA)</option>
+              <!-- Hoskote, Nelamangala, Kanakapura, Ramanagara, BIAAPA — enabled when bylaws are extracted -->
+            </select>
+            <span class="bp-hint" *ngIf="selectedAuthority">{{ selectedAuthorityInfo?.areas }}</span>
+            <span class="bp-hint" *ngIf="!selectedAuthority">BDA jurisdiction — click map to auto-detect zone</span>
+          </div>
 
           <!-- Zone -->
           <div class="bp-field">
             <label class="bp-label">Zone <span class="bp-req">*</span></label>
             <select class="bp-select" formControlName="zone">
-              <option *ngFor="let z of zones" [value]="z.value">{{ z.label }}</option>
+              <option *ngFor="let z of activeZones" [value]="z.value">{{ z.label }}</option>
             </select>
-            <span class="bp-hint">Click map to auto-detect zone</span>
+            <span class="bp-hint" *ngIf="!selectedAuthority">Click map to auto-detect zone</span>
+            <span class="bp-hint" *ngIf="selectedAuthority">Select the land use zone per BMRDA Master Plan</span>
           </div>
 
           <!-- Plot dimensions -->
@@ -737,6 +753,169 @@
         </div>
       </div>
 
+      <!-- Water Body Proximity -->
+      <div class="bp-section" *ngIf="result.water_proximity">
+        <div class="bp-section-header" (click)="toggleSection('waterProximity')">
+          <span>💧 Water Body Proximity</span>
+          <div class="bp-section-header-right">
+            <span>{{ openSections['waterProximity'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['waterProximity']">
+
+          <!-- Not checked: no map pin -->
+          <div *ngIf="!result.water_proximity.checked && result.water_proximity.reason === 'no_map_pin'"
+               class="bp-note bp-note-amber">
+            ⚠ Click on the map to enable water body proximity check.
+          </div>
+          <!-- Not checked: Overpass unavailable -->
+          <div *ngIf="!result.water_proximity.checked && result.water_proximity.reason !== 'no_map_pin'"
+               class="bp-note bp-note-info">
+            ℹ Water body proximity check could not be completed (service unavailable).
+          </div>
+
+          <!-- No water bodies found -->
+          <div *ngIf="result.water_proximity.checked && !result.water_proximity.water_body_found"
+               class="bp-noc-clear" style="display:inline-block;margin-bottom:8px">
+            ✓ No water bodies within 1500m
+          </div>
+
+          <!-- Water body found -->
+          <ng-container *ngIf="result.water_proximity.water_body_found">
+
+            <!-- In buffer zone — RED warning -->
+            <div *ngIf="result.water_proximity.in_buffer_zone"
+                 class="bp-noc-required" style="display:block;margin-bottom:8px">
+              ⚠ Within {{ result.water_proximity.required_buffer_m }}m Buffer Zone
+            </div>
+
+            <!-- Outside buffer zone — GREEN clear -->
+            <div *ngIf="!result.water_proximity.in_buffer_zone"
+                 class="bp-noc-clear" style="display:inline-block;margin-bottom:8px">
+              ✓ Outside Buffer Zone
+            </div>
+
+            <div class="bp-metrics" style="margin-top:8px">
+              <div class="bp-metric">
+                <span class="bp-metric-label">Nearest Water Body</span>
+                <span class="bp-metric-value">{{ result.water_proximity.nearest_water_body }}</span>
+              </div>
+              <div class="bp-metric">
+                <span class="bp-metric-label">Distance</span>
+                <span class="bp-metric-value">{{ result.water_proximity.distance_m }}</span>
+                <span class="bp-metric-unit">m from boundary</span>
+              </div>
+              <div class="bp-metric">
+                <span class="bp-metric-label">Required Buffer</span>
+                <span class="bp-metric-value">{{ result.water_proximity.required_buffer_m }}</span>
+                <span class="bp-metric-unit">m No-Development Zone</span>
+              </div>
+              <div class="bp-metric">
+                <span class="bp-metric-label">Water Body Area</span>
+                <span class="bp-metric-value">{{ (result.water_proximity.water_body_area_m2 / 4047).toFixed(1) }}</span>
+                <span class="bp-metric-unit">acres</span>
+              </div>
+            </div>
+
+            <div *ngIf="result.water_proximity.warning"
+                 class="bp-note bp-note-red" style="margin-top:10px">
+              ⚠ {{ result.water_proximity.warning }}
+            </div>
+
+            <!-- Named lakes nearby -->
+            <div *ngIf="result.water_proximity.named_lakes_nearby?.length" style="margin-top:12px">
+              <p class="bp-sub-label">Named Lakes Within 1500m</p>
+              <div *ngFor="let lake of result.water_proximity.named_lakes_nearby"
+                   class="bp-note bp-note-blue" style="margin-bottom:4px">
+                💧 {{ lake.name }} — {{ lake.distance_m }} m away ({{ lake.area_acres }} acres)
+              </div>
+            </div>
+
+            <p class="bp-summary" style="margin-top:8px">{{ result.water_proximity.regulation_ref }}</p>
+
+            <div class="bp-note bp-note-amber" style="margin-top:10px">
+              ⚠ Distances are measured from the OSM polygon edge. BBMP enforces buffers from the <strong>Full Tank Level (FTL)</strong> boundary, which may extend further than the visible water edge. Verify the exact lake boundary with a licensed surveyor before finalising plans.
+            </div>
+          </ng-container>
+
+        </div>
+      </div>
+
+      <!-- Rajkaluve / Drain Proximity -->
+      <div class="bp-section" *ngIf="result.rajkaluve_proximity">
+        <div class="bp-section-header" (click)="toggleSection('rajkaluveProximity')">
+          <span>🌊 Rajkaluve / Drain Proximity</span>
+          <div class="bp-section-header-right">
+            <span>{{ openSections['rajkaluveProximity'] ? '▲' : '▼' }}</span>
+          </div>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['rajkaluveProximity']">
+
+          <div *ngIf="!result.rajkaluve_proximity.checked && result.rajkaluve_proximity.reason === 'no_map_pin'"
+               class="bp-note bp-note-amber">
+            ⚠ Click on the map to enable drain proximity check.
+          </div>
+          <div *ngIf="!result.rajkaluve_proximity.checked && result.rajkaluve_proximity.reason !== 'no_map_pin'"
+               class="bp-note bp-note-info">
+            ℹ Drain proximity check could not be completed (service unavailable).
+          </div>
+
+          <div *ngIf="result.rajkaluve_proximity.checked && !result.rajkaluve_proximity.drain_found"
+               class="bp-noc-clear" style="display:inline-block;margin-bottom:8px">
+            ✓ No storm water drains within 500m
+          </div>
+
+          <ng-container *ngIf="result.rajkaluve_proximity.drain_found">
+            <div *ngIf="result.rajkaluve_proximity.in_buffer_zone"
+                 class="bp-noc-required" style="display:block;margin-bottom:8px">
+              ⚠ Within {{ result.rajkaluve_proximity.required_buffer_m }}m Buffer Zone
+            </div>
+            <div *ngIf="!result.rajkaluve_proximity.in_buffer_zone"
+                 class="bp-noc-clear" style="display:inline-block;margin-bottom:8px">
+              ✓ Outside Buffer Zone
+            </div>
+
+            <div class="bp-metrics" style="margin-top:8px">
+              <div class="bp-metric">
+                <span class="bp-metric-label">Nearest Drain</span>
+                <span class="bp-metric-value">{{ result.rajkaluve_proximity.nearest_drain }}</span>
+              </div>
+              <div class="bp-metric">
+                <span class="bp-metric-label">Type</span>
+                <span class="bp-metric-value">{{ result.rajkaluve_proximity.is_primary ? 'Primary' : 'Secondary' }}</span>
+                <span class="bp-metric-unit">{{ result.rajkaluve_proximity.is_primary ? 'canal / named drain' : 'unnamed drain / stream' }}</span>
+              </div>
+              <div class="bp-metric">
+                <span class="bp-metric-label">Distance</span>
+                <span class="bp-metric-value">{{ result.rajkaluve_proximity.distance_m }}</span>
+                <span class="bp-metric-unit">m from drain edge</span>
+              </div>
+              <div class="bp-metric">
+                <span class="bp-metric-label">Required Buffer</span>
+                <span class="bp-metric-value">{{ result.rajkaluve_proximity.required_buffer_m }}</span>
+                <span class="bp-metric-unit">m each side</span>
+              </div>
+            </div>
+
+            <div *ngIf="result.rajkaluve_proximity.warning"
+                 class="bp-note bp-note-red" style="margin-top:10px">
+              ⚠ {{ result.rajkaluve_proximity.warning }}
+            </div>
+
+            <div *ngIf="result.rajkaluve_proximity.named_drains_nearby?.length" style="margin-top:12px">
+              <p class="bp-sub-label">Named Drains Within 500m</p>
+              <div *ngFor="let d of result.rajkaluve_proximity.named_drains_nearby"
+                   class="bp-note bp-note-blue" style="margin-bottom:4px">
+                🌊 {{ d.name }} ({{ d.type }}) — {{ d.distance_m }} m away
+              </div>
+            </div>
+
+            <p class="bp-summary" style="margin-top:8px">{{ result.rajkaluve_proximity.regulation_ref }}</p>
+          </ng-container>
+
+        </div>
+      </div>
+
       <!-- Compliance -->
       <div class="bp-section">
         <div class="bp-section-header" (click)="toggleSection('compliance')">
@@ -788,8 +967,151 @@
 
     </div><!-- /bp-right -->
 
+    <!-- ── BMRDA Result Panel ──────────────────────────────────── -->
+    <div class="bp-right" *ngIf="bmrdaResult">
+      <div class="bp-result-header">
+        <div class="bp-result-header-main">
+          <h4 class="bp-result-title">Planning Result — {{ bmrdaResult.authority }}</h4>
+          <div class="bp-badges">
+            <span class="bp-badge bp-badge-zone">{{ bmrdaResult.zone }}</span>
+            <span class="bp-badge bp-badge-ht">{{ bmrdaResult.building_height_m }} m</span>
+            <span class="bp-badge bp-badge-far">FAR {{ bmrdaResult.far }}</span>
+            <span class="bp-badge bp-badge-ward">{{ bmrdaResult.city | titlecase }}</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Stub warning -->
+      <div class="bp-warn-banner" *ngIf="bmrdaResult.warnings?.length > 0">
+        <div *ngFor="let w of bmrdaResult.warnings">⚠ {{ w }}</div>
+      </div>
+
+      <!-- Key Metrics -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('bmrdaMetrics')">
+          <span>📐 Key Metrics</span>
+          <span>{{ openSections['bmrdaMetrics'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['bmrdaMetrics'] !== false">
+          <div class="bp-metrics">
+            <div class="bp-metric bp-metric-primary">
+              <span class="bp-metric-label">Plot Area</span>
+              <span class="bp-metric-value">{{ bmrdaResult.plot_area_sqm | number:'1.0-0' }}</span>
+              <span class="bp-metric-unit">sqm <span class="bp-sub-unit">({{ bmrdaResult.plot_area | number:'1.0-0' }} sqft)</span></span>
+            </div>
+            <div class="bp-metric bp-metric-primary">
+              <span class="bp-metric-label">Max Built-up</span>
+              <span class="bp-metric-value">{{ bmrdaResult.max_built_sqm | number:'1.0-0' }}</span>
+              <span class="bp-metric-unit">sqm <span class="bp-sub-unit">({{ bmrdaResult.max_built_area | number:'1.0-0' }} sqft)</span></span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">FAR</span>
+              <span class="bp-metric-value">{{ bmrdaResult.far }}</span>
+              <span class="bp-metric-unit">Floor Area Ratio</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Ground Coverage</span>
+              <span class="bp-metric-value">{{ bmrdaResult.ground_coverage_pct }}%</span>
+              <span class="bp-metric-unit">max allowed</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Floors Feasible</span>
+              <span class="bp-metric-value">{{ bmrdaResult.num_floors }}</span>
+              <span class="bp-metric-unit">G+{{ (bmrdaResult.num_floors ?? 1) - 1 }} · {{ bmrdaResult.building_height_m }} m</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">High-Rise</span>
+              <span class="bp-metric-value">{{ bmrdaResult.is_high_rise ? 'Yes' : 'No' }}</span>
+              <span class="bp-metric-unit">{{ bmrdaResult.is_high_rise ? 'Fire NOC required' : 'Below threshold' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Setbacks -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('bmrdaSetbacks')">
+          <span>📏 Setbacks</span>
+          <span>{{ openSections['bmrdaSetbacks'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['bmrdaSetbacks']">
+          <div class="bp-metrics">
+            <div class="bp-metric">
+              <span class="bp-metric-label">Front</span>
+              <span class="bp-metric-value">{{ bmrdaResult.setbacks?.front }}</span>
+              <span class="bp-metric-unit">m</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Rear</span>
+              <span class="bp-metric-value">{{ bmrdaResult.setbacks?.rear }}</span>
+              <span class="bp-metric-unit">m</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Side Left</span>
+              <span class="bp-metric-value">{{ bmrdaResult.setbacks?.side_left }}</span>
+              <span class="bp-metric-unit">m</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Side Right</span>
+              <span class="bp-metric-value">{{ bmrdaResult.setbacks?.side_right }}</span>
+              <span class="bp-metric-unit">m</span>
+            </div>
+          </div>
+          <p class="bp-summary" *ngIf="bmrdaResult.setbacks?.all_round">
+            All-round setback: {{ bmrdaResult.setbacks.all_round }} m
+          </p>
+        </div>
+      </div>
+
+      <!-- Fire & Parking -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('bmrdaFire')">
+          <span>🔥 Fire & Parking</span>
+          <span>{{ openSections['bmrdaFire'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['bmrdaFire']">
+          <div class="bp-metrics">
+            <div class="bp-metric">
+              <span class="bp-metric-label">Fire NOC</span>
+              <span class="bp-metric-value" [style.color]="bmrdaResult.fire_data?.noc_required ? '#dc2626' : '#16a34a'">
+                {{ bmrdaResult.fire_data?.noc_required ? 'Required' : 'Not Required' }}
+              </span>
+              <span class="bp-metric-unit">above {{ bmrdaResult.fire_data?.threshold_m }} m</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Car Parking</span>
+              <span class="bp-metric-value">{{ bmrdaResult.parking?.required?.cars }}</span>
+              <span class="bp-metric-unit">spaces</span>
+            </div>
+            <div class="bp-metric">
+              <span class="bp-metric-label">Scooter Parking</span>
+              <span class="bp-metric-value">{{ bmrdaResult.parking?.required?.scooters }}</span>
+              <span class="bp-metric-unit">spaces</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Compliance -->
+      <div class="bp-section">
+        <div class="bp-section-header" (click)="toggleSection('bmrdaCompliance')">
+          <span>✅ Compliance Notes</span>
+          <span>{{ openSections['bmrdaCompliance'] ? '▲' : '▼' }}</span>
+        </div>
+        <div class="bp-section-body" *ngIf="openSections['bmrdaCompliance']">
+          <div *ngFor="let item of bmrdaResult.compliance" class="bp-note bp-note-blue" style="margin-bottom:6px">
+            {{ item }}
+          </div>
+          <p class="bp-summary" style="margin-top:10px">
+            <strong>Bylaw Reference:</strong> {{ bmrdaResult.bylaw_ref }}
+          </p>
+        </div>
+      </div>
+
+    </div><!-- /bmrda-right -->
+
     <!-- Empty state -->
-    <div class="bp-right bp-empty" *ngIf="!result && !loading">
+    <div class="bp-right bp-empty" *ngIf="!result && !bmrdaResult && !loading">
       <div class="bp-empty-inner">
         <span class="bp-empty-icon">🏛</span>
         <h4>Bengaluru Planning Tool</h4>

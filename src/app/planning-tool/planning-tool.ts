@@ -202,7 +202,7 @@ export class PlanningTool implements OnInit, AfterViewInit {
   // ── Accordion state for result sections ───────────────────────
   openSections: Record<string, boolean> = {
     metrics:       true,
-    setbacks:      true,
+    setbacks:      false,
     far:           false,
     staircase:     false,
     projections:   false,
@@ -509,18 +509,22 @@ export class PlanningTool implements OnInit, AfterViewInit {
             this.mapData.setPlanningResult(response);
             // Open key sections by default
             this.openSections = {
-              metrics:    true,
-              setbacks:   true,
-              far:        false,
-              staircase:  false,
-              projections:false,
-              basement:   false,
-              fire:       false,
-              compliance: false,
-              scenarios:  false,
-              parking:    false,
-              sitePlan:   false,
-              cost:       false,
+              metrics:       true,
+              setbacks:      false,
+              far:           false,
+              staircase:     false,
+              projections:   false,
+              basement:      false,
+              fire:          false,
+              compliance:    false,
+              designOptions: false,
+              tdr:           false,
+              approval:      false,
+              watchOut:      false,
+              scenarios:     false,
+              parking:       false,
+              sitePlan:      false,
+              cost:          false,
             };
             // Persist so state survives navigation to /cost-analysis and back
             try {
